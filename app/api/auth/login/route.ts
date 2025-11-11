@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { queryOne } from '@/lib/db';
 import { verifyPassword, generateToken } from '@/lib/auth';
 
-export const dynamic = "force-dynamic"; // API routes are inherently dynamic
-export const runtime = "nodejs";        // or "edge" if you want
-
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();

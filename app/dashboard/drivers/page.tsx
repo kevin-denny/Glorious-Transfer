@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { Plus, Search, Edit, AlertCircle, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -81,14 +80,16 @@ export default function DriversPage() {
 
   async function fetchDrivers() {
     try {
-      const { data, error } = await supabase
-        .from('drivers')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // const { data, error } = await supabase
+      //   .from('drivers')
+      //   .select('*')
+      //   .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setDrivers(data || []);
-      setFilteredDrivers(data || []);
+      // if (error) throw error;
+      // setDrivers(data || []);
+      // setFilteredDrivers(data || []);
+      setDrivers( []);
+      setFilteredDrivers( []);
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -102,22 +103,24 @@ export default function DriversPage() {
 
   async function fetchDriverDetails(driverId: string) {
     try {
-      const [complaintsRes, toursRes] = await Promise.all([
-        supabase
-          .from('complaints')
-          .select('*')
-          .eq('driver_id', driverId)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('tours')
-          .select('id, booking_ref, client_name, status, arrival_datetime')
-          .eq('assigned_driver_id', driverId)
-          .order('arrival_datetime', { ascending: false })
-          .limit(10),
-      ]);
+      // const [complaintsRes, toursRes] = await Promise.all([
+      //   supabase
+      //     .from('complaints')
+      //     .select('*')
+      //     .eq('driver_id', driverId)
+      //     .order('created_at', { ascending: false }),
+      //   supabase
+      //     .from('tours')
+      //     .select('id, booking_ref, client_name, status, arrival_datetime')
+      //     .eq('assigned_driver_id', driverId)
+      //     .order('arrival_datetime', { ascending: false })
+      //     .limit(10),
+      // ]);
 
-      setComplaints(complaintsRes.data || []);
-      setTours(toursRes.data || []);
+      // setComplaints(complaintsRes.data || []);
+      // setTours(toursRes.data || []);
+      setComplaints( []);
+      setTours( []);
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -138,18 +141,18 @@ export default function DriversPage() {
         .filter((lang) => lang);
 
       if (selectedDriver) {
-        const { error } = await supabase
-          .from('drivers')
-          .update({
-            name: formData.name,
-            languages: languagesArray,
-            vehicle_type: formData.vehicle_type,
-            vehicle_plate: formData.vehicle_plate,
-            status: formData.status,
-          })
-          .eq('id', selectedDriver.id);
+        // const { error } = await supabase
+        //   .from('drivers')
+        //   .update({
+        //     name: formData.name,
+        //     languages: languagesArray,
+        //     vehicle_type: formData.vehicle_type,
+        //     vehicle_plate: formData.vehicle_plate,
+        //     status: formData.status,
+        //   })
+        //   .eq('id', selectedDriver.id);
 
-        if (error) throw error;
+        // if (error) throw error;
 
         await logActivity('update', 'drivers', selectedDriver.id, {
           old: selectedDriver,
@@ -161,19 +164,19 @@ export default function DriversPage() {
           description: 'Driver updated successfully',
         });
       } else {
-        const { data: driverNumber } = await supabase.rpc('generate_driver_number');
+        // const { data: driverNumber } = await supabase.rpc('generate_driver_number');
 
-        const { error } = await supabase.from('drivers').insert({
-          driver_number: driverNumber,
-          name: formData.name,
-          languages: languagesArray,
-          vehicle_type: formData.vehicle_type,
-          vehicle_plate: formData.vehicle_plate,
-          status: formData.status,
-          created_by: profile?.id,
-        });
+        // const { error } = await supabase.from('drivers').insert({
+        //   driver_number: driverNumber,
+        //   name: formData.name,
+        //   languages: languagesArray,
+        //   vehicle_type: formData.vehicle_type,
+        //   vehicle_plate: formData.vehicle_plate,
+        //   status: formData.status,
+        //   created_by: profile?.id,
+        // });
 
-        if (error) throw error;
+        // if (error) throw error;
 
         await logActivity('create', 'drivers', null, formData);
 

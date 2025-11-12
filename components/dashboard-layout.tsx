@@ -127,7 +127,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <aside className="hidden w-64 border-r bg-white lg:block">
         <div className="flex h-full flex-col">
           <div className="border-b px-6 py-4">
-            <h1 className="text-xl font-bold text-gray-900">Tourism System</h1>
+            <h1 className="text-xl font-bold text-gray-900">Glorious Transfer</h1>
           </div>
           <div className="relative flex-1">
             <NavContent />
@@ -147,7 +147,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <SheetContent side="left" className="w-64 p-0">
                 <div className="flex h-full flex-col">
                   <div className="border-b px-6 py-4">
-                    <h1 className="text-xl font-bold text-gray-900">Tourism System</h1>
+                    <h1 className="text-xl font-bold text-gray-900">Glorious Transfer</h1>
                   </div>
                   <div className="relative flex-1">
                     <NavContent />

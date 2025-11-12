@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { Plus, Search, Edit, UserPlus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -85,17 +84,19 @@ export default function ToursPage() {
 
   async function fetchTours() {
     try {
-      const { data, error } = await supabase
-        .from('tours')
-        .select(`
-          *,
-          drivers:assigned_driver_id (name, driver_number)
-        `)
-        .order('booking_date', { ascending: false });
+      // const { data, error } = await supabase
+      //   .from('tours')
+      //   .select(`
+      //     *,
+      //     drivers:assigned_driver_id (name, driver_number)
+      //   `)
+      //   .order('booking_date', { ascending: false });
 
-      if (error) throw error;
-      setTours(data || []);
-      setFilteredTours(data || []);
+      // if (error) throw error;
+      // setTours(data || []);
+      // setFilteredTours(data || []);
+      setTours([]);
+      setFilteredTours( []);
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -109,14 +110,15 @@ export default function ToursPage() {
 
   async function fetchDrivers() {
     try {
-      const { data, error } = await supabase
-        .from('drivers')
-        .select('id, name, driver_number, status')
-        .eq('status', 'active')
-        .order('name');
+      // const { data, error } = await supabase
+      //   .from('drivers')
+      //   .select('id, name, driver_number, status')
+      //   .eq('status', 'active')
+      //   .order('name');
 
-      if (error) throw error;
-      setDrivers(data || []);
+      // if (error) throw error;
+      // setDrivers(data || []);
+      setDrivers([]);
     } catch (error: any) {
       console.error('Error fetching drivers:', error);
     }
@@ -128,12 +130,12 @@ export default function ToursPage() {
 
     try {
       if (selectedTour) {
-        const { error } = await supabase
-          .from('tours')
-          .update(formData)
-          .eq('id', selectedTour.id);
+        // const { error } = await supabase
+        //   .from('tours')
+        //   .update(formData)
+        //   .eq('id', selectedTour.id);
 
-        if (error) throw error;
+        // if (error) throw error;
 
         await logActivity('update', 'tours', selectedTour.id, {
           old: selectedTour,
@@ -145,12 +147,12 @@ export default function ToursPage() {
           description: 'Tour updated successfully',
         });
       } else {
-        const { error } = await supabase.from('tours').insert({
-          ...formData,
-          created_by: profile?.id,
-        });
+        // const { error } = await supabase.from('tours').insert({
+        //   ...formData,
+        //   created_by: profile?.id,
+        // });
 
-        if (error) throw error;
+        // if (error) throw error;
 
         await logActivity('create', 'tours', null, formData);
 
@@ -179,21 +181,21 @@ export default function ToursPage() {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('tours')
-        .update({
-          assigned_driver_id: driverId,
-          status: 'assigned',
-        })
-        .eq('id', selectedTour.id);
+      // const { error } = await supabase
+      //   .from('tours')
+      //   .update({
+      //     assigned_driver_id: driverId,
+      //     status: 'assigned',
+      //   })
+      //   .eq('id', selectedTour.id);
 
-      if (error) throw error;
+      // if (error) throw error;
 
-      const { error: updateError } = await supabase.rpc('increment', {
-        row_id: driverId,
-        table_name: 'drivers',
-        column_name: 'number_of_rides',
-      });
+      // const { error: updateError } = await supabase.rpc('increment', {
+      //   row_id: driverId,
+      //   table_name: 'drivers',
+      //   column_name: 'number_of_rides',
+      // });
 
       await logActivity('update', 'tours', selectedTour.id, {
         action: 'assigned_driver',

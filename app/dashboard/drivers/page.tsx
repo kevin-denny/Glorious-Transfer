@@ -69,6 +69,15 @@ export default function DriversPage() {
   const { profile } = useAuth();
   const { toast } = useToast();
   const token = localStorage.getItem("auth_token");
+  
+  const baseUrl = process.env.NEXT_PUBLIC_API;
+
+// For all drivers
+const getdrivers = `http://${baseUrl}/api/drivers`;
+// update driver
+ const updatedriver =   `http://${baseUrl}/api/drivers`;
+// create driver
+ const createdriver =   `http://${baseUrl}/api/drivers/register`;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -98,7 +107,7 @@ export default function DriversPage() {
     try {
       if (!token) throw new Error("No auth token found");
 
-      const response = await fetch("http://localhost:3000/api/drivers", {
+      const response = await fetch(getdrivers, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -171,7 +180,7 @@ export default function DriversPage() {
       if (selectedDriver) {
         // Update driver
         response = await fetch(
-          `http://localhost:3000/api/drivers/${selectedDriver.id}`,
+          `${updatedriver}/${selectedDriver.id}`,
           {
             method: "PUT",
             headers: {
@@ -207,7 +216,7 @@ export default function DriversPage() {
         });
       } else {
         // Create new driver
-        response = await fetch("http://localhost:3000/api/drivers/register", {
+        response = await fetch(createdriver, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

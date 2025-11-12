@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { ReactNode } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
-import { Button } from './ui/button';
+import { ReactNode } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { Button } from "./ui/button";
 import {
   Car,
   Calendar,
@@ -12,11 +12,12 @@ import {
   FileText,
   LogOut,
   Menu,
-  Shield
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
-import { useState } from 'react';
+  Shield,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import { useState } from "react";
+import Image from "next/image";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -30,44 +31,44 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navigation = [
     {
-      name: 'Dashboard',
-      href: '/dashboard',
+      name: "Dashboard",
+      href: "/dashboard",
       icon: FileText,
-      roles: ['administrator', 'finance', 'operations'],
+      roles: ["administrator", "finance", "operations"],
     },
     {
-      name: 'Drivers',
-      href: '/dashboard/drivers',
+      name: "Drivers",
+      href: "/dashboard/drivers",
       icon: Car,
-      roles: ['administrator'],
+      roles: ["administrator"],
     },
     {
-      name: 'Tours',
-      href: '/dashboard/tours',
+      name: "Tours",
+      href: "/dashboard/tours",
       icon: Calendar,
-      roles: ['administrator', 'operations'],
+      roles: ["administrator", "operations"],
     },
     {
-      name: 'Payments',
-      href: '/dashboard/payments',
+      name: "Payments",
+      href: "/dashboard/payments",
       icon: DollarSign,
-      roles: ['administrator', 'finance'],
+      roles: ["administrator", "finance"],
     },
     {
-      name: 'Activity Logs',
-      href: '/dashboard/logs',
+      name: "Activity Logs",
+      href: "/dashboard/logs",
       icon: Shield,
-      roles: ['administrator'],
+      roles: ["administrator"],
     },
   ];
 
   const filteredNav = navigation.filter((item) =>
-    item.roles.includes(profile?.role || '')
+    item.roles.includes(profile?.role || "")
   );
 
   const handleSignOut = async () => {
     await signOut();
-    router.push('/login');
+    router.push("/login");
   };
 
   const NavContent = () => (
@@ -78,7 +79,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <Users className="h-6 w-6 text-white" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900">{profile?.full_name}</p>
+            <p className="text-sm font-semibold text-gray-900">
+              {profile?.full_name}
+            </p>
             <p className="text-xs capitalize text-gray-500">{profile?.role}</p>
           </div>
         </div>
@@ -92,10 +95,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               key={item.name}
               variant="ghost"
               className={cn(
-                'w-full justify-start gap-3 px-4 py-6',
+                "w-full justify-start gap-3 px-4 py-6",
                 isActive
-                  ? 'bg-slate-100 text-slate-900 font-medium'
-                  : 'text-gray-600 hover:bg-slate-50 hover:text-gray-900'
+                  ? "bg-slate-100 text-slate-900 font-medium"
+                  : "text-gray-600 hover:bg-slate-50 hover:text-gray-900"
               )}
               onClick={() => {
                 router.push(item.href);
@@ -127,7 +130,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <aside className="hidden w-64 border-r bg-white lg:block">
         <div className="flex h-full flex-col">
           <div className="border-b px-6 py-4">
-            <h1 className="text-xl font-bold text-gray-900">Glorious Transfer</h1>
+            <Image
+              src="/logo.png"
+              alt="Glorious Transfer Logo"
+              width={200}
+              height={100}
+            />
           </div>
           <div className="relative flex-1">
             <NavContent />
@@ -147,7 +155,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <SheetContent side="left" className="w-64 p-0">
                 <div className="flex h-full flex-col">
                   <div className="border-b px-6 py-4">
-                    <h1 className="text-xl font-bold text-gray-900">Glorious Transfer</h1>
+                      <Image
+              src="/logo.png"
+              alt="Glorious Transfer Logo"
+              width={150}
+              height={100}
+            />
                   </div>
                   <div className="relative flex-1">
                     <NavContent />
@@ -157,7 +170,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </Sheet>
             <div className="hidden lg:block">
               <h2 className="text-lg font-semibold text-gray-900">
-                {filteredNav.find((item) => item.href === pathname)?.name || 'Dashboard'}
+                {filteredNav.find((item) => item.href === pathname)?.name ||
+                  "Dashboard"}
               </h2>
             </div>
           </div>

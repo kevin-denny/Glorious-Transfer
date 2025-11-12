@@ -57,3 +57,21 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.substring(7);
+    const user = await getUserFromToken(token!);
+
+    if (!user || !(user.role === 'administrator')) {
+      return NextResponse.json({ message: 'Unauthorized access!' }, { status: 403 });
+    }
+
+    await query(`DELETE FROM drivers WHERE id = ?`, [params.id]);
+
+    return NextResponse.json({ message: 'Driver deleted successfully' });
+  } catch (error: any) {
+    return NextResponse.json({ message: error.message }, { status: 500 });
+  }
+}

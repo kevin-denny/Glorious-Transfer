@@ -4,14 +4,36 @@ import { getUserFromToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.substring(7);
+    const user = await getUserFromToken(token!);
+
+    if (!user || !(user.role === 'administrator' || user.role === 'operations')) {
+      return NextResponse.json({ message: 'Unauthorized access!' }, { status: 403 });
+    }
+
+    const driver = await queryOne(`SELECT * FROM drivers WHERE id = ?`, [params.id]);
+
+    if (!driver) {
+      return NextResponse.json({ message: 'Driver not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(driver);
+  } catch (error: any) {
+    return NextResponse.json({ message: error.message }, { status: 500 });
+  }
+}
+
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.substring(7);
     const user = await getUserFromToken(token!);
 
-    if (!user || user.role !== 'administrator') {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    if (!user || !(user.role === 'administrator')) {
+      return NextResponse.json({ message: 'Unauthorized access!' }, { status: 403 });
     }
 
     const data = await request.json();

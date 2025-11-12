@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const user = await getUserFromToken(token!);
 
     if (!user || user.role !== 'administrator') {
-      return NextResponse.json({ message: 'Unauthorized request!' }, { status: 403 });
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
 
     const body: RegisterDriverRequest = await request.json();

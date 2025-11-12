@@ -3,8 +3,6 @@ import { query, queryOne } from '@/lib/db';
 import { hashPassword, generateToken } from '@/lib/auth';
 import { randomUUID } from 'crypto';
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(request: NextRequest) {
   try {
     const { email, password, full_name, role } = await request.json();

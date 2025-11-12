@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (!body.driver_number || !body.name || !body.languages || !body.vehicle_type || !body.vehicle_plate) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { message: 'Missing required fields' },
         { status: 400 }
       );
     }
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // Validate languages array
     if (!Array.isArray(body.languages) || body.languages.length === 0) {
       return NextResponse.json(
-        { error: 'Languages must be a non-empty array' },
+        { message: 'Languages must be a non-empty array' },
         { status: 400 }
       );
     }
@@ -69,7 +69,10 @@ export async function POST(request: NextRequest) {
       [driverId]
     );
 
-    return NextResponse.json(driver, { status: 201 });
+    return NextResponse.json(
+      { message: 'Driver registered successfully'},
+      { status: 201 }
+    );
 
   } catch (error: any) {
     console.error('Driver registration error:', error);
@@ -77,13 +80,13 @@ export async function POST(request: NextRequest) {
     // Handle duplicate driver_number
     if (error.code === 'ER_DUP_ENTRY') {
       return NextResponse.json(
-        { error: 'Driver number already exists' },
+        { message: 'Driver number already exists' },
         { status: 409 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Failed to register driver' },
+      { message: 'Failed to register driver' },
       { status: 500 }
     );
   }

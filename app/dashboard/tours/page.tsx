@@ -1,19 +1,31 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { DashboardLayout } from '@/components/dashboard-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/lib/auth-context';
-import { Plus, Search, Edit, UserPlus } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { logActivity } from '@/lib/activity-logger';
+import { useEffect, useState } from "react";
+import { DashboardLayout } from "@/components/dashboard-layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/lib/auth-context";
+import { Plus, Search, Edit, UserPlus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { logActivity } from "@/lib/activity-logger";
 
 interface Tour {
   id: string;
@@ -44,27 +56,29 @@ export default function ToursPage() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [filteredTours, setFilteredTours] = useState<Tour[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
+  const [viewMode, setViewMode] = useState(false);
+
   const { profile } = useAuth();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    booking_date: new Date().toISOString().split('T')[0],
-    booking_ref: '',
-    client_name: '',
-    agent: '',
+    booking_date: new Date().toISOString().split("T")[0],
+    booking_ref: "",
+    client_name: "",
+    agent: "",
     pax: 1,
-    contact_details: '',
-    arrival_datetime: '',
-    departure_datetime: '',
-    flight_no: '',
-    flight_time: '',
-    remarks: '',
-    status: 'pending',
+    contact_details: "",
+    arrival_datetime: "",
+    departure_datetime: "",
+    flight_no: "",
+    flight_time: "",
+    remarks: "",
+    status: "pending",
   });
 
   useEffect(() => {
@@ -96,12 +110,12 @@ export default function ToursPage() {
       // setTours(data || []);
       // setFilteredTours(data || []);
       setTours([]);
-      setFilteredTours( []);
+      setFilteredTours([]);
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: "Error",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -120,7 +134,7 @@ export default function ToursPage() {
       // setDrivers(data || []);
       setDrivers([]);
     } catch (error: any) {
-      console.error('Error fetching drivers:', error);
+      console.error("Error fetching drivers:", error);
     }
   }
 
@@ -137,14 +151,14 @@ export default function ToursPage() {
 
         // if (error) throw error;
 
-        await logActivity('update', 'tours', selectedTour.id, {
+        await logActivity("update", "tours", selectedTour.id, {
           old: selectedTour,
           new: formData,
         });
 
         toast({
-          title: 'Success',
-          description: 'Tour updated successfully',
+          title: "Success",
+          description: "Tour updated successfully",
         });
       } else {
         // const { error } = await supabase.from('tours').insert({
@@ -154,11 +168,11 @@ export default function ToursPage() {
 
         // if (error) throw error;
 
-        await logActivity('create', 'tours', null, formData);
+        await logActivity("create", "tours", null, formData);
 
         toast({
-          title: 'Success',
-          description: 'Tour created successfully',
+          title: "Success",
+          description: "Tour created successfully",
         });
       }
 
@@ -167,9 +181,9 @@ export default function ToursPage() {
       resetForm();
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: "Error",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -197,14 +211,14 @@ export default function ToursPage() {
       //   column_name: 'number_of_rides',
       // });
 
-      await logActivity('update', 'tours', selectedTour.id, {
-        action: 'assigned_driver',
+      await logActivity("update", "tours", selectedTour.id, {
+        action: "assigned_driver",
         driver_id: driverId,
       });
 
       toast({
-        title: 'Success',
-        description: 'Driver assigned successfully',
+        title: "Success",
+        description: "Driver assigned successfully",
       });
 
       fetchTours();
@@ -212,9 +226,9 @@ export default function ToursPage() {
       setSelectedTour(null);
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: "Error",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -223,23 +237,24 @@ export default function ToursPage() {
 
   function resetForm() {
     setFormData({
-      booking_date: new Date().toISOString().split('T')[0],
-      booking_ref: '',
-      client_name: '',
-      agent: '',
+      booking_date: new Date().toISOString().split("T")[0],
+      booking_ref: "",
+      client_name: "",
+      agent: "",
       pax: 1,
-      contact_details: '',
-      arrival_datetime: '',
-      departure_datetime: '',
-      flight_no: '',
-      flight_time: '',
-      remarks: '',
-      status: 'pending',
+      contact_details: "",
+      arrival_datetime: "",
+      departure_datetime: "",
+      flight_no: "",
+      flight_time: "",
+      remarks: "",
+      status: "pending",
     });
     setSelectedTour(null);
   }
 
   function handleEdit(tour: Tour) {
+    setViewMode(false);
     setSelectedTour(tour);
     setFormData({
       booking_date: tour.booking_date,
@@ -250,12 +265,17 @@ export default function ToursPage() {
       contact_details: tour.contact_details,
       arrival_datetime: tour.arrival_datetime.slice(0, 16),
       departure_datetime: tour.departure_datetime.slice(0, 16),
-      flight_no: tour.flight_no || '',
-      flight_time: tour.flight_time || '',
-      remarks: tour.remarks || '',
+      flight_no: tour.flight_no || "",
+      flight_time: tour.flight_time || "",
+      remarks: tour.remarks || "",
       status: tour.status,
     });
     setDialogOpen(true);
+  }
+
+  function handleView(tour: Tour) {
+    setViewMode(true);
+    handleEdit(tour);
   }
 
   function openAssignDialog(tour: Tour) {
@@ -265,16 +285,16 @@ export default function ToursPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'assigned':
-        return 'bg-blue-100 text-blue-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "assigned":
+        return "bg-blue-100 text-blue-800";
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -298,7 +318,9 @@ export default function ToursPage() {
             </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{selectedTour ? 'Edit Tour' : 'Create New Tour'}</DialogTitle>
+                <DialogTitle>
+                  {selectedTour ? "Edit Tour" : "Create New Tour"}
+                </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -309,7 +331,10 @@ export default function ToursPage() {
                       type="date"
                       value={formData.booking_date}
                       onChange={(e) =>
-                        setFormData({ ...formData, booking_date: e.target.value })
+                        setFormData({
+                          ...formData,
+                          booking_date: e.target.value,
+                        })
                       }
                       required
                     />
@@ -320,7 +345,10 @@ export default function ToursPage() {
                       id="booking_ref"
                       value={formData.booking_ref}
                       onChange={(e) =>
-                        setFormData({ ...formData, booking_ref: e.target.value })
+                        setFormData({
+                          ...formData,
+                          booking_ref: e.target.value,
+                        })
                       }
                       required
                     />
@@ -331,19 +359,40 @@ export default function ToursPage() {
                       id="client_name"
                       value={formData.client_name}
                       onChange={(e) =>
-                        setFormData({ ...formData, client_name: e.target.value })
+                        setFormData({
+                          ...formData,
+                          client_name: e.target.value,
+                        })
                       }
                       required
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="agent">Agent</Label>
-                    <Input
-                      id="agent"
+                    <Select
                       value={formData.agent}
-                      onChange={(e) => setFormData({ ...formData, agent: e.target.value })}
-                      required
-                    />
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, agent: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an agent" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="EL">EL</SelectItem>
+                        <SelectItem value="IW">IW</SelectItem>
+                        <SelectItem value="TF">TF</SelectItem>
+                        <SelectItem value="IT">IT</SelectItem>
+                        <SelectItem value="OW">OW</SelectItem>
+                        <SelectItem value="BF">BF</SelectItem>
+                        <SelectItem value="CT">CT</SelectItem>
+                        <SelectItem value="BW">BW</SelectItem>
+                        <SelectItem value="MT">MT</SelectItem>
+                        <SelectItem value="MZ">MZ</SelectItem>
+                        <SelectItem value="TX">TX</SelectItem>
+                        <SelectItem value="DR">DR</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="pax">Number of Passengers</Label>
@@ -353,7 +402,10 @@ export default function ToursPage() {
                       min="1"
                       value={formData.pax}
                       onChange={(e) =>
-                        setFormData({ ...formData, pax: parseInt(e.target.value) })
+                        setFormData({
+                          ...formData,
+                          pax: parseInt(e.target.value),
+                        })
                       }
                       required
                     />
@@ -364,31 +416,44 @@ export default function ToursPage() {
                       id="contact_details"
                       value={formData.contact_details}
                       onChange={(e) =>
-                        setFormData({ ...formData, contact_details: e.target.value })
+                        setFormData({
+                          ...formData,
+                          contact_details: e.target.value,
+                        })
                       }
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="arrival_datetime">Arrival Date & Time</Label>
+                    <Label htmlFor="arrival_datetime">
+                      Arrival Date & Time
+                    </Label>
                     <Input
                       id="arrival_datetime"
                       type="datetime-local"
                       value={formData.arrival_datetime}
                       onChange={(e) =>
-                        setFormData({ ...formData, arrival_datetime: e.target.value })
+                        setFormData({
+                          ...formData,
+                          arrival_datetime: e.target.value,
+                        })
                       }
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="departure_datetime">Departure Date & Time</Label>
+                    <Label htmlFor="departure_datetime">
+                      Departure Date & Time
+                    </Label>
                     <Input
                       id="departure_datetime"
                       type="datetime-local"
                       value={formData.departure_datetime}
                       onChange={(e) =>
-                        setFormData({ ...formData, departure_datetime: e.target.value })
+                        setFormData({
+                          ...formData,
+                          departure_datetime: e.target.value,
+                        })
                       }
                       required
                     />
@@ -409,7 +474,10 @@ export default function ToursPage() {
                       id="flight_time"
                       value={formData.flight_time}
                       onChange={(e) =>
-                        setFormData({ ...formData, flight_time: e.target.value })
+                        setFormData({
+                          ...formData,
+                          flight_time: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -417,7 +485,9 @@ export default function ToursPage() {
                     <Label htmlFor="status">Status</Label>
                     <Select
                       value={formData.status}
-                      onValueChange={(value) => setFormData({ ...formData, status: value })}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, status: value })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -436,7 +506,9 @@ export default function ToursPage() {
                   <Textarea
                     id="remarks"
                     value={formData.remarks}
-                    onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, remarks: e.target.value })
+                    }
                     rows={3}
                   />
                 </div>
@@ -452,7 +524,7 @@ export default function ToursPage() {
                     Cancel
                   </Button>
                   <Button type="submit" disabled={loading}>
-                    {selectedTour ? 'Update' : 'Create'} Tour
+                    {selectedTour ? "Update" : "Create"} Tour
                   </Button>
                 </div>
               </form>
@@ -492,7 +564,9 @@ export default function ToursPage() {
                 <tbody>
                   {filteredTours.map((tour) => (
                     <tr key={tour.id} className="border-b last:border-0">
-                      <td className="py-4 font-mono text-sm">{tour.booking_ref}</td>
+                      <td className="py-4 font-mono text-sm">
+                        {tour.booking_ref}
+                      </td>
                       <td className="py-4 font-medium">{tour.client_name}</td>
                       <td className="py-4 text-sm">{tour.agent}</td>
                       <td className="py-4 text-sm">{tour.pax}</td>
@@ -503,21 +577,36 @@ export default function ToursPage() {
                         {tour.drivers ? (
                           <div>
                             <p className="font-medium">{tour.drivers.name}</p>
-                            <p className="text-xs text-gray-500">{tour.drivers.driver_number}</p>
+                            <p className="text-xs text-gray-500">
+                              {tour.drivers.driver_number}
+                            </p>
                           </div>
                         ) : (
                           <span className="text-gray-400">Not assigned</span>
                         )}
                       </td>
                       <td className="py-4">
-                        <Badge className={getStatusColor(tour.status)}>{tour.status}</Badge>
+                        <Badge className={getStatusColor(tour.status)}>
+                          {tour.status}
+                        </Badge>
                       </td>
                       <td className="py-4">
                         <div className="flex gap-2">
-                          <Button size="sm" variant="ghost" onClick={() => handleEdit(tour)}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleView(tour)}
+                          >
+                            View
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleEdit(tour)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          {tour.status === 'pending' && (
+                          {tour.status === "pending" && (
                             <Button
                               size="sm"
                               variant="ghost"
@@ -533,7 +622,9 @@ export default function ToursPage() {
                 </tbody>
               </table>
               {filteredTours.length === 0 && (
-                <div className="py-12 text-center text-gray-500">No tours found</div>
+                <div className="py-12 text-center text-gray-500">
+                  No tours found
+                </div>
               )}
             </div>
           </CardContent>
@@ -563,11 +654,15 @@ export default function ToursPage() {
                     className="w-full rounded-lg border p-3 text-left transition-colors hover:bg-gray-50"
                   >
                     <p className="font-medium">{driver.name}</p>
-                    <p className="text-sm text-gray-500">{driver.driver_number}</p>
+                    <p className="text-sm text-gray-500">
+                      {driver.driver_number}
+                    </p>
                   </button>
                 ))}
                 {drivers.length === 0 && (
-                  <p className="text-sm text-gray-500">No active drivers available</p>
+                  <p className="text-sm text-gray-500">
+                    No active drivers available
+                  </p>
                 )}
               </div>
             </div>

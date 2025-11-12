@@ -330,6 +330,8 @@ For detailed setup instructions, see `SETUP.md`.
 
 Built with Next.js and Supabase for modern tourism operations.
 
+## GENERATE JWT KEY
+openssl rand -base64 32
 
 ## PASSWORD ENCRYPTION COMAND
 node -e "console.log(require('bcryptjs').hashSync('admin123', 10))"

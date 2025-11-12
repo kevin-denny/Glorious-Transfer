@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, queryOne } from '@/lib/db';
 import { randomUUID } from 'crypto';
+import { getUserFromToken } from '@/lib/auth';
 
 interface RegisterDriverRequest {
   driver_number: string;
@@ -9,10 +10,19 @@ interface RegisterDriverRequest {
   vehicle_type: string;
   vehicle_plate: string;
   created_by?: string;
+  status?: string;
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.substring(7);
+    const user = await getUserFromToken(token!);
+
+    if (!user || user.role !== 'administrator') {
+      return NextResponse.json({ message: 'Unauthorized request!' }, { status: 403 });
+    }
+
     const body: RegisterDriverRequest = await request.json();
 
     // Validate required fields
@@ -39,8 +49,8 @@ export async function POST(request: NextRequest) {
     const result = await query(
       `INSERT INTO drivers (
         id, driver_number, name, languages, vehicle_type, 
-        vehicle_plate, complaints, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        vehicle_plate, complaints, created_by, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         driverId,
         body.driver_number,
@@ -49,25 +59,18 @@ export async function POST(request: NextRequest) {
         body.vehicle_type,
         body.vehicle_plate,
         complaintsJson,
-        body.created_by || null
+        user.id || null,
+        body.status || 'Inactive'
       ]
     );
 
-    return NextResponse.json(
-      {
-        message: 'Driver registered successfully',
-        driver: {
-          id: driverId,
-          driver_number: body.driver_number,
-          name: body.name,
-          languages: body.languages,
-          vehicle_type: body.vehicle_type,
-          vehicle_plate: body.vehicle_plate,
-          number_of_rides: 0
-        }
-      },
-      { status: 201 }
+    const driver = await queryOne(
+      `SELECT * FROM drivers WHERE id = ?`, 
+      [driverId]
     );
+
+    return NextResponse.json(driver, { status: 201 });
+
   } catch (error: any) {
     console.error('Driver registration error:', error);
 

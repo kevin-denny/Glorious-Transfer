@@ -155,12 +155,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <SheetContent side="left" className="w-64 p-0">
                 <div className="flex h-full flex-col">
                   <div className="border-b px-6 py-4">
-                      <Image
-              src="/logo.png"
-              alt="Glorious Transfer Logo"
-              width={150}
-              height={100}
-            />
+                    <Image
+                      src="/logo.png"
+                      alt="Glorious Transfer Logo"
+                      width={150}
+                      height={100}
+                    />
                   </div>
                   <div className="relative flex-1">
                     <NavContent />

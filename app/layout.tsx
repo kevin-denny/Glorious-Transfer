@@ -1,14 +1,14 @@
-import './globals.css';
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { AuthProvider } from '@/lib/auth-context';
-import { Toaster } from '@/components/ui/toaster';
+import "./globals.css";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { AuthProvider } from "@/lib/auth-context";
+import { Toaster } from "@/components/ui/toaster";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Tourism Management System',
-  description: 'Comprehensive tourism management platform',
+  title: "Glorious Transfer",
+  description: "Comprehensive tourism management platform",
 };
 
 export default function RootLayout({
@@ -18,6 +18,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Favicon */}
+        <link rel="icon" href="/favicon.png" />
+      </head>
       <body className={inter.className}>
         <AuthProvider>
           {children}

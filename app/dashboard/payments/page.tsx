@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { Plus, Search, Check, DollarSign } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -94,18 +93,20 @@ export default function PaymentsPage() {
 
   async function fetchPayments() {
     try {
-      const { data, error } = await supabase
-        .from('driver_payments')
-        .select(`
-          *,
-          drivers!inner (name, driver_number),
-          tours (booking_ref, client_name)
-        `)
-        .order('created_at', { ascending: false });
+      // const { data, error } = await supabase
+      //   .from('driver_payments')
+      //   .select(`
+      //     *,
+      //     drivers!inner (name, driver_number),
+      //     tours (booking_ref, client_name)
+      //   `)
+      //   .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setPayments(data || []);
-      setFilteredPayments(data || []);
+      // if (error) throw error;
+      // setPayments(data || []);
+      // setFilteredPayments(data || []);
+      setPayments( []);
+      setFilteredPayments( []);
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -119,14 +120,15 @@ export default function PaymentsPage() {
 
   async function fetchDrivers() {
     try {
-      const { data, error } = await supabase
-        .from('drivers')
-        .select('id, name, driver_number')
-        .eq('status', 'active')
-        .order('name');
+      // const { data, error } = await supabase
+      //   .from('drivers')
+      //   .select('id, name, driver_number')
+      //   .eq('status', 'active')
+      //   .order('name');
 
-      if (error) throw error;
-      setDrivers(data || []);
+      // if (error) throw error;
+      // setDrivers(data || []);
+      setDrivers( []);
     } catch (error: any) {
       console.error('Error fetching drivers:', error);
     }
@@ -134,14 +136,15 @@ export default function PaymentsPage() {
 
   async function fetchTours() {
     try {
-      const { data, error } = await supabase
-        .from('tours')
-        .select('id, booking_ref, client_name')
-        .eq('status', 'completed')
-        .order('booking_date', { ascending: false });
+      // const { data, error } = await supabase
+      //   .from('tours')
+      //   .select('id, booking_ref, client_name')
+      //   .eq('status', 'completed')
+      //   .order('booking_date', { ascending: false });
 
-      if (error) throw error;
-      setTours(data || []);
+      // if (error) throw error;
+      // setTours(data || []);
+      setTours([]);
     } catch (error: any) {
       console.error('Error fetching tours:', error);
     }
@@ -152,15 +155,15 @@ export default function PaymentsPage() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.from('driver_payments').insert({
-        driver_id: formData.driver_id,
-        tour_id: formData.tour_id || null,
-        amount: parseFloat(formData.amount),
-        notes: formData.notes,
-        updated_by: profile?.id,
-      });
+      // const { error } = await supabase.from('driver_payments').insert({
+      //   driver_id: formData.driver_id,
+      //   tour_id: formData.tour_id || null,
+      //   amount: parseFloat(formData.amount),
+      //   notes: formData.notes,
+      //   updated_by: profile?.id,
+      // });
 
-      if (error) throw error;
+      // if (error) throw error;
 
       await logActivity('create', 'driver_payments', null, formData);
 
@@ -186,16 +189,16 @@ export default function PaymentsPage() {
   async function handleMarkAsPaid(payment: Payment) {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('driver_payments')
-        .update({
-          status: 'paid',
-          payment_date: new Date().toISOString().split('T')[0],
-          updated_by: profile?.id,
-        })
-        .eq('id', payment.id);
+      // const { error } = await supabase
+      //   .from('driver_payments')
+      //   .update({
+      //     status: 'paid',
+      //     payment_date: new Date().toISOString().split('T')[0],
+      //     updated_by: profile?.id,
+      //   })
+      //   .eq('id', payment.id);
 
-      if (error) throw error;
+      // if (error) throw error;
 
       await logActivity('update', 'driver_payments', payment.id, {
         action: 'marked_as_paid',

@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const data = await request.json();
     const { name, languages, vehicle_type, vehicle_plate, status = 'active' } = data;
 
-    const result = await query<any>(
+    const result = await query(
       `INSERT INTO drivers (name, languages, vehicle_type, vehicle_plate, status, created_by) 
        VALUES (?, ?, ?, ?, ?, ?)`,
       [name, JSON.stringify(languages), vehicle_type, vehicle_plate, status, user.id]

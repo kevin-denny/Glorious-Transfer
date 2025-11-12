@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 interface RegisterDriverRequest {
   driver_number: string;
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const driverId = uuidv4();
+    const driverId = randomUUID();
     const languagesJson = JSON.stringify(body.languages);
     const complaintsJson = JSON.stringify([]);
 
@@ -62,7 +62,8 @@ export async function POST(request: NextRequest) {
           name: body.name,
           languages: body.languages,
           vehicle_type: body.vehicle_type,
-          vehicle_plate: body.vehicle_plate
+          vehicle_plate: body.vehicle_plate,
+          number_of_rides: 0
         }
       },
       { status: 201 }

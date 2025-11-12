@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
+import { formatToIST } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     if (!driver) {
       return NextResponse.json({ message: 'Driver not found' }, { status: 404 });
     }
+
+    driver.created_at = formatToIST(driver.created_at);
+    driver.updated_at = formatToIST(driver.updated_at);
 
     return NextResponse.json(driver);
   } catch (error: any) {

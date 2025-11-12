@@ -5,7 +5,6 @@ import { DashboardLayout } from '@/components/dashboard-layout';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/lib/supabase';
 import { Search, Activity } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -60,18 +59,20 @@ export default function ActivityLogsPage() {
 
   async function fetchLogs() {
     try {
-      const { data, error } = await supabase
-        .from('activity_logs')
-        .select(`
-          *,
-          profiles (full_name, role)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(500);
+      // const { data, error } = await supabase
+      //   .from('activity_logs')
+      //   .select(`
+      //     *,
+      //     profiles (full_name, role)
+      //   `)
+      //   .order('created_at', { ascending: false })
+      //   .limit(500);
 
-      if (error) throw error;
-      setLogs(data || []);
-      setFilteredLogs(data || []);
+      // if (error) throw error;
+      // setLogs(data || []);
+      // setFilteredLogs(data || []);
+      setLogs( []);
+      setFilteredLogs( []);
     } catch (error: any) {
       toast({
         title: 'Error',

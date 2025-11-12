@@ -68,7 +68,19 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ message: 'Unauthorized access!' }, { status: 403 });
     }
 
-    await query(`DELETE FROM drivers WHERE id = ?`, [params.id]);
+    // Check if driver exists
+    const driver = await queryOne(`SELECT * FROM drivers WHERE id = ?`, [params.id]);
+
+    if (!driver) {
+      return NextResponse.json({ message: 'Driver not found' }, { status: 404 });
+    }
+
+    const result: any = await query(`DELETE FROM drivers WHERE id = ?`, [params.id]);
+
+    // Check if deletion was successful
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ message: 'Failed to delete driver' }, { status: 500 });
+    }
 
     return NextResponse.json({ message: 'Driver deleted successfully' });
   } catch (error: any) {

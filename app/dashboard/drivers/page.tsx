@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
-import { Plus, Search, Edit, AlertCircle, Eye } from "lucide-react";
+import { Plus, Search, Edit, AlertCircle, Eye, Trash } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -69,15 +69,15 @@ export default function DriversPage() {
   const { profile } = useAuth();
   const { toast } = useToast();
   const token = localStorage.getItem("auth_token");
-  
+
   const baseUrl = process.env.NEXT_PUBLIC_API;
 
-// For all drivers
-const getdrivers = `http://${baseUrl}/api/drivers`;
-// update driver
- const updatedriver =   `http://${baseUrl}/api/drivers`;
-// create driver
- const createdriver =   `http://${baseUrl}/api/drivers/register`;
+  // For all drivers
+  const getdrivers = `http://${baseUrl}/api/drivers`;
+  // update driver
+  const drivercall = `http://${baseUrl}/api/drivers`;
+  // create driver
+  const createdriver = `http://${baseUrl}/api/drivers/register`;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -179,24 +179,21 @@ const getdrivers = `http://${baseUrl}/api/drivers`;
 
       if (selectedDriver) {
         // Update driver
-        response = await fetch(
-          `${updatedriver}/${selectedDriver.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              name: formData.name,
-              languages: languagesArray,
-              vehicle_type: formData.vehicle_type,
-              vehicle_plate: formData.vehicle_plate,
-              driver_number: formData.driver_number,
-              status: formData.status,
-            }),
-          }
-        );
+        response = await fetch(`${drivercall}/${selectedDriver.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            languages: languagesArray,
+            vehicle_type: formData.vehicle_type,
+            vehicle_plate: formData.vehicle_plate,
+            driver_number: formData.driver_number,
+            status: formData.status,
+          }),
+        });
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -291,6 +288,42 @@ const getdrivers = `http://${baseUrl}/api/drivers`;
     setSelectedDriver(driver);
     fetchDriverDetails(driver.id);
     setDetailsOpen(true);
+  }
+
+  async function handleDelete(driverId: string) {
+    if (!confirm("Are you sure you want to delete this driver?")) return;
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`${drivercall}/${driverId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to delete driver`);
+      }
+
+      toast({
+        title: "Deleted",
+        description: "Driver deleted successfully",
+      });
+
+      // Refresh drivers list
+      fetchDrivers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -500,6 +533,14 @@ const getdrivers = `http://${baseUrl}/api/drivers`;
                             onClick={() => handleEdit(driver)}
                           >
                             <Edit className="h-4 w-4" />
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDelete(driver.id)}
+                          >
+                            <Trash className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
                       </td>

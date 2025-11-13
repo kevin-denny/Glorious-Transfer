@@ -80,3 +80,42 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+/* Make sure the buttons have space between them */
+.swal2-actions {
+  gap: 0.5rem !important; /* ✅ this creates the actual space */
+}
+
+/* Confirm (Delete) button styling */
+.swal-confirm-btn {
+  background-color: hsl(var(--destructive)) !important;
+  color: hsl(var(--destructive-foreground)) !important;
+  border: none !important;
+  border-radius: 0.5rem;
+  padding: 8px 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.swal-confirm-btn:hover {
+  background-color: hsl(var(--destructive) / 0.85) !important;
+}
+
+/* Cancel button styling */
+.swal-cancel-btn {
+  background-color: hsl(var(--secondary)) !important;
+  color: hsl(var(--secondary-foreground)) !important;
+  border: none !important;
+  border-radius: 0.5rem;
+  padding: 8px 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.swal-cancel-btn:hover {
+  background-color: hsl(var(--secondary) / 0.85) !important;
+}
+

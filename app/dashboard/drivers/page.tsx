@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/lib/activity-logger";
-import { Textarea } from "@/components/ui/textarea";
+import Swal from "sweetalert2";
 
 interface Driver {
   id: string;
@@ -290,41 +290,99 @@ export default function DriversPage() {
     setDetailsOpen(true);
   }
 
-  async function handleDelete(driverId: string) {
-    if (!confirm("Are you sure you want to delete this driver?")) return;
+  // async function handleDelete(driverId: string) {
+  //   if (!confirm("Are you sure you want to delete this driver?")) return;
 
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch(`${drivercall}/${driverId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  //   setLoading(true);
+  //   try {
+  //     const token = localStorage.getItem("auth_token");
+  //     const response = await fetch(`${drivercall}/${driverId}`, {
+  //       method: "DELETE",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to delete driver`);
-      }
+  //     if (!response.ok) {
+  //       const errorData = await response.json();
+  //       throw new Error(errorData.message || `Failed to delete driver`);
+  //     }
 
-      toast({
-        title: "Deleted",
-        description: "Driver deleted successfully",
-      });
+  //     toast({
+  //       title: "Deleted",
+  //       description: "Driver deleted successfully",
+  //     });
 
-      // Refresh drivers list
-      fetchDrivers();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+  //     // Refresh drivers list
+  //     fetchDrivers();
+  //   } catch (error: any) {
+  //     toast({
+  //       title: "Error",
+  //       description: error.message,
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
+
+
+async function handleDelete(driverId: string) {
+   const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "Do you really want to delete this driver?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    customClass: {
+      confirmButton: "swal-confirm-btn",
+      cancelButton: "swal-cancel-btn",
+      popup: "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
+    },
+    buttonsStyling: false, // we’ll style it ourselves
+    background: "hsl(var(--background))",
+    color: "hsl(var(--foreground))",
+  });
+
+
+  if (!result.isConfirmed) return;
+
+  setLoading(true);
+  try {
+    const token = localStorage.getItem("auth_token");
+    const response = await fetch(`${drivercall}/${driverId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Failed to delete driver`);
     }
+
+    await Swal.fire({
+      title: "Deleted!",
+      text: "Driver deleted successfully.",
+      icon: "success",
+      confirmButtonColor: "#3085d6",
+    });
+
+    // Refresh drivers list
+    fetchDrivers();
+  } catch (error: any) {
+    Swal.fire({
+      title: "Error!",
+      text: error.message,
+      icon: "error",
+      confirmButtonColor: "#3085d6",
+    });
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <DashboardLayout>
@@ -484,7 +542,7 @@ export default function DriversPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b text-left text-sm text-gray-500">
-                    {/* <th className="pb-3 font-medium">Driver #</th> */}
+                    <th className="pb-3 font-medium">Driver #</th>
                     <th className="pb-3 font-medium">Name</th>
                     <th className="pb-3 font-medium">Languages</th>
                     <th className="pb-3 font-medium">Vehicle</th>
@@ -497,9 +555,9 @@ export default function DriversPage() {
                 <tbody>
                   {filteredDrivers.map((driver) => (
                     <tr key={driver.id} className="border-b last:border-0">
-                      {/* <td className="py-4 font-mono text-sm">
-                        {driver.driver_number}
-                      </td> */}
+                      <td className="py-4 font-mono text-sm">
+                        {driver.id}
+                      </td>
                       <td className="py-4 font-medium">{driver.name}</td>
                       <td className="py-4 text-sm">
                         {driver.languages.join(", ")}

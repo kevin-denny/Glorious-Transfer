@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { hashPassword, generateToken } from '@/lib/auth';
-import { randomUUID } from 'crypto';
+import { generateUniqueUserId } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate user ID and hash password
-    const userId = randomUUID();
+    // Generate unique user ID
+    const userId = await generateUniqueUserId();
     const hashedPassword = await hashPassword(password);
 
     // Insert into auth_users

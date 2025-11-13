@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { randomUUID } from 'crypto';
 import { getUserFromToken } from '@/lib/auth';
+import { generateUniqueDriverId } from '@/lib/utils';
 
 interface RegisterDriverRequest {
   driver_number: string;
@@ -41,7 +42,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const driverId = randomUUID();
+    // Generate unique driver ID
+    const driverId = await generateUniqueDriverId();
     const languagesJson = JSON.stringify(body.languages);
     const complaintsJson = JSON.stringify([]);
 

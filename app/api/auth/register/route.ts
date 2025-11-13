@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { hashPassword, generateToken } from '@/lib/auth';
-import { generateUniqueUserId } from '@/lib/utils';
+import { generateUniqueUserId } from '@/lib/id-generator';
 
 export async function POST(request: NextRequest) {
   try {

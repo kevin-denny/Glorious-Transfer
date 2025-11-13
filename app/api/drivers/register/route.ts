@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
-import { randomUUID } from 'crypto';
 import { getUserFromToken } from '@/lib/auth';
-import { generateUniqueDriverId } from '@/lib/utils';
+import { generateUniqueDriverId } from '@/lib/id-generator';
 
 interface RegisterDriverRequest {
   driver_number: string;

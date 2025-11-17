@@ -1,27 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { query, queryOne } from '@/lib/db';
-import { getUserFromToken } from '@/lib/auth';
-import { formatToIST } from '@/lib/utils';
+import { NextRequest, NextResponse } from "next/server";
+import { query, queryOne } from "@/lib/db";
+import { getUserFromToken } from "@/lib/auth";
+import { formatToIST } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
+    const authHeader = request.headers.get("authorization");
     const token = authHeader?.substring(7);
     const user = await getUserFromToken(token!);
 
     if (!user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     // Get pagination parameters from query string
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "10");
 
     // Validate pagination parameters
     if (page < 1 || pageSize < 1 || pageSize > 100) {
       return NextResponse.json(
-        { message: 'Invalid pagination parameters. Page must be >= 1 and pageSize between 1-100' },
+        {
+          message:
+            "Invalid pagination parameters. Page must be >= 1 and pageSize between 1-100",
+        },
         { status: 400 }
       );
     }
@@ -35,18 +38,55 @@ export async function GET(request: NextRequest) {
     );
     const total = totalResult?.total || 0;
 
-    // Get paginated tours - Use template literals for LIMIT/OFFSET
-    const tours = await query(
-      `SELECT * FROM tours ORDER BY created_at DESC LIMIT ${pageSize} OFFSET ${offset}`
-    ) as any[];
+    // Get paginated tours with assignment details - Use template literals for LIMIT/OFFSET
+    const tours = (await query(`
+      SELECT 
+        t.*,
+        a.id as assignment_id,
+        a.assigned_at,
+        a.assigned_by,
+        d.id as driver_id,
+        d.name as driver_name,
+        d.driver_number as driver_number,
+        d.vehicle_type as driver_vehicle_type,
+        d.vehicle_plate as driver_vehicle_plate
+      FROM tours t
+      LEFT JOIN assignments a ON t.id = a.tour_id
+      LEFT JOIN drivers d ON a.driver_id = d.id
+      ORDER BY t.created_at DESC 
+      LIMIT ${pageSize} OFFSET ${offset}
+    `)) as any[];
 
-    // Format timestamps for all tours
-    const formattedTours = tours.map(tour => ({
-      ...tour,
+    // Format timestamps and structure assignment data for all tours
+    const formattedTours = tours.map((tour) => ({
+      id: tour.id,
+      booking_date: formatToIST(tour.booking_date),
+      customer_name: tour.customer_name,
+      agent: tour.agent,
+      pax: tour.pax,
+      contact_details: tour.contact_details,
+      arrival_datetime: formatToIST(tour.arrival_datetime),
+      departure_datetime: formatToIST(tour.departure_datetime),
+      flight_no: tour.flight_no,
+      flight_time: tour.flight_time,
+      remarks: tour.remarks,
+      status: tour.status,
       created_at: formatToIST(tour.created_at),
       updated_at: formatToIST(tour.updated_at),
-      arrival_datetime: formatToIST(tour.arrival_datetime),
-      departure_datetime: formatToIST(tour.departure_datetime)
+      assignment: tour.assignment_id
+        ? {
+            id: tour.assignment_id,
+            assigned_at: formatToIST(tour.assigned_at),
+            assigned_by: tour.assigned_by,
+            driver: {
+              id: tour.driver_id,
+              name: tour.driver_name,
+              phone: tour.driver_phone,
+              vehicle_type: tour.driver_vehicle_type,
+              vehicle_number: tour.driver_vehicle_number,
+            },
+          }
+        : null,
     }));
 
     // Calculate pagination metadata
@@ -62,8 +102,8 @@ export async function GET(request: NextRequest) {
         total,
         totalPages,
         hasNextPage,
-        hasPreviousPage
-      }
+        hasPreviousPage,
+      },
     });
   } catch (error: any) {
     return NextResponse.json({ message: error.message }, { status: 500 });

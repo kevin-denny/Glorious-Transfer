@@ -26,6 +26,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/lib/activity-logger";
 import Swal from "sweetalert2";
+import DataTable from "@/components/ui/DataTable";
 
 interface Driver {
   id: string;
@@ -100,10 +101,6 @@ export default function DriversPage() {
     hasPreviousPage: false,
   });
 
-  // useEffect(() => {
-  //   fetchDrivers();
-  // }, []);
-
   useEffect(() => {
     fetchDrivers();
   }, [page, pageSize]);
@@ -112,42 +109,11 @@ export default function DriversPage() {
     const filtered = drivers.filter(
       (driver) =>
         driver.name.toLowerCase().includes(search.toLowerCase()) ||
-        driver.driver_number.toLowerCase().includes(search.toLowerCase()) ||
-        driver.vehicle_plate.toLowerCase().includes(search.toLowerCase())
+        driver.id.includes(search) ||
+        driver.vehicle_plate.includes(search)
     );
     setFilteredDrivers(filtered);
   }, [search, drivers]);
-
-  // async function fetchDrivers() {
-  //   setLoading(true); // Make sure loading starts here
-  //   try {
-  //     if (!token) throw new Error("No auth token found");
-
-  //     const response = await fetch(getdrivers, {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-
-  //     if (!response.ok) {
-  //       throw new Error(`HTTP error! status: ${response.status}`);
-  //     }
-
-  //     const data = await response.json();
-  //     setDrivers(data || []);
-  //     setFilteredDrivers(data || []);
-  //   } catch (error: any) {
-  //     toast({
-  //       title: "Error",
-  //       description: error.message,
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }
 
   async function fetchDrivers() {
     setLoading(true);
@@ -218,7 +184,7 @@ export default function DriversPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-
+       console.log(formData)
     try {
       const token = localStorage.getItem("auth_token");
       if (!token) throw new Error("No auth token found");
@@ -298,9 +264,9 @@ export default function DriversPage() {
         });
       }
 
+      resetForm();
       fetchDrivers();
       setDialogOpen(false);
-      resetForm();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -319,7 +285,7 @@ export default function DriversPage() {
       vehicle_type: "",
       vehicle_plate: "",
       driver_number: "",
-      status: "active",
+      status: "",
     });
     setSelectedDriver(null);
   }
@@ -342,42 +308,6 @@ export default function DriversPage() {
     fetchDriverDetails(driver.id);
     setDetailsOpen(true);
   }
-
-  // async function handleDelete(driverId: string) {
-  //   if (!confirm("Are you sure you want to delete this driver?")) return;
-
-  //   setLoading(true);
-  //   try {
-  //     const token = localStorage.getItem("auth_token");
-  //     const response = await fetch(`${drivercall}/${driverId}`, {
-  //       method: "DELETE",
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-
-  //     if (!response.ok) {
-  //       const errorData = await response.json();
-  //       throw new Error(errorData.message || `Failed to delete driver`);
-  //     }
-
-  //     toast({
-  //       title: "Deleted",
-  //       description: "Driver deleted successfully",
-  //     });
-
-  //     // Refresh drivers list
-  //     fetchDrivers();
-  //   } catch (error: any) {
-  //     toast({
-  //       title: "Error",
-  //       description: error.message,
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }
 
   async function handleDelete(driverId: string) {
     const result = await Swal.fire({
@@ -435,6 +365,43 @@ export default function DriversPage() {
       setLoading(false);
     }
   }
+
+  const columns = [
+    {
+      key: "id",
+      label: "Driver #",
+    },
+    {
+      key: "name",
+      label: "Name",
+    },
+    {
+      key: "languages",
+      label: "Languages",
+      render: (row: Driver) => row.languages.join(", "),
+    },
+    {
+      key: "vehicle_type",
+      label: "Vehicle",
+    },
+    {
+      key: "vehicle_plate",
+      label: "Plate",
+    },
+    {
+      key: "number_of_rides",
+      label: "Rides",
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (row: Driver) => (
+        <Badge variant={row.status === "active" ? "default" : "secondary"}>
+          {row.status}
+        </Badge>
+      ),
+    },
+  ];
 
   return (
     <DashboardLayout>
@@ -575,156 +542,54 @@ export default function DriversPage() {
           </Dialog>
         </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  placeholder="Search by name, number, or plate..."
-                  className="pl-10"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
+        <DataTable
+          columns={columns}
+          data={filteredDrivers}
+          searchValue={search}
+          onSearchChange={setSearch}
+          pagination={pagination}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+          renderActions={(driver: Driver) => (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleViewDetails(driver)}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleEdit(driver)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleDelete(driver.id)}
+              >
+                <Trash className="h-4 w-4 text-red-500" />
+              </Button>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b text-left text-sm text-gray-500">
-                    <th className="pb-3 font-medium">Driver #</th>
-                    <th className="pb-3 font-medium">Name</th>
-                    <th className="pb-3 font-medium">Languages</th>
-                    <th className="pb-3 font-medium">Vehicle</th>
-                    <th className="pb-3 font-medium">Plate</th>
-                    <th className="pb-3 font-medium">Rides</th>
-                    <th className="pb-3 font-medium">Status</th>
-                    <th className="pb-3 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredDrivers.map((driver) => (
-                    <tr key={driver.id} className="border-b last:border-0">
-                      <td className="py-4 font-mono text-sm">{driver.id}</td>
-                      <td className="py-4 font-medium">{driver.name}</td>
-                      <td className="py-4 text-sm">
-                        {driver.languages.join(", ")}
-                      </td>
-                      <td className="py-4 text-sm">{driver.vehicle_type}</td>
-                      <td className="py-4 font-mono text-sm">
-                        {driver.vehicle_plate}
-                      </td>
-                      <td className="py-4 text-sm">{driver.number_of_rides}</td>
-                      <td className="py-4">
-                        <Badge
-                          variant={
-                            driver.status === "active" ? "default" : "secondary"
-                          }
-                        >
-                          {driver.status}
-                        </Badge>
-                      </td>
-                      <td className="py-4">
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleViewDetails(driver)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleEdit(driver)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDelete(driver.id)}
-                          >
-                            <Trash className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filteredDrivers.length === 0 && (
-                <div className="py-12 text-center text-gray-500">
-                  No drivers found
-                </div>
-              )}
-              {filteredDrivers.length !== 0 && (
-                <div className="flex justify-between items-center mt-4 mb-2">
-                  {/* Left: Page Size Selector */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">
-                      Rows per page:
-                    </span>
-
-                    <Select
-                      onValueChange={(value) => {
-                        setPageSize(Number(value));
-                        setPage(1); // reset to first page when size changes
-                      }}
-                      defaultValue={pageSize.toString()}
-                    >
-                      <SelectTrigger className="w-[80px]">
-                        <SelectValue />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        <SelectItem value="5">5</SelectItem>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="25">25</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Center: Page Info */}
-                  <p className="text-sm text-gray-600">
-                    Page {pagination.page} of {pagination.totalPages}
-                    <span className="ml-2 text-gray-500">
-                      | Total: {pagination.total}
-                    </span>
-                  </p>
-
-                  {/* Right: Pagination Buttons */}
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      disabled={!pagination.hasPreviousPage}
-                      onClick={() => setPage(page - 1)}
-                    >
-                      Previous
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      disabled={!pagination.hasNextPage}
-                      onClick={() => setPage(page + 1)}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          )}
+        />
       </div>
 
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Driver Details: {selectedDriver?.name}</DialogTitle>
+            <DialogTitle>
+              Driver Details: {selectedDriver?.name} | {selectedDriver?.id}
+            </DialogTitle>
           </DialogHeader>
           {selectedDriver && (
             <div className="space-y-6">

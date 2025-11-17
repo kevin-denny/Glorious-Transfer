@@ -88,9 +88,25 @@ export default function DriversPage() {
     status: "active",
   });
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 5,
+    total: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  });
+
+  // useEffect(() => {
+  //   fetchDrivers();
+  // }, []);
+
   useEffect(() => {
     fetchDrivers();
-  }, []);
+  }, [page, pageSize]);
 
   useEffect(() => {
     const filtered = drivers.filter(
@@ -102,26 +118,63 @@ export default function DriversPage() {
     setFilteredDrivers(filtered);
   }, [search, drivers]);
 
+  // async function fetchDrivers() {
+  //   setLoading(true); // Make sure loading starts here
+  //   try {
+  //     if (!token) throw new Error("No auth token found");
+
+  //     const response = await fetch(getdrivers, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
+
+  //     const data = await response.json();
+  //     setDrivers(data || []);
+  //     setFilteredDrivers(data || []);
+  //   } catch (error: any) {
+  //     toast({
+  //       title: "Error",
+  //       description: error.message,
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
+
   async function fetchDrivers() {
-    setLoading(true); // Make sure loading starts here
+    setLoading(true);
     try {
       if (!token) throw new Error("No auth token found");
 
-      const response = await fetch(getdrivers, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${getdrivers}?page=${page}&pageSize=${pageSize}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
-      }
 
-      const data = await response.json();
-      setDrivers(data || []);
-      setFilteredDrivers(data || []);
+      const res = await response.json();
+
+      setDrivers(res.data || []);
+      setFilteredDrivers(res.data || []);
+
+      // Save pagination info
+      setPagination(res.pagination);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -326,63 +379,62 @@ export default function DriversPage() {
   //   }
   // }
 
-
-async function handleDelete(driverId: string) {
-   const result = await Swal.fire({
-    title: "Are you sure?",
-    text: "Do you really want to delete this driver?",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Yes, delete it!",
-    cancelButtonText: "Cancel",
-    customClass: {
-      confirmButton: "swal-confirm-btn",
-      cancelButton: "swal-cancel-btn",
-      popup: "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
-    },
-    buttonsStyling: false, // we’ll style it ourselves
-    background: "hsl(var(--background))",
-    color: "hsl(var(--foreground))",
-  });
-
-
-  if (!result.isConfirmed) return;
-
-  setLoading(true);
-  try {
-    const token = localStorage.getItem("auth_token");
-    const response = await fetch(`${drivercall}/${driverId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
+  async function handleDelete(driverId: string) {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you really want to delete this driver?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+      customClass: {
+        confirmButton: "swal-confirm-btn",
+        cancelButton: "swal-cancel-btn",
+        popup:
+          "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
       },
+      buttonsStyling: false, // we’ll style it ourselves
+      background: "hsl(var(--background))",
+      color: "hsl(var(--foreground))",
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `Failed to delete driver`);
+    if (!result.isConfirmed) return;
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`${drivercall}/${driverId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to delete driver`);
+      }
+
+      await Swal.fire({
+        title: "Deleted!",
+        text: "Driver deleted successfully.",
+        icon: "success",
+        confirmButtonColor: "#3085d6",
+      });
+
+      // Refresh drivers list
+      fetchDrivers();
+    } catch (error: any) {
+      Swal.fire({
+        title: "Error!",
+        text: error.message,
+        icon: "error",
+        confirmButtonColor: "#3085d6",
+      });
+    } finally {
+      setLoading(false);
     }
-
-    await Swal.fire({
-      title: "Deleted!",
-      text: "Driver deleted successfully.",
-      icon: "success",
-      confirmButtonColor: "#3085d6",
-    });
-
-    // Refresh drivers list
-    fetchDrivers();
-  } catch (error: any) {
-    Swal.fire({
-      title: "Error!",
-      text: error.message,
-      icon: "error",
-      confirmButtonColor: "#3085d6",
-    });
-  } finally {
-    setLoading(false);
   }
-}
 
   return (
     <DashboardLayout>
@@ -555,9 +607,7 @@ async function handleDelete(driverId: string) {
                 <tbody>
                   {filteredDrivers.map((driver) => (
                     <tr key={driver.id} className="border-b last:border-0">
-                      <td className="py-4 font-mono text-sm">
-                        {driver.id}
-                      </td>
+                      <td className="py-4 font-mono text-sm">{driver.id}</td>
                       <td className="py-4 font-medium">{driver.name}</td>
                       <td className="py-4 text-sm">
                         {driver.languages.join(", ")}
@@ -609,6 +659,61 @@ async function handleDelete(driverId: string) {
               {filteredDrivers.length === 0 && (
                 <div className="py-12 text-center text-gray-500">
                   No drivers found
+                </div>
+              )}
+              {filteredDrivers.length !== 0 && (
+                <div className="flex justify-between items-center mt-4 mb-2">
+                  {/* Left: Page Size Selector */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">
+                      Rows per page:
+                    </span>
+
+                    <Select
+                      onValueChange={(value) => {
+                        setPageSize(Number(value));
+                        setPage(1); // reset to first page when size changes
+                      }}
+                      defaultValue={pageSize.toString()}
+                    >
+                      <SelectTrigger className="w-[80px]">
+                        <SelectValue />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="25">25</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Center: Page Info */}
+                  <p className="text-sm text-gray-600">
+                    Page {pagination.page} of {pagination.totalPages}
+                    <span className="ml-2 text-gray-500">
+                      | Total: {pagination.total}
+                    </span>
+                  </p>
+
+                  {/* Right: Pagination Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      disabled={!pagination.hasPreviousPage}
+                      onClick={() => setPage(page - 1)}
+                    >
+                      Previous
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      disabled={!pagination.hasNextPage}
+                      onClick={() => setPage(page + 1)}
+                    >
+                      Next
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

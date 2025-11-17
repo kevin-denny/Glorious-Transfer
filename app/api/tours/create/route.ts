@@ -68,33 +68,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If driver_id is provided, verify driver exists
-    if (body.driver_id) {
-      const driver = await queryOne("SELECT id FROM drivers WHERE id = ?", [
-        body.driver_id,
-      ]);
-
-      if (!driver) {
-        return NextResponse.json(
-          { message: "Driver not found" },
-          { status: 404 }
-        );
-      }
-    }
-
     // Generate unique tour ID - will be used as booking_ref
     const tourId = await generateUniqueTourId();
-    const status = body.status || "pending";
-    const assignedAt = body.driver_id ? new Date().toISOString() : null;
 
     // Insert tour into database (booking_ref = tourId)
     await query(
       `INSERT INTO tours (
         id, booking_date, customer_name, agent, pax,
         contact_details, arrival_datetime, departure_datetime,
-        flight_no, flight_time, remarks, driver_id, assigned_at,
-        status, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        flight_no, flight_time, remarks,
+        created_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         tourId,
         body.booking_date,
@@ -107,9 +91,6 @@ export async function POST(request: NextRequest) {
         body.flight_no || null,
         body.flight_time || null,
         body.remarks || null,
-        body.driver_id || null,
-        assignedAt,
-        status,
         user.id,
       ]
     );

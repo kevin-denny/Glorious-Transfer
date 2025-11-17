@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         message: "Tour created successfully",
-        tour,
+        tour_id: tour.id,
       },
       { status: 201 }
     );

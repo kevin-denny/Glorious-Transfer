@@ -26,6 +26,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/lib/activity-logger";
 import Swal from "sweetalert2";
+import DataTable from "@/components/ui/DataTable";
 
 interface Driver {
   id: string;
@@ -88,40 +89,58 @@ export default function DriversPage() {
     status: "active",
   });
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 5,
+    total: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  });
+
   useEffect(() => {
     fetchDrivers();
-  }, []);
+  }, [page, pageSize]);
 
   useEffect(() => {
     const filtered = drivers.filter(
       (driver) =>
         driver.name.toLowerCase().includes(search.toLowerCase()) ||
-        driver.driver_number.toLowerCase().includes(search.toLowerCase()) ||
-        driver.vehicle_plate.toLowerCase().includes(search.toLowerCase())
+        driver.id.includes(search) ||
+        driver.vehicle_plate.includes(search)
     );
     setFilteredDrivers(filtered);
   }, [search, drivers]);
 
   async function fetchDrivers() {
-    setLoading(true); // Make sure loading starts here
+    setLoading(true);
     try {
       if (!token) throw new Error("No auth token found");
 
-      const response = await fetch(getdrivers, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${getdrivers}?page=${page}&pageSize=${pageSize}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
-      }
 
-      const data = await response.json();
-      setDrivers(data || []);
-      setFilteredDrivers(data || []);
+      const res = await response.json();
+
+      setDrivers(res.data || []);
+      setFilteredDrivers(res.data || []);
+
+      // Save pagination info
+      setPagination(res.pagination);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -165,7 +184,7 @@ export default function DriversPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-
+       console.log(formData)
     try {
       const token = localStorage.getItem("auth_token");
       if (!token) throw new Error("No auth token found");
@@ -245,9 +264,9 @@ export default function DriversPage() {
         });
       }
 
+      resetForm();
       fetchDrivers();
       setDialogOpen(false);
-      resetForm();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -266,7 +285,7 @@ export default function DriversPage() {
       vehicle_type: "",
       vehicle_plate: "",
       driver_number: "",
-      status: "active",
+      status: "",
     });
     setSelectedDriver(null);
   }
@@ -290,99 +309,99 @@ export default function DriversPage() {
     setDetailsOpen(true);
   }
 
-  // async function handleDelete(driverId: string) {
-  //   if (!confirm("Are you sure you want to delete this driver?")) return;
-
-  //   setLoading(true);
-  //   try {
-  //     const token = localStorage.getItem("auth_token");
-  //     const response = await fetch(`${drivercall}/${driverId}`, {
-  //       method: "DELETE",
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-
-  //     if (!response.ok) {
-  //       const errorData = await response.json();
-  //       throw new Error(errorData.message || `Failed to delete driver`);
-  //     }
-
-  //     toast({
-  //       title: "Deleted",
-  //       description: "Driver deleted successfully",
-  //     });
-
-  //     // Refresh drivers list
-  //     fetchDrivers();
-  //   } catch (error: any) {
-  //     toast({
-  //       title: "Error",
-  //       description: error.message,
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }
-
-
-async function handleDelete(driverId: string) {
-   const result = await Swal.fire({
-    title: "Are you sure?",
-    text: "Do you really want to delete this driver?",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Yes, delete it!",
-    cancelButtonText: "Cancel",
-    customClass: {
-      confirmButton: "swal-confirm-btn",
-      cancelButton: "swal-cancel-btn",
-      popup: "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
-    },
-    buttonsStyling: false, // we’ll style it ourselves
-    background: "hsl(var(--background))",
-    color: "hsl(var(--foreground))",
-  });
-
-
-  if (!result.isConfirmed) return;
-
-  setLoading(true);
-  try {
-    const token = localStorage.getItem("auth_token");
-    const response = await fetch(`${drivercall}/${driverId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
+  async function handleDelete(driverId: string) {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you really want to delete this driver?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+      customClass: {
+        confirmButton: "swal-confirm-btn",
+        cancelButton: "swal-cancel-btn",
+        popup:
+          "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
       },
+      buttonsStyling: false, // we’ll style it ourselves
+      background: "hsl(var(--background))",
+      color: "hsl(var(--foreground))",
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `Failed to delete driver`);
+    if (!result.isConfirmed) return;
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`${drivercall}/${driverId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to delete driver`);
+      }
+
+      await Swal.fire({
+        title: "Deleted!",
+        text: "Driver deleted successfully.",
+        icon: "success",
+        confirmButtonColor: "#3085d6",
+      });
+
+      // Refresh drivers list
+      fetchDrivers();
+    } catch (error: any) {
+      Swal.fire({
+        title: "Error!",
+        text: error.message,
+        icon: "error",
+        confirmButtonColor: "#3085d6",
+      });
+    } finally {
+      setLoading(false);
     }
-
-    await Swal.fire({
-      title: "Deleted!",
-      text: "Driver deleted successfully.",
-      icon: "success",
-      confirmButtonColor: "#3085d6",
-    });
-
-    // Refresh drivers list
-    fetchDrivers();
-  } catch (error: any) {
-    Swal.fire({
-      title: "Error!",
-      text: error.message,
-      icon: "error",
-      confirmButtonColor: "#3085d6",
-    });
-  } finally {
-    setLoading(false);
   }
-}
+
+  const columns = [
+    {
+      key: "id",
+      label: "Driver #",
+    },
+    {
+      key: "name",
+      label: "Name",
+    },
+    {
+      key: "languages",
+      label: "Languages",
+      render: (row: Driver) => row.languages.join(", "),
+    },
+    {
+      key: "vehicle_type",
+      label: "Vehicle",
+    },
+    {
+      key: "vehicle_plate",
+      label: "Plate",
+    },
+    {
+      key: "number_of_rides",
+      label: "Rides",
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (row: Driver) => (
+        <Badge variant={row.status === "active" ? "default" : "secondary"}>
+          {row.status}
+        </Badge>
+      ),
+    },
+  ];
 
   return (
     <DashboardLayout>
@@ -523,103 +542,54 @@ async function handleDelete(driverId: string) {
           </Dialog>
         </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  placeholder="Search by name, number, or plate..."
-                  className="pl-10"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b text-left text-sm text-gray-500">
-                    <th className="pb-3 font-medium">Driver #</th>
-                    <th className="pb-3 font-medium">Name</th>
-                    <th className="pb-3 font-medium">Languages</th>
-                    <th className="pb-3 font-medium">Vehicle</th>
-                    <th className="pb-3 font-medium">Plate</th>
-                    <th className="pb-3 font-medium">Rides</th>
-                    <th className="pb-3 font-medium">Status</th>
-                    <th className="pb-3 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredDrivers.map((driver) => (
-                    <tr key={driver.id} className="border-b last:border-0">
-                      <td className="py-4 font-mono text-sm">
-                        {driver.id}
-                      </td>
-                      <td className="py-4 font-medium">{driver.name}</td>
-                      <td className="py-4 text-sm">
-                        {driver.languages.join(", ")}
-                      </td>
-                      <td className="py-4 text-sm">{driver.vehicle_type}</td>
-                      <td className="py-4 font-mono text-sm">
-                        {driver.vehicle_plate}
-                      </td>
-                      <td className="py-4 text-sm">{driver.number_of_rides}</td>
-                      <td className="py-4">
-                        <Badge
-                          variant={
-                            driver.status === "active" ? "default" : "secondary"
-                          }
-                        >
-                          {driver.status}
-                        </Badge>
-                      </td>
-                      <td className="py-4">
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleViewDetails(driver)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleEdit(driver)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+        <DataTable
+          columns={columns}
+          data={filteredDrivers}
+          searchValue={search}
+          onSearchChange={setSearch}
+          pagination={pagination}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+          renderActions={(driver: Driver) => (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleViewDetails(driver)}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
 
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDelete(driver.id)}
-                          >
-                            <Trash className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filteredDrivers.length === 0 && (
-                <div className="py-12 text-center text-gray-500">
-                  No drivers found
-                </div>
-              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleEdit(driver)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleDelete(driver.id)}
+              >
+                <Trash className="h-4 w-4 text-red-500" />
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        />
       </div>
 
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Driver Details: {selectedDriver?.name}</DialogTitle>
+            <DialogTitle>
+              Driver Details: {selectedDriver?.name} | {selectedDriver?.id}
+            </DialogTitle>
           </DialogHeader>
           {selectedDriver && (
             <div className="space-y-6">

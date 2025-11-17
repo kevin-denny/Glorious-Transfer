@@ -64,3 +64,19 @@ export const generateUniquePaymentId = async (): Promise<string> => {
 
   return paymentId;
 };
+
+// Generate unique assignment ID with format A123456
+export const generateUniqueAssignmentId = async (): Promise<string> => {
+  let assignmentId: string;
+  let exists: any;
+
+  do {
+    const randomNumber = Math.floor(100000 + Math.random() * 900000); // Generate 6-digit number
+    assignmentId = `A${randomNumber}`;
+    
+    // Check if ID exists in database
+    exists = await queryOne('SELECT id FROM assignments WHERE id = ?', [assignmentId]);
+  } while (exists);
+
+  return assignmentId;
+};

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { query, queryOne } from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
 import { generateUniqueAssignmentId } from "@/lib/id-generator";
+import { SYSCONFIG } from "@/lib/utils";
 
 export async function POST(request: NextRequest) {
   let assignmentId: string | null = null;
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if driver exists
-    const driver = await queryOne("SELECT id, name FROM drivers WHERE id = ?", [
+    const driver = await queryOne("SELECT id, name, status FROM drivers WHERE id = ?", [
       driver_id,
     ]);
 
@@ -45,6 +46,13 @@ export async function POST(request: NextRequest) {
         { message: "Driver not found" },
         { status: 404 }
       );
+    } else {
+        if(driver.status !== SYSCONFIG.ACTIVE) {
+            return NextResponse.json(
+                { message: "Driver is not active" },
+                { status: 400 }
+              );
+        }
     }
 
     // Check if tour is already assigned
@@ -123,7 +131,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         message: "Tour assigned successfully",
-        assignment: newAssignment,
+        assignment_id: newAssignment.id,
       },
       { status: 201 }
     );

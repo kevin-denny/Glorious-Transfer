@@ -73,6 +73,8 @@ export async function GET(request: NextRequest) {
       status: tour.status,
       created_at: formatToIST(tour.created_at),
       updated_at: formatToIST(tour.updated_at),
+      pickup: tour.pickup,
+      destination: tour.destination,
       assignment: tour.assignment_id
         ? {
             id: tour.assignment_id,

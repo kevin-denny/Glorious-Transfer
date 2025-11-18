@@ -184,7 +184,6 @@ export default function DriversPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-       console.log(formData)
     try {
       const token = localStorage.getItem("auth_token");
       if (!token) throw new Error("No auth token found");
@@ -491,7 +490,7 @@ export default function DriversPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="status">Phone Number</Label>
+                    <Label htmlFor="driver_number">Phone Number</Label>
                     <Input
                       id="driver_number"
                       value={formData.driver_number}
@@ -595,7 +594,7 @@ export default function DriversPage() {
             <div className="space-y-6">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label className="text-gray-500">Driver Number</Label>
+                  <Label className="text-gray-500">Contact Number</Label>
                   <p className="font-mono font-medium">
                     {selectedDriver.driver_number}
                   </p>

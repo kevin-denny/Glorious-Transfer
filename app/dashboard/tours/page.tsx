@@ -31,14 +31,15 @@ interface Tour {
   id: string;
   booking_date: string;
   booking_ref: string;
-  client_name: string;
+  customer_name: string;
   agent: string;
   pax: number;
   contact_details: string;
   arrival_datetime: string;
   departure_datetime: string;
+  pickup: string | null;
+  destination: string | null;
   flight_no: string | null;
-  flight_time: string | null;
   remarks: string | null;
   status: string;
   assigned_driver_id: string | null;
@@ -66,17 +67,22 @@ export default function ToursPage() {
   const { profile } = useAuth();
   const { toast } = useToast();
 
+  const baseUrl = process.env.NEXT_PUBLIC_API;
+
+  // create tour
+  const createtour = `http://${baseUrl}/api/tours/create`;
+
   const [formData, setFormData] = useState({
     booking_date: new Date().toISOString().split("T")[0],
-    booking_ref: "",
-    client_name: "",
+    customer_name: "",
     agent: "",
     pax: 1,
     contact_details: "",
     arrival_datetime: "",
     departure_datetime: "",
+    pickup: "",
+    destination: "",
     flight_no: "",
-    flight_time: "",
     remarks: "",
     status: "pending",
   });
@@ -90,7 +96,7 @@ export default function ToursPage() {
     const filtered = tours.filter(
       (tour) =>
         tour.booking_ref.toLowerCase().includes(search.toLowerCase()) ||
-        tour.client_name.toLowerCase().includes(search.toLowerCase()) ||
+        tour.customer_name.toLowerCase().includes(search.toLowerCase()) ||
         tour.agent.toLowerCase().includes(search.toLowerCase())
     );
     setFilteredTours(filtered);
@@ -143,6 +149,9 @@ export default function ToursPage() {
     setLoading(true);
 
     try {
+      const token = localStorage.getItem("auth_token");
+      if (!token) throw new Error("No auth token found");
+      let response: Response;
       if (selectedTour) {
         // const { error } = await supabase
         //   .from('tours')
@@ -161,12 +170,36 @@ export default function ToursPage() {
           description: "Tour updated successfully",
         });
       } else {
-        // const { error } = await supabase.from('tours').insert({
-        //   ...formData,
-        //   created_by: profile?.id,
-        // });
+        // Create new driver
+        response = await fetch(createtour, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            booking_date: formData.booking_date,
+            customer_name: formData.customer_name,
+            agent: formData.agent,
+            pax: formData.pax,
+            contact_details: formData.contact_details,
+            arrival_datetime: formData.arrival_datetime,
+            pickup: formData.pickup,
+            destination: formData.destination,
+            departure_datetime: formData.departure_datetime,
+            flight_no: formData.flight_no,
+            remarks: formData.remarks,
+            status: formData.status,
+            created_by: profile?.id,
+          }),
+        });
 
-        // if (error) throw error;
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.message || `HTTP error! status: ${response.status}`
+          );
+        }
 
         await logActivity("create", "tours", null, formData);
 
@@ -238,15 +271,15 @@ export default function ToursPage() {
   function resetForm() {
     setFormData({
       booking_date: new Date().toISOString().split("T")[0],
-      booking_ref: "",
-      client_name: "",
+      customer_name: "",
       agent: "",
       pax: 1,
       contact_details: "",
       arrival_datetime: "",
+      pickup: "",
+      destination: "",
       departure_datetime: "",
       flight_no: "",
-      flight_time: "",
       remarks: "",
       status: "pending",
     });
@@ -258,15 +291,15 @@ export default function ToursPage() {
     setSelectedTour(tour);
     setFormData({
       booking_date: tour.booking_date,
-      booking_ref: tour.booking_ref,
-      client_name: tour.client_name,
+      customer_name: tour.customer_name,
       agent: tour.agent,
       pax: tour.pax,
       contact_details: tour.contact_details,
       arrival_datetime: tour.arrival_datetime.slice(0, 16),
       departure_datetime: tour.departure_datetime.slice(0, 16),
+      pickup: tour.pickup || "",
+      destination: tour.destination || "",
       flight_no: tour.flight_no || "",
-      flight_time: tour.flight_time || "",
       remarks: tour.remarks || "",
       status: tour.status,
     });
@@ -340,28 +373,14 @@ export default function ToursPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="booking_ref">Booking Reference</Label>
+                    <Label htmlFor="customer_name">Client Name</Label>
                     <Input
-                      id="booking_ref"
-                      value={formData.booking_ref}
+                      id="customer_name"
+                      value={formData.customer_name}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          booking_ref: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="client_name">Client Name</Label>
-                    <Input
-                      id="client_name"
-                      value={formData.client_name}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          client_name: e.target.value,
+                          customer_name: e.target.value,
                         })
                       }
                       required
@@ -469,37 +488,50 @@ export default function ToursPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="flight_time">Flight Time</Label>
+                    <Label htmlFor="pickup">Pickup</Label>
                     <Input
-                      id="flight_time"
-                      value={formData.flight_time}
+                      id="pickup"
+                      value={formData.pickup}
                       onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          flight_time: e.target.value,
-                        })
+                        setFormData({ ...formData, pickup: e.target.value })
                       }
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, status: value })
+                    <Label htmlFor="destination">Destination</Label>
+                    <Input
+                      id="destination"
+                      value={formData.destination}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          destination: e.target.value,
+                        })
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="assigned">Assigned</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
+
+                  {selectedTour && (
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        value={formData.status}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, status: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="assigned">Assigned</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="remarks">Remarks</Label>
@@ -567,7 +599,7 @@ export default function ToursPage() {
                       <td className="py-4 font-mono text-sm">
                         {tour.booking_ref}
                       </td>
-                      <td className="py-4 font-medium">{tour.client_name}</td>
+                      <td className="py-4 font-medium">{tour.customer_name}</td>
                       <td className="py-4 text-sm">{tour.agent}</td>
                       <td className="py-4 text-sm">{tour.pax}</td>
                       <td className="py-4 text-sm">
@@ -641,7 +673,7 @@ export default function ToursPage() {
               <div className="rounded-lg bg-gray-50 p-4">
                 <p className="text-sm text-gray-500">Tour Details</p>
                 <p className="font-medium">{selectedTour.booking_ref}</p>
-                <p className="text-sm">{selectedTour.client_name}</p>
+                <p className="text-sm">{selectedTour.customer_name}</p>
               </div>
             )}
             <div className="space-y-2">

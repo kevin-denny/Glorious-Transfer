@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { hashPassword, generateToken } from '@/lib/auth';
 import { generateUniqueUserId } from '@/lib/id-generator';
+import { SYSCONFIG } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate role
-    const validRoles = ['administrator', 'finance', 'operations'];
+    const validRoles = [SYSCONFIG.ADMINISTRATOR, SYSCONFIG.FINANCE, SYSCONFIG.OPERATIONS];
     if (!validRoles.includes(role)) {
       return NextResponse.json(
         { message: 'Invalid role. Must be: administrator, finance, or operations' },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
 import { formatToIST } from '@/lib/utils';
+import { SYSCONFIG } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const token = authHeader?.substring(7);
     const user = await getUserFromToken(token!);
 
-    if (!user || !(user.role === 'administrator' || user.role === 'operations')) {
+    if (!user || !(user.role === SYSCONFIG.ADMINISTRATOR || user.role === SYSCONFIG.OPERATIONS)) {
       return NextResponse.json({ message: 'Unauthorized access!' }, { status: 403 });
     }
 
@@ -36,7 +37,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const token = authHeader?.substring(7);
     const user = await getUserFromToken(token!);
 
-    if (!user || !(user.role === 'administrator')) {
+    if (!user || !(user.role === SYSCONFIG.ADMINISTRATOR)) {
       return NextResponse.json({ message: 'Unauthorized access!' }, { status: 403 });
     }
 
@@ -64,7 +65,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const token = authHeader?.substring(7);
     const user = await getUserFromToken(token!);
 
-    if (!user || !(user.role === 'administrator')) {
+    if (!user || !(user.role === SYSCONFIG.ADMINISTRATOR)) {
       return NextResponse.json({ message: 'Unauthorized access!' }, { status: 403 });
     }
 

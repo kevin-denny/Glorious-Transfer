@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { query, queryOne } from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
 import { generateUniqueTourId } from "@/lib/id-generator";
+import { SYSCONFIG } from "@/lib/utils";
 
 interface CreateTourRequest {
   booking_date: string;
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     if (
       !user ||
-      !(user.role === "administrator" || user.role === "operations")
+      !(user.role === SYSCONFIG.ADMINISTRATOR || user.role === "operations")
     ) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
     }

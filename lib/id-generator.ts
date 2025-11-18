@@ -91,7 +91,7 @@ export const generateUniqueAuditLogId = async (): Promise<string> => {
     const now = new Date();
     const hrTime = process.hrtime(); // High-resolution time [seconds, nanoseconds]
     
-    // Base timestamp: YYYYMMDDHHMMSSMMMUUU
+    // Base timestamp: YYYYMMDDHHMMSS
     const timestamp = now.getFullYear().toString() +
       (now.getMonth() + 1).toString().padStart(2, '0') +
       now.getDate().toString().padStart(2, '0') +

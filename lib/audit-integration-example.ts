@@ -1,12 +1,12 @@
 // Example: How to integrate audit logging into your API endpoints
 // This shows the pattern for adding audit logs to the assignment POST endpoint
-
+import 'server-only';
 import { NextRequest, NextResponse } from "next/server";
 import { query, queryOne } from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
 import { generateUniqueAssignmentId } from "@/lib/id-generator";
 import { SYSCONFIG } from "@/lib/utils";
-import { AuditLogger } from "@/lib/activity-logger";
+import { AuditLogger } from "@/lib/activity-logger.server";
 
 export async function POST(request: NextRequest) {
   let assignmentId: string | null = null;

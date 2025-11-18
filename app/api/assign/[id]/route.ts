@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { query, queryOne } from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
 import { formatToIST, SYSCONFIG } from "@/lib/utils";
-import { AuditLogger } from "@/lib/activity-logger";
+import { AuditLogger } from "@/lib/activity-logger.server";
 
 // GET assignment by ID
 export async function GET(
@@ -10,7 +10,6 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
 
-  let assignmentId: string | null = null;
   let auditLogger: AuditLogger | null = null;
 
   try {
@@ -41,24 +40,26 @@ export async function GET(
         a.assigned_at,
         a.assigned_by,
         d.name as driver_name,
-        d.driver_number as driver_number,
-        d.vehicle_type as driver_vehicle_type,
-        d.vehicle_plate as driver_vehicle_plate,
+        d.driver_number,
+        d.vehicle_type,
+        d.vehicle_plate,
         t.customer_name,
-        t.customer_phone,
-        t.pickup_location,
+        t.agent,
+        t.pax,
+        t.contact_details,
+        t.pickup,
         t.destination,
         t.arrival_datetime,
         t.departure_datetime,
-        t.passenger_count,
-        t.luggage_count,
-        t.special_requirements,
+        t.flight_no,
+        t.flight_time,
+        t.remarks,
         t.status as tour_status,
-        u.name as assigned_by_name
+        p.full_name as assigned_by_name
       FROM assignments a
       JOIN drivers d ON a.driver_id = d.id
       JOIN tours t ON a.tour_id = t.id
-      LEFT JOIN users u ON a.assigned_by = u.id
+      LEFT JOIN profiles p ON a.assigned_by = p.id
       WHERE a.id = ?
     `,
       [assignmentId]
@@ -106,6 +107,13 @@ export async function PUT(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
+
     const assignmentId = params.id;
     const body = await request.json();
     const { driver_id } = body;
@@ -118,9 +126,13 @@ export async function PUT(
       );
     }
 
-    // Check if assignment exists
+    // Check if assignment exists and get full data for audit log
     const existingAssignment = await queryOne(
-      "SELECT tour_id, driver_id FROM assignments WHERE id = ?",
+      `SELECT a.*, t.customer_name, t.agent, t.pickup, t.destination, d.name as driver_name 
+       FROM assignments a 
+       LEFT JOIN tours t ON a.tour_id = t.id 
+       LEFT JOIN drivers d ON a.driver_id = d.id 
+       WHERE a.id = ?`,
       [assignmentId]
     );
 
@@ -205,10 +217,13 @@ export async function PUT(
         a.assigned_at,
         a.assigned_by,
         d.name as driver_name,
-        d.driver_number as driver_number,
-        d.vehicle_type as driver_vehicle_type,
-        d.vehicle_plate as driver_vehicle_plate,
-        t.customer_name
+        d.driver_number,
+        d.vehicle_type,
+        d.vehicle_plate,
+        t.customer_name,
+        t.agent,
+        t.pickup,
+        t.destination
       FROM assignments a
       JOIN drivers d ON a.driver_id = d.id
       JOIN tours t ON a.tour_id = t.id
@@ -216,6 +231,14 @@ export async function PUT(
     `,
       [assignmentId]
     );
+
+    // 🔥 LOG AUDIT ACTIVITY - ASSIGNMENT UPDATE
+    await auditLogger.logUpdate('assignment', assignmentId, existingAssignment, updatedAssignment, {
+      change_type: 'driver_reassignment',
+      old_driver_id: existingAssignment.driver_id,
+      new_driver_id: driver_id,
+      tour_id: existingAssignment.tour_id
+    });
 
     return NextResponse.json({
       message: "Assignment updated successfully",
@@ -250,11 +273,22 @@ export async function DELETE(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
+
     const assignmentId = params.id;
 
-    // Check if assignment exists
+    // Check if assignment exists and get full data for audit log
     const assignment = await queryOne(
-      "SELECT id, tour_id, driver_id FROM assignments WHERE id = ?",
+      `SELECT a.*, t.customer_name, t.agent, t.pickup, t.destination, d.name as driver_name 
+       FROM assignments a 
+       LEFT JOIN tours t ON a.tour_id = t.id 
+       LEFT JOIN drivers d ON a.driver_id = d.id 
+       WHERE a.id = ?`,
       [assignmentId]
     );
 
@@ -267,6 +301,15 @@ export async function DELETE(
 
     // Delete the assignment
     await query("DELETE FROM assignments WHERE id = ?", [assignmentId]);
+
+    // 🔥 LOG AUDIT ACTIVITY - ASSIGNMENT DELETION
+    await auditLogger.logDelete('assignment', assignmentId, assignment, {
+      reason: 'manual_deletion',
+      tour_id: assignment.tour_id,
+      driver_id: assignment.driver_id,
+      customer_name: assignment.customer_name,
+      driver_name: assignment.driver_name
+    });
 
     return NextResponse.json({
       message: "Assignment deleted successfully",

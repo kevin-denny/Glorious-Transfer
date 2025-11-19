@@ -193,7 +193,8 @@ export default function ToursPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    console.log("Cool",selectedTour)
+    //www.linkedin.com/in/kevin-denny-0b332b218/
+    https: console.log("Cool", selectedTour);
     try {
       const token = localStorage.getItem("auth_token");
       if (!token) throw new Error("No auth token found");
@@ -696,9 +697,9 @@ export default function ToursPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Pending">Pending</SelectItem>
-                          <SelectItem value="Assigned">Assigned</SelectItem>
-                          <SelectItem value="Completed">Completed</SelectItem>
+                          {selectedTour.status == "Assigned" && (
+                            <SelectItem value="Completed">Completed</SelectItem>
+                          )}
                           <SelectItem value="Cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>

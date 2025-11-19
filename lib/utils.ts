@@ -1,5 +1,4 @@
 import { clsx, type ClassValue } from 'clsx';
-import { CANCELLED } from 'node:dns';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
@@ -33,4 +32,10 @@ export const SYSCONFIG = {
 
   SUCCESS: 'Success',
   FAIL: 'Fail',
+
+  DRIVER: 'driver',
+  TOUR: 'tour',
+  PAYMENT: 'payment',
+  ACTIVITY_LOG: 'activity_log',
+  ALL: 'all'
 };

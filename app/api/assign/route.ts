@@ -83,7 +83,6 @@ export async function GET(request: NextRequest) {
         t.arrival_datetime,
         t.departure_datetime,
         t.flight_no,
-        t.flight_time,
         t.status as tour_status,
         t.booking_date,
         p.full_name as assigned_by_name

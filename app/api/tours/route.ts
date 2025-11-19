@@ -68,7 +68,6 @@ export async function GET(request: NextRequest) {
       arrival_datetime: formatToIST(tour.arrival_datetime),
       departure_datetime: formatToIST(tour.departure_datetime),
       flight_no: tour.flight_no,
-      flight_time: tour.flight_time,
       remarks: tour.remarks,
       status: tour.status,
       created_at: formatToIST(tour.created_at),

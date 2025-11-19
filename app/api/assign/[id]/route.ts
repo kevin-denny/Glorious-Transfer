@@ -52,7 +52,6 @@ export async function GET(
         t.arrival_datetime,
         t.departure_datetime,
         t.flight_no,
-        t.flight_time,
         t.remarks,
         t.status as tour_status,
         p.full_name as assigned_by_name

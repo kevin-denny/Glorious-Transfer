@@ -66,7 +66,6 @@ CREATE TABLE tours (
   arrival_datetime TIMESTAMP NOT NULL,
   departure_datetime TIMESTAMP NOT NULL,
   flight_no VARCHAR(50),
-  flight_time TIME,
   remarks TEXT,
   status VARCHAR(50) NOT NULL DEFAULT 'Pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query, queryOne } from '@/lib/db';
+import { query, queryOne, transaction } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
-import { formatToIST } from '@/lib/utils';
+import { formatToIST, SYSCONFIG } from '@/lib/utils';
 
 // GET tour by ID
 export async function GET(
@@ -170,118 +170,98 @@ export async function PUT(
       );
     }
 
-    // If tour has assignment and datetime is changing, check for conflicts
-    const hasAssignment = await queryOne(
-      'SELECT driver_id FROM assignments WHERE tour_id = ?',
-      [tourId]
-    );
+    // Use transaction to ensure atomicity
+    const result = await transaction(async (connection) => {
+      // Update the tour
+      await connection.execute(`
+        UPDATE tours SET 
+          booking_date = ?,
+          customer_name = ?,
+          agent = ?,
+          pax = ?,
+          contact_details = ?,
+          arrival_datetime = ?,
+          departure_datetime = ?,
+          flight_no = ?,
+          remarks = ?,
+          status = ?,
+          pickup = ?,
+          destination = ?,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `, [
+        booking_date,
+        customer_name,
+        agent,
+        pax,
+        contact_details,
+        arrival_datetime,
+        departure_datetime,
+        flight_no || null,
+        remarks || null,
+        status || existingTour.status,
+        pickup || null,
+        destination || null,
+        tourId
+      ]);
 
-    if (hasAssignment && 
-        (existingTour.arrival_datetime !== arrival_datetime || 
-         existingTour.departure_datetime !== departure_datetime)) {
-      
-      const conflictingAssignment = await queryOne(`
-        SELECT a.id 
-        FROM assignments a
-        JOIN tours t ON a.tour_id = t.id
-        WHERE a.driver_id = ? 
-        AND t.id != ?
-        AND (
-          (t.departure_datetime <= ? AND t.arrival_datetime >= ?)
-          OR
-          (t.arrival_datetime <= ? AND t.departure_datetime >= ?)
-        )
-      `, [hasAssignment.driver_id, tourId, departure_datetime, arrival_datetime, arrival_datetime, departure_datetime]);
-
-      if (conflictingAssignment) {
-        return NextResponse.json(
-          {
-            message: 'Cannot update tour times: assigned driver has conflicting tour during new time period'
-          },
-          { status: 409 }
+      // Delete assignment if status is Cancelled or Completed
+      if (status === SYSCONFIG.CANCELLED || status === SYSCONFIG.COMPLETED) {
+        await connection.execute(
+          'DELETE FROM assignments WHERE tour_id = ?',
+          [tourId]
         );
       }
-    }
 
-    // Update the tour
-    await query(`
-      UPDATE tours SET 
-        booking_date = ?,
-        customer_name = ?,
-        agent = ?,
-        pax = ?,
-        contact_details = ?,
-        arrival_datetime = ?,
-        departure_datetime = ?,
-        flight_no = ?,
-        remarks = ?,
-        status = ?,
-        pickup = ?,
-        destination = ?,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `, [
-      booking_date,
-      customer_name,
-      agent,
-      pax,
-      contact_details,
-      arrival_datetime,
-      departure_datetime,
-      flight_no || null,
-      remarks || null,
-      status || existingTour.status,
-      pickup || null,
-      destination || null,
-      tourId
-    ]);
+      // Get the updated tour with assignment details
+      const [rows] = await connection.execute(`
+        SELECT 
+          t.*,
+          a.id as assignment_id,
+          a.assigned_at,
+          a.assigned_by,
+          d.id as driver_id,
+          d.name as driver_name,
+          d.driver_number as driver_phone,
+          d.vehicle_type as driver_vehicle_type,
+          d.vehicle_plate as driver_vehicle_number
+        FROM tours t
+        LEFT JOIN assignments a ON t.id = a.tour_id
+        LEFT JOIN drivers d ON a.driver_id = d.id
+        WHERE t.id = ?
+      `, [tourId]);
 
-    // Get the updated tour with assignment details
-    const updatedTour = await queryOne(`
-      SELECT 
-        t.*,
-        a.id as assignment_id,
-        a.assigned_at,
-        a.assigned_by,
-        d.id as driver_id,
-        d.name as driver_name,
-        d.driver_number as driver_phone,
-        d.vehicle_type as driver_vehicle_type,
-        d.vehicle_plate as driver_vehicle_number
-      FROM tours t
-      LEFT JOIN assignments a ON t.id = a.tour_id
-      LEFT JOIN drivers d ON a.driver_id = d.id
-      WHERE t.id = ?
-    `, [tourId]);
+      return (rows as any[])[0];
+    });
 
     // Format the response
     const formattedTour = {
-      id: updatedTour.id,
-      booking_date: updatedTour.booking_date,
-      customer_name: updatedTour.customer_name,
-      agent: updatedTour.agent,
-      pax: updatedTour.pax,
-      contact_details: updatedTour.contact_details,
-      arrival_datetime: formatToIST(updatedTour.arrival_datetime),
-      departure_datetime: formatToIST(updatedTour.departure_datetime),
-      flight_no: updatedTour.flight_no,
-      remarks: updatedTour.remarks,
-      status: updatedTour.status,
-      pickup: updatedTour.pickup,
-      destination: updatedTour.destination,
-      created_at: formatToIST(updatedTour.created_at),
-      updated_at: formatToIST(updatedTour.updated_at),
-      created_by: updatedTour.created_by,
-      assignment: updatedTour.assignment_id ? {
-        id: updatedTour.assignment_id,
-        assigned_at: formatToIST(updatedTour.assigned_at),
-        assigned_by: updatedTour.assigned_by,
+      id: result.id,
+      booking_date: result.booking_date,
+      customer_name: result.customer_name,
+      agent: result.agent,
+      pax: result.pax,
+      contact_details: result.contact_details,
+      arrival_datetime: formatToIST(result.arrival_datetime),
+      departure_datetime: formatToIST(result.departure_datetime),
+      flight_no: result.flight_no,
+      remarks: result.remarks,
+      status: result.status,
+      pickup: result.pickup,
+      destination: result.destination,
+      created_at: formatToIST(result.created_at),
+      updated_at: formatToIST(result.updated_at),
+      created_by: result.created_by,
+      assignment: result.assignment_id ? {
+        id: result.assignment_id,
+        assigned_at: formatToIST(result.assigned_at),
+        assigned_by: result.assigned_by,
         driver: {
-          id: updatedTour.driver_id,
-          name: updatedTour.driver_name,
-          phone: updatedTour.driver_phone,
-          vehicle_type: updatedTour.driver_vehicle_type,
-          vehicle_number: updatedTour.driver_vehicle_number
+          id: result.driver_id,
+          name: result.driver_name,
+          phone: result.driver_phone,
+          vehicle_type: result.driver_vehicle_type,
+          vehicle_number: result.driver_vehicle_number
         }
       } : null
     };

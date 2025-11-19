@@ -193,18 +193,41 @@ export default function ToursPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-
+    console.log("Cool",selectedTour)
     try {
       const token = localStorage.getItem("auth_token");
       if (!token) throw new Error("No auth token found");
       let response: Response;
       if (selectedTour) {
-        // const { error } = await supabase
-        //   .from('tours')
-        //   .update(formData)
-        //   .eq('id', selectedTour.id);
+        response = await fetch(`${gettours}/${selectedTour.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            booking_date: formData.booking_date,
+            customer_name: formData.customer_name,
+            agent: formData.agent,
+            pax: formData.pax,
+            contact_details: formData.contact_details,
+            arrival_datetime: formData.arrival_datetime,
+            pickup: formData.pickup,
+            destination: formData.destination,
+            departure_datetime: formData.departure_datetime,
+            flight_no: formData.flight_no,
+            remarks: formData.remarks,
+            status: formData.status,
+            created_by: profile?.id,
+          }),
+        });
 
-        // if (error) throw error;
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.message || `HTTP error! status: ${response.status}`
+          );
+        }
 
         await logActivity("update", "tours", selectedTour.id, {
           old: selectedTour,
@@ -336,7 +359,6 @@ export default function ToursPage() {
   }
 
   function handleEdit(tour: Tour) {
-    setViewMode(false);
     setSelectedTour(tour);
     setFormData({
       booking_date: tour.booking_date,
@@ -344,8 +366,8 @@ export default function ToursPage() {
       agent: tour.agent,
       pax: tour.pax,
       contact_details: tour.contact_details,
-      arrival_datetime: tour.arrival_datetime.slice(0, 16),
-      departure_datetime: tour.departure_datetime.slice(0, 16),
+      arrival_datetime: tour.arrival_datetime,
+      departure_datetime: tour.departure_datetime,
       pickup: tour.pickup || "",
       destination: tour.destination || "",
       flight_no: tour.flight_no || "",

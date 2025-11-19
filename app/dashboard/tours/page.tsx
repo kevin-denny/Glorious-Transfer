@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
-import { Plus, Search, Edit, UserPlus } from "lucide-react";
+import { Plus, Search, Edit, UserPlus, Eye, Trash } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -26,11 +26,13 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/lib/activity-logger";
+import DataTable from "@/components/ui/DataTable";
+import Swal from "sweetalert2";
 
 interface Tour {
   id: string;
   booking_date: string;
-  booking_ref: string;
+  // booking_ref: string;
   customer_name: string;
   agent: string;
   pax: number;
@@ -42,15 +44,17 @@ interface Tour {
   flight_no: string | null;
   remarks: string | null;
   status: string;
+  created_at: string;
+  updated_at: string;
   assigned_driver_id: string | null;
-  drivers?: { name: string; driver_number: string } | null;
+  assignment?: { driver: Driver; driver_number: string } | null;
 }
 
 interface Driver {
-  id: string;
+  driver_id: string;
   name: string;
   driver_number: string;
-  status: string;
+  vehicle_type: string;
 }
 
 export default function ToursPage() {
@@ -62,15 +66,23 @@ export default function ToursPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
+  const [selectedDriver, setSelectedDriver] = useState({});
   const [viewMode, setViewMode] = useState(false);
 
   const { profile } = useAuth();
   const { toast } = useToast();
+  const token = localStorage.getItem("auth_token");
 
   const baseUrl = process.env.NEXT_PUBLIC_API;
 
+  // For all tours
+  const gettours = `http://${baseUrl}/api/tours`;
   // create tour
   const createtour = `http://${baseUrl}/api/tours/create`;
+  // create tour
+  const activedrivers = `http://${baseUrl}/api/assign/drivers`;
+  // assign driver
+  const assigndrivers = `http://${baseUrl}/api/assign`;
 
   const [formData, setFormData] = useState({
     booking_date: new Date().toISOString().split("T")[0],
@@ -84,39 +96,63 @@ export default function ToursPage() {
     destination: "",
     flight_no: "",
     remarks: "",
-    status: "pending",
+    status: "Pending",
+  });
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 5,
+    total: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
   });
 
   useEffect(() => {
     fetchTours();
+  }, [page, pageSize]);
+
+  useEffect(() => {
     fetchDrivers();
   }, []);
 
   useEffect(() => {
     const filtered = tours.filter(
       (tour) =>
-        tour.booking_ref.toLowerCase().includes(search.toLowerCase()) ||
-        tour.customer_name.toLowerCase().includes(search.toLowerCase()) ||
-        tour.agent.toLowerCase().includes(search.toLowerCase())
+        // tour.booking_ref.toLowerCase().includes(search.toLowerCase()) ||
+        tour.customer_name.includes(search) || tour.agent.includes(search)
     );
     setFilteredTours(filtered);
   }, [search, tours]);
 
   async function fetchTours() {
+    setLoading(true);
     try {
-      // const { data, error } = await supabase
-      //   .from('tours')
-      //   .select(`
-      //     *,
-      //     drivers:assigned_driver_id (name, driver_number)
-      //   `)
-      //   .order('booking_date', { ascending: false });
+      if (!token) throw new Error("No auth token found");
 
-      // if (error) throw error;
-      // setTours(data || []);
-      // setFilteredTours(data || []);
-      setTours([]);
-      setFilteredTours([]);
+      const response = await fetch(
+        `${gettours}?page=${page}&pageSize=${pageSize}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+
+      const res = await response.json();
+      setTours(res.data || []);
+      setFilteredTours(res.data || []);
+
+      // Save pagination info
+      setPagination(res.pagination);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -130,17 +166,27 @@ export default function ToursPage() {
 
   async function fetchDrivers() {
     try {
-      // const { data, error } = await supabase
-      //   .from('drivers')
-      //   .select('id, name, driver_number, status')
-      //   .eq('status', 'active')
-      //   .order('name');
+      if (!token) throw new Error("No auth token found");
 
-      // if (error) throw error;
-      // setDrivers(data || []);
-      setDrivers([]);
+      const response = await fetch(`${activedrivers}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+
+      const res = await response.json();
+      setDrivers(res.data || []);
     } catch (error: any) {
-      console.error("Error fetching drivers:", error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   }
 
@@ -223,35 +269,38 @@ export default function ToursPage() {
     }
   }
 
-  async function handleAssignDriver(driverId: string) {
+  async function handleAssignDriver(driver: string) {
     if (!selectedTour) return;
 
     setLoading(true);
     try {
-      // const { error } = await supabase
-      //   .from('tours')
-      //   .update({
-      //     assigned_driver_id: driverId,
-      //     status: 'assigned',
-      //   })
-      //   .eq('id', selectedTour.id);
-
-      // if (error) throw error;
-
-      // const { error: updateError } = await supabase.rpc('increment', {
-      //   row_id: driverId,
-      //   table_name: 'drivers',
-      //   column_name: 'number_of_rides',
-      // });
-
-      await logActivity("update", "tours", selectedTour.id, {
-        action: "assigned_driver",
-        driver_id: driverId,
+      if (!token) throw new Error("No auth token found");
+      let response: Response;
+      response = await fetch(assigndrivers, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tour_id: selectedTour.id,
+          driver_id: driver,
+        }),
       });
 
+      // await logActivity("update", "tours", selectedTour.id, {
+      //   action: "assigned_driver",
+      //   driver_id: driverId,
+      // });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`
+        );
+      }
       toast({
         title: "Success",
-        description: "Driver assigned successfully",
+        description: "Driver Assigned successfully",
       });
 
       fetchTours();
@@ -281,7 +330,7 @@ export default function ToursPage() {
       departure_datetime: "",
       flight_no: "",
       remarks: "",
-      status: "pending",
+      status: "Pending",
     });
     setSelectedTour(null);
   }
@@ -308,7 +357,7 @@ export default function ToursPage() {
 
   function handleView(tour: Tour) {
     setViewMode(true);
-    handleEdit(tour);
+    setSelectedTour(tour);
   }
 
   function openAssignDialog(tour: Tour) {
@@ -318,18 +367,119 @@ export default function ToursPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending":
+      case "Pending":
         return "bg-yellow-100 text-yellow-800";
-      case "assigned":
+      case "Assigned":
         return "bg-blue-100 text-blue-800";
-      case "completed":
+      case "Completed":
         return "bg-green-100 text-green-800";
-      case "cancelled":
+      case "Cancelled":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  async function handleDelete(id: string) {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you really want to delete this tour?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+      customClass: {
+        confirmButton: "swal-confirm-btn",
+        cancelButton: "swal-cancel-btn",
+        popup:
+          "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
+      },
+      buttonsStyling: false, // we’ll style it ourselves
+      background: "hsl(var(--background))",
+      color: "hsl(var(--foreground))",
+    });
+
+    if (!result.isConfirmed) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${gettours}/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to delete tour`);
+      }
+
+      await Swal.fire({
+        title: "Deleted!",
+        text: "Tour deleted successfully.",
+        icon: "success",
+        confirmButtonColor: "#3085d6",
+      });
+
+      // Refresh drivers list
+      fetchTours();
+    } catch (error: any) {
+      Swal.fire({
+        title: "Error!",
+        text: error.message,
+        icon: "error",
+        confirmButtonColor: "#3085d6",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const columns = [
+    {
+      key: "id",
+      label: "Booking Ref #",
+    },
+    {
+      key: "customer_name",
+      label: "Client",
+    },
+
+    {
+      key: "agent",
+      label: "Agent",
+    },
+    {
+      key: "pax",
+      label: "Pax",
+    },
+    {
+      key: "drivers_name",
+      label: "Driver",
+      render: (row: Tour) => (
+        <>
+          {row.assignment ? (
+            <div>
+              <p className="font-medium">{row.assignment.driver.name}</p>
+              <p className="text-xs text-gray-500">
+                {row.assignment.driver.vehicle_type}
+              </p>
+            </div>
+          ) : (
+            <span className="text-gray-400">Not Assigned</span>
+          )}
+        </>
+      ),
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (row: Tour) => (
+        <Badge className={getStatusColor(row.status)}>{row.status}</Badge>
+      ),
+    },
+  ];
 
   return (
     <DashboardLayout>
@@ -524,10 +674,10 @@ export default function ToursPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="assigned">Assigned</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Assigned">Assigned</SelectItem>
+                          <SelectItem value="Completed">Completed</SelectItem>
+                          <SelectItem value="Cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -563,104 +713,55 @@ export default function ToursPage() {
             </DialogContent>
           </Dialog>
         </div>
+        <DataTable
+          columns={columns}
+          data={filteredTours}
+          searchValue={search}
+          onSearchChange={setSearch}
+          pagination={pagination}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+          renderActions={(tour: Tour) => (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleView(tour)}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  placeholder="Search by booking ref, client, or agent..."
-                  className="pl-10"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b text-left text-sm text-gray-500">
-                    <th className="pb-3 font-medium">Booking Ref</th>
-                    <th className="pb-3 font-medium">Client</th>
-                    <th className="pb-3 font-medium">Agent</th>
-                    <th className="pb-3 font-medium">Pax</th>
-                    <th className="pb-3 font-medium">Arrival</th>
-                    <th className="pb-3 font-medium">Driver</th>
-                    <th className="pb-3 font-medium">Status</th>
-                    <th className="pb-3 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTours.map((tour) => (
-                    <tr key={tour.id} className="border-b last:border-0">
-                      <td className="py-4 font-mono text-sm">
-                        {tour.booking_ref}
-                      </td>
-                      <td className="py-4 font-medium">{tour.customer_name}</td>
-                      <td className="py-4 text-sm">{tour.agent}</td>
-                      <td className="py-4 text-sm">{tour.pax}</td>
-                      <td className="py-4 text-sm">
-                        {new Date(tour.arrival_datetime).toLocaleString()}
-                      </td>
-                      <td className="py-4 text-sm">
-                        {tour.drivers ? (
-                          <div>
-                            <p className="font-medium">{tour.drivers.name}</p>
-                            <p className="text-xs text-gray-500">
-                              {tour.drivers.driver_number}
-                            </p>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">Not assigned</span>
-                        )}
-                      </td>
-                      <td className="py-4">
-                        <Badge className={getStatusColor(tour.status)}>
-                          {tour.status}
-                        </Badge>
-                      </td>
-                      <td className="py-4">
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleView(tour)}
-                          >
-                            View
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleEdit(tour)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          {tour.status === "pending" && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => openAssignDialog(tour)}
-                            >
-                              <UserPlus className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filteredTours.length === 0 && (
-                <div className="py-12 text-center text-gray-500">
-                  No tours found
-                </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleEdit(tour)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleDelete(tour.id)}
+              >
+                <Trash className="h-4 w-4 text-red-500" />
+              </Button>
+              {tour.status === "Pending" && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => openAssignDialog(tour)}
+                >
+                  <UserPlus className="h-4 w-4" />
+                </Button>
               )}
             </div>
-          </CardContent>
-        </Card>
+          )}
+        />
       </div>
 
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
@@ -668,37 +769,135 @@ export default function ToursPage() {
           <DialogHeader>
             <DialogTitle>Assign Driver to Tour</DialogTitle>
           </DialogHeader>
+
           <div className="space-y-4">
             {selectedTour && (
               <div className="rounded-lg bg-gray-50 p-4">
                 <p className="text-sm text-gray-500">Tour Details</p>
-                <p className="font-medium">{selectedTour.booking_ref}</p>
-                <p className="text-sm">{selectedTour.customer_name}</p>
+                <p className="text-sm">
+                  {selectedTour.id} | {selectedTour.customer_name}
+                </p>
               </div>
             )}
+
+            {/* Driver dropdown */}
             <div className="space-y-2">
               <Label>Select Driver</Label>
-              <div className="space-y-2">
-                {drivers.map((driver) => (
-                  <button
-                    key={driver.id}
-                    onClick={() => handleAssignDriver(driver.id)}
-                    className="w-full rounded-lg border p-3 text-left transition-colors hover:bg-gray-50"
-                  >
-                    <p className="font-medium">{driver.name}</p>
-                    <p className="text-sm text-gray-500">
-                      {driver.driver_number}
-                    </p>
-                  </button>
-                ))}
-                {drivers.length === 0 && (
-                  <p className="text-sm text-gray-500">
-                    No active drivers available
-                  </p>
-                )}
-              </div>
+
+              <Select onValueChange={(val) => setSelectedDriver(val as any)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose a driver" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {drivers.map((driver) => (
+                    <SelectItem
+                      key={driver.driver_id}
+                      value={String(driver.driver_id)}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">{driver.name}</span>
+                        <span className="text-xs text-gray-500">
+                          {driver.driver_number}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+
+                  {drivers.length === 0 && (
+                    <div className="p-2 text-sm text-gray-500">
+                      No active drivers available
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* OK Button */}
+            <div className="flex justify-end pt-4">
+              <Button
+                disabled={!selectedDriver}
+                onClick={() => {
+                  handleAssignDriver(selectedDriver as any);
+                  setAssignDialogOpen(false);
+                }}
+              >
+                OK
+              </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={viewMode} onOpenChange={setViewMode}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tour Details: {selectedTour?.id}</DialogTitle>
+          </DialogHeader>
+          {selectedTour && (
+            <div className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label className="text-gray-500">Booking Date</Label>
+                  <p className="font-medium">{selectedTour.booking_date}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Customer Name</Label>
+                  <p className="font-medium">{selectedTour.customer_name}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Agent</Label>
+                  <p className="font-medium">{selectedTour.agent}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Pax</Label>
+                  <p className="font-medium">{selectedTour.pax}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Contact Details</Label>
+                  <p className="font-medium">{selectedTour.contact_details}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Arrival Date-Time</Label>
+                  <p className="font-medium">{selectedTour.arrival_datetime}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Departure Date-Time</Label>
+                  <p className="font-medium">
+                    {selectedTour.departure_datetime}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Flight Number</Label>
+                  <p className="font-medium">{selectedTour.flight_no}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Pickup</Label>
+                  <p className="font-medium">{selectedTour.pickup}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Destination</Label>
+                  <p className="font-medium">{selectedTour.destination}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Status</Label>
+                  <p className="font-medium">{selectedTour.status}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Remarks</Label>
+                  <p className="font-medium">{selectedTour.remarks}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Created Time</Label>
+                  <p className="font-medium">{selectedTour.created_at}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Last Updated Time</Label>
+                  <p className="font-medium">{selectedTour.updated_at}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </DashboardLayout>

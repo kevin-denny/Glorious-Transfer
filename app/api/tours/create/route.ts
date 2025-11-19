@@ -13,7 +13,6 @@ interface CreateTourRequest {
   arrival_datetime: string;
   departure_datetime: string;
   flight_no?: string;
-  flight_time?: string;
   remarks?: string;
   driver_id?: string;
   status?: string;
@@ -81,7 +80,7 @@ export async function POST(request: NextRequest) {
       `INSERT INTO tours (
         id, booking_date, customer_name, agent, pax,
         contact_details, arrival_datetime, departure_datetime,
-        flight_no, flight_time, remarks, pickup, destination,
+        flight_no, remarks, pickup, destination,
         created_by
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
@@ -94,7 +93,6 @@ export async function POST(request: NextRequest) {
         body.arrival_datetime,
         body.departure_datetime,
         body.flight_no || null,
-        body.flight_time || null,
         body.remarks || null,
         body.pickup || null,
         body.destination || null,

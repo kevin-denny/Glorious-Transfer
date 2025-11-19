@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
         contact_details, arrival_datetime, departure_datetime,
         flight_no, remarks, pickup, destination,
         created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         tourId,
         body.booking_date,

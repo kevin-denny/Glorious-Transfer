@@ -3,7 +3,7 @@ import { query, queryOne } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
 import { formatToIST } from '@/lib/utils';
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.substring(7);
@@ -13,10 +13,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get pagination parameters from query string
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    // Get search term and pagination from body
+    const body = await request.json();
+    const { searchTerm = '', limit = 15, page = 1, pageSize = 10 } = body;
 
     // Validate pagination parameters
     if (page < 1 || pageSize < 1 || pageSize > 100) {
@@ -35,10 +34,22 @@ export async function GET(request: NextRequest) {
     );
     const total = totalResult?.total || 0;
 
-    // Get paginated drivers - Use template literals for LIMIT/OFFSET
-    const drivers = await query(
-      `SELECT * FROM drivers ORDER BY created_at DESC LIMIT ${pageSize} OFFSET ${offset}`
-    ) as any[];
+    let drivers = [];
+    if(searchTerm && searchTerm.trim().length > 0) {
+      // Get search results
+      drivers = await query(
+        `SELECT * FROM drivers 
+        WHERE id LIKE ? OR name LIKE ? OR driver_number LIKE ?
+        ORDER BY created_at DESC
+        LIMIT ${limit}`,
+        [`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`]
+      ) as any[];
+    } else {
+      // Get paginated drivers
+      drivers = await query(
+        `SELECT * FROM drivers ORDER BY created_at DESC LIMIT ${pageSize} OFFSET ${offset}`
+      ) as any[];
+    }
 
     // Format timestamps for all drivers
     const formattedDrivers = drivers.map(driver => ({

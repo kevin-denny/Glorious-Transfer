@@ -3,7 +3,7 @@ import { query, queryOne } from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
 import { formatToIST } from "@/lib/utils";
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");
     const token = authHeader?.substring(7);
@@ -13,10 +13,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // Get pagination parameters from query string
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const pageSize = parseInt(searchParams.get("pageSize") || "10");
+    // Get search term and pagination from body
+    const body = await request.json();
+    const { searchTerm = '', limit = 15, page = 1, pageSize = 10 } = body;
 
     // Validate pagination parameters
     if (page < 1 || pageSize < 1 || pageSize > 100) {
@@ -38,24 +37,46 @@ export async function GET(request: NextRequest) {
     );
     const total = totalResult?.total || 0;
 
-    // Get paginated tours with assignment details - Use template literals for LIMIT/OFFSET
-    const tours = (await query(`
-      SELECT 
-        t.*,
-        a.id as assignment_id,
-        a.assigned_at,
-        a.assigned_by,
-        d.id as driver_id,
-        d.name as driver_name,
-        d.driver_number as driver_number,
-        d.vehicle_type as driver_vehicle_type,
-        d.vehicle_plate as driver_vehicle_plate
-      FROM tours t
-      LEFT JOIN assignments a ON t.id = a.tour_id
-      LEFT JOIN drivers d ON a.driver_id = d.id
-      ORDER BY t.created_at DESC 
-      LIMIT ${pageSize} OFFSET ${offset}
-    `)) as any[];
+    let tours = [];
+    // Get paginated tours with assignment details
+    if(searchTerm && searchTerm.trim().length > 0) {
+      tours = (await query(`
+        SELECT 
+          t.*,
+          a.id as assignment_id,
+          a.assigned_at,
+          a.assigned_by,
+          d.id as driver_id,
+          d.name as driver_name,
+          d.driver_number as driver_number,
+          d.vehicle_type as driver_vehicle_type,
+          d.vehicle_plate as driver_vehicle_plate
+        FROM tours t
+        LEFT JOIN assignments a ON t.id = a.tour_id
+        LEFT JOIN drivers d ON a.driver_id = d.id
+        WHERE t.id LIKE ? OR t.customer_name LIKE ?
+        ORDER BY t.created_at DESC 
+        LIMIT ${limit}
+      `, [`%${searchTerm}%`, `%${searchTerm}%`])) as any[];
+    } else {
+      tours = (await query(`
+        SELECT 
+          t.*,
+          a.id as assignment_id,
+          a.assigned_at,
+          a.assigned_by,
+          d.id as driver_id,
+          d.name as driver_name,
+          d.driver_number as driver_number,
+          d.vehicle_type as driver_vehicle_type,
+          d.vehicle_plate as driver_vehicle_plate
+        FROM tours t
+        LEFT JOIN assignments a ON t.id = a.tour_id
+        LEFT JOIN drivers d ON a.driver_id = d.id
+        ORDER BY t.created_at DESC 
+        LIMIT ${pageSize} OFFSET ${offset}
+      `)) as any[];
+    }
 
     // Format timestamps and structure assignment data for all tours
     const formattedTours = tours.map((tour) => ({
@@ -82,9 +103,9 @@ export async function GET(request: NextRequest) {
             driver: {
               id: tour.driver_id,
               name: tour.driver_name,
-              phone: tour.driver_phone,
+              phone: tour.driver_number,
               vehicle_type: tour.driver_vehicle_type,
-              vehicle_number: tour.driver_vehicle_number,
+              vehicle_number: tour.driver_vehicle_plate,
             },
           }
         : null,
@@ -107,6 +128,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
+    console.error('Tours fetch error:', error);
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }

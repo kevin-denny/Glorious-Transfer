@@ -137,6 +137,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   let assignmentId: string | null = null;
+  let tour_id_revert: string | null = null;
   
   try {
     const authHeader = request.headers.get("authorization");
@@ -149,6 +150,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { tour_id, driver_id } = body;
+    tour_id_revert = tour_id;
 
     // Validate required fields
     if (!tour_id || !driver_id) {
@@ -262,6 +264,12 @@ export async function POST(request: NextRequest) {
       [assignmentId]
     );
 
+    // update tour status to Assigned
+    await query("UPDATE tours SET status = ? WHERE id = ?", [
+      SYSCONFIG.ASSIIGNED,
+      tour_id,
+    ]);
+
     return NextResponse.json(
       {
         message: "Tour assigned successfully",
@@ -273,6 +281,11 @@ export async function POST(request: NextRequest) {
     // revert insertion of assignment in case of error
     if (assignmentId) {
       await query("DELETE FROM assignments WHERE id = ?", [assignmentId]);
+      // optionally revert tour status change if needed
+      await query("UPDATE tours SET status = ? WHERE id = ?", [
+        SYSCONFIG.PENDING,
+        tour_id_revert,
+      ]);
     }
     console.error("Assignment error:", error);
     return NextResponse.json(

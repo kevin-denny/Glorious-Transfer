@@ -32,7 +32,7 @@ import Swal from "sweetalert2";
 interface Tour {
   id: string;
   booking_date: string;
-  booking_ref: string;
+  // booking_ref: string;
   customer_name: string;
   agent: string;
   pax: number;
@@ -44,6 +44,8 @@ interface Tour {
   flight_no: string | null;
   remarks: string | null;
   status: string;
+  created_at: string;
+  updated_at: string;
   assigned_driver_id: string | null;
   drivers?: { name: string; driver_number: string } | null;
 }
@@ -115,9 +117,8 @@ export default function ToursPage() {
   useEffect(() => {
     const filtered = tours.filter(
       (tour) =>
-        tour.booking_ref.toLowerCase().includes(search.toLowerCase()) ||
-        tour.customer_name.toLowerCase().includes(search.toLowerCase()) ||
-        tour.agent.toLowerCase().includes(search.toLowerCase())
+        // tour.booking_ref.toLowerCase().includes(search.toLowerCase()) ||
+        tour.customer_name.includes(search) || tour.agent.includes(search)
     );
     setFilteredTours(filtered);
   }, [search, tours]);
@@ -338,7 +339,7 @@ export default function ToursPage() {
 
   function handleView(tour: Tour) {
     setViewMode(true);
-    handleEdit(tour);
+    setSelectedTour(tour);
   }
 
   function openAssignDialog(tour: Tour) {
@@ -743,7 +744,6 @@ export default function ToursPage() {
             </div>
           )}
         />
-
       </div>
 
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
@@ -755,7 +755,7 @@ export default function ToursPage() {
             {selectedTour && (
               <div className="rounded-lg bg-gray-50 p-4">
                 <p className="text-sm text-gray-500">Tour Details</p>
-                <p className="font-medium">{selectedTour.booking_ref}</p>
+                {/* <p className="font-medium">{selectedTour.booking_ref}</p> */}
                 <p className="text-sm">{selectedTour.customer_name}</p>
               </div>
             )}
@@ -782,6 +782,77 @@ export default function ToursPage() {
               </div>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={viewMode} onOpenChange={setViewMode}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tour Details: {selectedTour?.id}</DialogTitle>
+          </DialogHeader>
+          {selectedTour && (
+            <div className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label className="text-gray-500">Booking Date</Label>
+                  <p className="font-medium">
+                    {selectedTour.booking_date}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Customer Name</Label>
+                  <p className="font-medium">{selectedTour.customer_name}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Agent</Label>
+                  <p className="font-medium">{selectedTour.agent}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Pax</Label>
+                  <p className="font-medium">{selectedTour.pax}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Contact Details</Label>
+                  <p className="font-medium">{selectedTour.contact_details}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Arrival Date-Time</Label>
+                  <p className="font-medium">{selectedTour.arrival_datetime}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Departure Date-Time</Label>
+                  <p className="font-medium">{selectedTour.departure_datetime}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Flight Number</Label>
+                  <p className="font-medium">{selectedTour.flight_no}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Pickup</Label>
+                  <p className="font-medium">{selectedTour.pickup}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Destination</Label>
+                  <p className="font-medium">{selectedTour.destination}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Status</Label>
+                  <p className="font-medium">{selectedTour.status}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Remarks</Label>
+                  <p className="font-medium">{selectedTour.remarks}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Created Time</Label>
+                  <p className="font-medium">{selectedTour.created_at}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Last Updated Time</Label>
+                  <p className="font-medium">{selectedTour.updated_at}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </DashboardLayout>

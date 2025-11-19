@@ -331,7 +331,6 @@ export default function DriversPage() {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("auth_token");
       const response = await fetch(`${drivercall}/${driverId}`, {
         method: "DELETE",
         headers: {
@@ -395,7 +394,7 @@ export default function DriversPage() {
       key: "status",
       label: "Status",
       render: (row: Driver) => (
-        <Badge variant={row.status === "active" ? "default" : "secondary"}>
+        <Badge variant={row.status === "Active" ? "default" : "secondary"}>
           {row.status}
         </Badge>
       ),

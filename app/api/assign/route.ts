@@ -262,6 +262,12 @@ export async function POST(request: NextRequest) {
       [assignmentId]
     );
 
+    // update tour status to Assigned
+    await query("UPDATE tours SET status = ? WHERE id = ?", [
+      SYSCONFIG.ASSIIGNED,
+      tour_id,
+    ]);
+
     return NextResponse.json(
       {
         message: "Tour assigned successfully",

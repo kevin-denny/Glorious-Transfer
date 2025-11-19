@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     // Format timestamps and structure assignment data for all tours
     const formattedTours = tours.map((tour) => ({
       id: tour.id,
-      booking_date: formatToIST(tour.booking_date),
+      booking_date: formatToIST(tour.booking_date).split(" ")[0],
       customer_name: tour.customer_name,
       agent: tour.agent,
       pax: tour.pax,

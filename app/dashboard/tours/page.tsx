@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
-import { Plus, Search, Edit, UserPlus } from "lucide-react";
+import { Plus, Search, Edit, UserPlus, Eye, Trash } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/lib/activity-logger";
+import DataTable from "@/components/ui/DataTable";
+import Swal from "sweetalert2";
 
 interface Tour {
   id: string;
@@ -66,9 +68,12 @@ export default function ToursPage() {
 
   const { profile } = useAuth();
   const { toast } = useToast();
+  const token = localStorage.getItem("auth_token");
 
   const baseUrl = process.env.NEXT_PUBLIC_API;
 
+  // For all tours
+  const gettours = `http://${baseUrl}/api/tours`;
   // create tour
   const createtour = `http://${baseUrl}/api/tours/create`;
 
@@ -87,8 +92,23 @@ export default function ToursPage() {
     status: "pending",
   });
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 5,
+    total: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  });
+
   useEffect(() => {
     fetchTours();
+  }, [page, pageSize]);
+
+  useEffect(() => {
     fetchDrivers();
   }, []);
 
@@ -103,20 +123,30 @@ export default function ToursPage() {
   }, [search, tours]);
 
   async function fetchTours() {
+    setLoading(true);
     try {
-      // const { data, error } = await supabase
-      //   .from('tours')
-      //   .select(`
-      //     *,
-      //     drivers:assigned_driver_id (name, driver_number)
-      //   `)
-      //   .order('booking_date', { ascending: false });
+      if (!token) throw new Error("No auth token found");
 
-      // if (error) throw error;
-      // setTours(data || []);
-      // setFilteredTours(data || []);
-      setTours([]);
-      setFilteredTours([]);
+      const response = await fetch(
+        `${gettours}?page=${page}&pageSize=${pageSize}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+
+      const res = await response.json();
+      setTours(res.data || []);
+      setFilteredTours(res.data || []);
+
+      // Save pagination info
+      setPagination(res.pagination);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -330,6 +360,107 @@ export default function ToursPage() {
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  async function handleDelete(id: string) {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you really want to delete this tour?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+      customClass: {
+        confirmButton: "swal-confirm-btn",
+        cancelButton: "swal-cancel-btn",
+        popup:
+          "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
+      },
+      buttonsStyling: false, // we’ll style it ourselves
+      background: "hsl(var(--background))",
+      color: "hsl(var(--foreground))",
+    });
+
+    if (!result.isConfirmed) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${gettours}/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to delete tour`);
+      }
+
+      await Swal.fire({
+        title: "Deleted!",
+        text: "Tour deleted successfully.",
+        icon: "success",
+        confirmButtonColor: "#3085d6",
+      });
+
+      // Refresh drivers list
+      fetchTours();
+    } catch (error: any) {
+      Swal.fire({
+        title: "Error!",
+        text: error.message,
+        icon: "error",
+        confirmButtonColor: "#3085d6",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const columns = [
+    {
+      key: "id",
+      label: "Booking Ref #",
+    },
+    {
+      key: "customer_name",
+      label: "Client",
+    },
+
+    {
+      key: "agent",
+      label: "Agent",
+    },
+    {
+      key: "pax",
+      label: "Pax",
+    },
+    {
+      key: "drivers_name",
+      label: "Driver",
+      render: (row: Tour) => (
+        <>
+          {row.drivers ? (
+            <div>
+              <p className="font-medium">{row.drivers.name}</p>
+              <p className="text-xs text-gray-500">
+                {row.drivers.driver_number}
+              </p>
+            </div>
+          ) : (
+            <span className="text-gray-400">Not assigned</span>
+          )}
+        </>
+      ),
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (row: Tour) => (
+        <Badge className={getStatusColor(row.status)}>{row.status}</Badge>
+      ),
+    },
+  ];
 
   return (
     <DashboardLayout>
@@ -563,104 +694,56 @@ export default function ToursPage() {
             </DialogContent>
           </Dialog>
         </div>
+        <DataTable
+          columns={columns}
+          data={filteredTours}
+          searchValue={search}
+          onSearchChange={setSearch}
+          pagination={pagination}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+          renderActions={(tour: Tour) => (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleView(tour)}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  placeholder="Search by booking ref, client, or agent..."
-                  className="pl-10"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b text-left text-sm text-gray-500">
-                    <th className="pb-3 font-medium">Booking Ref</th>
-                    <th className="pb-3 font-medium">Client</th>
-                    <th className="pb-3 font-medium">Agent</th>
-                    <th className="pb-3 font-medium">Pax</th>
-                    <th className="pb-3 font-medium">Arrival</th>
-                    <th className="pb-3 font-medium">Driver</th>
-                    <th className="pb-3 font-medium">Status</th>
-                    <th className="pb-3 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTours.map((tour) => (
-                    <tr key={tour.id} className="border-b last:border-0">
-                      <td className="py-4 font-mono text-sm">
-                        {tour.booking_ref}
-                      </td>
-                      <td className="py-4 font-medium">{tour.customer_name}</td>
-                      <td className="py-4 text-sm">{tour.agent}</td>
-                      <td className="py-4 text-sm">{tour.pax}</td>
-                      <td className="py-4 text-sm">
-                        {new Date(tour.arrival_datetime).toLocaleString()}
-                      </td>
-                      <td className="py-4 text-sm">
-                        {tour.drivers ? (
-                          <div>
-                            <p className="font-medium">{tour.drivers.name}</p>
-                            <p className="text-xs text-gray-500">
-                              {tour.drivers.driver_number}
-                            </p>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">Not assigned</span>
-                        )}
-                      </td>
-                      <td className="py-4">
-                        <Badge className={getStatusColor(tour.status)}>
-                          {tour.status}
-                        </Badge>
-                      </td>
-                      <td className="py-4">
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleView(tour)}
-                          >
-                            View
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleEdit(tour)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          {tour.status === "pending" && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => openAssignDialog(tour)}
-                            >
-                              <UserPlus className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filteredTours.length === 0 && (
-                <div className="py-12 text-center text-gray-500">
-                  No tours found
-                </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleEdit(tour)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleDelete(tour.id)}
+              >
+                <Trash className="h-4 w-4 text-red-500" />
+              </Button>
+              {tour.status === "pending" && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => openAssignDialog(tour)}
+                >
+                  <UserPlus className="h-4 w-4" />
+                </Button>
               )}
             </div>
-          </CardContent>
-        </Card>
+          )}
+        />
+
       </div>
 
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>

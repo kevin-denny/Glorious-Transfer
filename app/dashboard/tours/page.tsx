@@ -89,7 +89,7 @@ export default function ToursPage() {
     destination: "",
     flight_no: "",
     remarks: "",
-    status: "pending",
+    status: "Pending",
   });
 
   const [page, setPage] = useState(1);
@@ -262,7 +262,7 @@ export default function ToursPage() {
       //   .from('tours')
       //   .update({
       //     assigned_driver_id: driverId,
-      //     status: 'assigned',
+      //     status: 'Assigned',
       //   })
       //   .eq('id', selectedTour.id);
 
@@ -281,7 +281,7 @@ export default function ToursPage() {
 
       toast({
         title: "Success",
-        description: "Driver assigned successfully",
+        description: "Driver Assigned successfully",
       });
 
       fetchTours();
@@ -311,7 +311,7 @@ export default function ToursPage() {
       departure_datetime: "",
       flight_no: "",
       remarks: "",
-      status: "pending",
+      status: "Pending",
     });
     setSelectedTour(null);
   }
@@ -348,13 +348,13 @@ export default function ToursPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending":
+      case "Pending":
         return "bg-yellow-100 text-yellow-800";
-      case "assigned":
+      case "Assigned":
         return "bg-blue-100 text-blue-800";
-      case "completed":
+      case "Completed":
         return "bg-green-100 text-green-800";
-      case "cancelled":
+      case "Cancelled":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -448,7 +448,7 @@ export default function ToursPage() {
               </p>
             </div>
           ) : (
-            <span className="text-gray-400">Not assigned</span>
+            <span className="text-gray-400">Not Assigned</span>
           )}
         </>
       ),
@@ -655,10 +655,10 @@ export default function ToursPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="assigned">Assigned</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Assigned">Assigned</SelectItem>
+                          <SelectItem value="Completed">Completed</SelectItem>
+                          <SelectItem value="Cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -731,7 +731,7 @@ export default function ToursPage() {
               >
                 <Trash className="h-4 w-4 text-red-500" />
               </Button>
-              {tour.status === "pending" && (
+              {tour.status === "Pending" && (
                 <Button
                   size="sm"
                   variant="ghost"

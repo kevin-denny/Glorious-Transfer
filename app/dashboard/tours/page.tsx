@@ -51,10 +51,9 @@ interface Tour {
 }
 
 interface Driver {
-  id: string;
+  driver_id: string;
   name: string;
   driver_number: string;
-  status: string;
 }
 
 export default function ToursPage() {
@@ -66,6 +65,7 @@ export default function ToursPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
+  const [selectedDriver, setSelectedDriver] = useState({});
   const [viewMode, setViewMode] = useState(false);
 
   const { profile } = useAuth();
@@ -78,6 +78,8 @@ export default function ToursPage() {
   const gettours = `http://${baseUrl}/api/tours`;
   // create tour
   const createtour = `http://${baseUrl}/api/tours/create`;
+  // create tour
+  const activedrivers = `http://${baseUrl}/api/assign/drivers`;
 
   const [formData, setFormData] = useState({
     booking_date: new Date().toISOString().split("T")[0],
@@ -161,17 +163,27 @@ export default function ToursPage() {
 
   async function fetchDrivers() {
     try {
-      // const { data, error } = await supabase
-      //   .from('drivers')
-      //   .select('id, name, driver_number, status')
-      //   .eq('status', 'active')
-      //   .order('name');
+      if (!token) throw new Error("No auth token found");
 
-      // if (error) throw error;
-      // setDrivers(data || []);
-      setDrivers([]);
+      const response = await fetch(`${activedrivers}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+
+      const res = await response.json();
+      setDrivers(res.data || []);
     } catch (error: any) {
-      console.error("Error fetching drivers:", error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   }
 
@@ -254,7 +266,7 @@ export default function ToursPage() {
     }
   }
 
-  async function handleAssignDriver(driverId: string) {
+  async function handleAssignDriver(driver: Driver) {
     if (!selectedTour) return;
 
     setLoading(true);
@@ -275,10 +287,10 @@ export default function ToursPage() {
       //   column_name: 'number_of_rides',
       // });
 
-      await logActivity("update", "tours", selectedTour.id, {
-        action: "assigned_driver",
-        driver_id: driverId,
-      });
+      // await logActivity("update", "tours", selectedTour.id, {
+      //   action: "assigned_driver",
+      //   driver_id: driverId,
+      // });
 
       toast({
         title: "Success",
@@ -751,39 +763,61 @@ export default function ToursPage() {
           <DialogHeader>
             <DialogTitle>Assign Driver to Tour</DialogTitle>
           </DialogHeader>
+
           <div className="space-y-4">
             {selectedTour && (
               <div className="rounded-lg bg-gray-50 p-4">
                 <p className="text-sm text-gray-500">Tour Details</p>
-                {/* <p className="font-medium">{selectedTour.booking_ref}</p> */}
-                <p className="text-sm">{selectedTour.customer_name}</p>
+                <p className="text-sm">{selectedTour.id} | {selectedTour.customer_name}</p>
               </div>
             )}
+
+            {/* Driver dropdown */}
             <div className="space-y-2">
               <Label>Select Driver</Label>
-              <div className="space-y-2">
-                {drivers.map((driver) => (
-                  <button
-                    key={driver.id}
-                    onClick={() => handleAssignDriver(driver.id)}
-                    className="w-full rounded-lg border p-3 text-left transition-colors hover:bg-gray-50"
-                  >
-                    <p className="font-medium">{driver.name}</p>
-                    <p className="text-sm text-gray-500">
-                      {driver.driver_number}
-                    </p>
-                  </button>
-                ))}
-                {drivers.length === 0 && (
-                  <p className="text-sm text-gray-500">
-                    No active drivers available
-                  </p>
-                )}
-              </div>
+
+              <Select onValueChange={(val) => setSelectedDriver(val as any)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose a driver" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {drivers.map((driver) => (
+                    <SelectItem key={driver.driver_id} value={String(driver.driver_id)}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{driver.name}</span>
+                        <span className="text-xs text-gray-500">
+                          {driver.driver_number}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+
+                  {drivers.length === 0 && (
+                    <div className="p-2 text-sm text-gray-500">
+                      No active drivers available
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* OK Button */}
+            <div className="flex justify-end pt-4">
+              <Button
+                disabled={!selectedDriver}
+                onClick={() => {
+                  handleAssignDriver(selectedDriver as any);
+                  setAssignDialogOpen(false);
+                }}
+              >
+                OK
+              </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
       <Dialog open={viewMode} onOpenChange={setViewMode}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -794,9 +828,7 @@ export default function ToursPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label className="text-gray-500">Booking Date</Label>
-                  <p className="font-medium">
-                    {selectedTour.booking_date}
-                  </p>
+                  <p className="font-medium">{selectedTour.booking_date}</p>
                 </div>
                 <div>
                   <Label className="text-gray-500">Customer Name</Label>
@@ -820,7 +852,9 @@ export default function ToursPage() {
                 </div>
                 <div>
                   <Label className="text-gray-500">Departure Date-Time</Label>
-                  <p className="font-medium">{selectedTour.departure_datetime}</p>
+                  <p className="font-medium">
+                    {selectedTour.departure_datetime}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-gray-500">Flight Number</Label>

@@ -47,13 +47,14 @@ interface Tour {
   created_at: string;
   updated_at: string;
   assigned_driver_id: string | null;
-  drivers?: { name: string; driver_number: string } | null;
+  assignment?: { driver: Driver; driver_number: string } | null;
 }
 
 interface Driver {
   driver_id: string;
   name: string;
   driver_number: string;
+  vehicle_type: string;
 }
 
 export default function ToursPage() {
@@ -80,6 +81,8 @@ export default function ToursPage() {
   const createtour = `http://${baseUrl}/api/tours/create`;
   // create tour
   const activedrivers = `http://${baseUrl}/api/assign/drivers`;
+  // assign driver
+  const assigndrivers = `http://${baseUrl}/api/assign`;
 
   const [formData, setFormData] = useState({
     booking_date: new Date().toISOString().split("T")[0],
@@ -266,32 +269,35 @@ export default function ToursPage() {
     }
   }
 
-  async function handleAssignDriver(driver: Driver) {
+  async function handleAssignDriver(driver: string) {
     if (!selectedTour) return;
 
     setLoading(true);
     try {
-      // const { error } = await supabase
-      //   .from('tours')
-      //   .update({
-      //     assigned_driver_id: driverId,
-      //     status: 'Assigned',
-      //   })
-      //   .eq('id', selectedTour.id);
-
-      // if (error) throw error;
-
-      // const { error: updateError } = await supabase.rpc('increment', {
-      //   row_id: driverId,
-      //   table_name: 'drivers',
-      //   column_name: 'number_of_rides',
-      // });
+      if (!token) throw new Error("No auth token found");
+      let response: Response;
+      response = await fetch(assigndrivers, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tour_id: selectedTour.id,
+          driver_id: driver,
+        }),
+      });
 
       // await logActivity("update", "tours", selectedTour.id, {
       //   action: "assigned_driver",
       //   driver_id: driverId,
       // });
-
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`
+        );
+      }
       toast({
         title: "Success",
         description: "Driver Assigned successfully",
@@ -453,11 +459,11 @@ export default function ToursPage() {
       label: "Driver",
       render: (row: Tour) => (
         <>
-          {row.drivers ? (
+          {row.assignment ? (
             <div>
-              <p className="font-medium">{row.drivers.name}</p>
+              <p className="font-medium">{row.assignment.driver.name}</p>
               <p className="text-xs text-gray-500">
-                {row.drivers.driver_number}
+                {row.assignment.driver.vehicle_type}
               </p>
             </div>
           ) : (
@@ -768,7 +774,9 @@ export default function ToursPage() {
             {selectedTour && (
               <div className="rounded-lg bg-gray-50 p-4">
                 <p className="text-sm text-gray-500">Tour Details</p>
-                <p className="text-sm">{selectedTour.id} | {selectedTour.customer_name}</p>
+                <p className="text-sm">
+                  {selectedTour.id} | {selectedTour.customer_name}
+                </p>
               </div>
             )}
 
@@ -783,7 +791,10 @@ export default function ToursPage() {
 
                 <SelectContent>
                   {drivers.map((driver) => (
-                    <SelectItem key={driver.driver_id} value={String(driver.driver_id)}>
+                    <SelectItem
+                      key={driver.driver_id}
+                      value={String(driver.driver_id)}
+                    >
                       <div className="flex flex-col">
                         <span className="font-medium">{driver.name}</span>
                         <span className="text-xs text-gray-500">

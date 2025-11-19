@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from 'clsx';
+import { CANCELLED } from 'node:dns';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
@@ -17,6 +18,19 @@ export const SYSCONFIG = {
   APP_NAME: 'Glorious Transfer',
   APP_VERSION: '1.0.0',
   SUPPORT_EMAIL: 'support@glorioustransfer.com',
+
+  ADMINISTRATOR: 'administrator',
+  OPERATIONS: 'operations',
+  FINANCE: 'finance',
+
   ACTIVE: 'Active',
   INACTIVE: 'Inactive',
+
+  PENDING: 'Pending',
+  ASSIIGNED: 'Assigned',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+
+  SUCCESS: 'Success',
+  FAIL: 'Fail',
 };

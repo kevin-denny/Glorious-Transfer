@@ -80,3 +80,38 @@ export const generateUniqueAssignmentId = async (): Promise<string> => {
 
   return assignmentId;
 };
+
+// Generate unique audit log ID with format L20241119143025123456789 (L + timestamp + milliseconds + microseconds + random)
+export const generateUniqueAuditLogId = async (): Promise<string> => {
+  let logId: string;
+  let exists: any;
+
+  do {
+    // Generate high-precision timestamp
+    const now = new Date();
+    const hrTime = process.hrtime(); // High-resolution time [seconds, nanoseconds]
+    
+    // Base timestamp: YYYYMMDDHHMMSS
+    const timestamp = now.getFullYear().toString() +
+      (now.getMonth() + 1).toString().padStart(2, '0') +
+      now.getDate().toString().padStart(2, '0') +
+      now.getHours().toString().padStart(2, '0') +
+      now.getMinutes().toString().padStart(2, '0') +
+      now.getSeconds().toString().padStart(2, '0') +
+      now.getMilliseconds().toString().padStart(3, '0') +
+      Math.floor((hrTime[1] % 1000000) / 1000).toString().padStart(3, '0');
+    
+    // Generate 2-digit random number for final uniqueness
+    const randomNumber = Math.floor(10 + Math.random() * 90);
+    
+    logId = `L${timestamp}${randomNumber}`;
+    
+    // Check if ID exists in database (extremely unlikely with this precision)
+    exists = await queryOne('SELECT id FROM activity_logs WHERE id = ?', [logId]);
+  } while (exists);
+
+  return logId;
+};
+
+// General UUID generator function (for backward compatibility)
+export const generateId = generateUniqueAuditLogId;

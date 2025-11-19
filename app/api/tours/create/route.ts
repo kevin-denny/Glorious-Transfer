@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { query, queryOne } from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
 import { generateUniqueTourId } from "@/lib/id-generator";
+import { SYSCONFIG } from "@/lib/utils";
 
 interface CreateTourRequest {
   booking_date: string;
@@ -16,6 +17,8 @@ interface CreateTourRequest {
   remarks?: string;
   driver_id?: string;
   status?: string;
+  pickup?: string;
+  destination?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -26,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     if (
       !user ||
-      !(user.role === "administrator" || user.role === "operations")
+      !(user.role === SYSCONFIG.ADMINISTRATOR || user.role === "operations")
     ) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
     }
@@ -41,7 +44,9 @@ export async function POST(request: NextRequest) {
       !body.pax ||
       !body.contact_details ||
       !body.arrival_datetime ||
-      !body.departure_datetime
+      !body.departure_datetime ||
+      !body.pickup ||
+      !body.destination
     ) {
       return NextResponse.json(
         { message: "Missing required fields" },
@@ -76,9 +81,9 @@ export async function POST(request: NextRequest) {
       `INSERT INTO tours (
         id, booking_date, customer_name, agent, pax,
         contact_details, arrival_datetime, departure_datetime,
-        flight_no, flight_time, remarks,
+        flight_no, flight_time, remarks, pickup, destination,
         created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         tourId,
         body.booking_date,
@@ -91,6 +96,8 @@ export async function POST(request: NextRequest) {
         body.flight_no || null,
         body.flight_time || null,
         body.remarks || null,
+        body.pickup || null,
+        body.destination || null,
         user.id,
       ]
     );

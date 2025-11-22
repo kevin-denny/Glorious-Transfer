@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
-import { formatToIST } from '@/lib/utils';
+import { formatToIST, SYSCONFIG } from '@/lib/utils';
 import { AuditLogger } from '@/lib/activity-logger.server';
 
 export async function GET(request: NextRequest) {
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
     const hasPreviousPage = page > 1;
 
     // 🔥 LOG AUDIT ACTIVITY - AUDIT LOGS RETRIEVAL (MULTIPLE)
-    await auditLogger.logReadMultiple('audit_log', formattedAuditLogs.map(log => log.id));
+    await auditLogger.logReadMultiple(SYSCONFIG.ENTITY_TYPE_ACTIVITY_LOG, formattedAuditLogs.map(log => log.id), SYSCONFIG.SUCCESS);
 
     return NextResponse.json({
       data: formattedAuditLogs,

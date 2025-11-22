@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { queryOne } from '@/lib/db';
 import { verifyPassword, generateToken } from '@/lib/auth';
+import { AuditLogger } from '@/lib/activity-logger.server';
+import { SYSCONFIG } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,6 +19,16 @@ export async function POST(request: NextRequest) {
     if (!user || !(await verifyPassword(password, user.encrypted_password))) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
+
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
+
+    // 🔥 LOG AUDIT ACTIVITY - USER LOGIN
+    await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_LOGIN, user.id, { email: user.email }, SYSCONFIG.SUCCESS);
 
     const token = generateToken({
       id: user.id,

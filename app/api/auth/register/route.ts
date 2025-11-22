@@ -3,6 +3,7 @@ import { query, queryOne } from '@/lib/db';
 import { hashPassword, generateToken } from '@/lib/auth';
 import { generateUniqueUserId } from '@/lib/id-generator';
 import { SYSCONFIG } from '@/lib/utils';
+import { AuditLogger } from '@/lib/activity-logger.server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,6 +60,13 @@ export async function POST(request: NextRequest) {
     const userId = await generateUniqueUserId();
     const hashedPassword = await hashPassword(password);
 
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: userId,
+      name: full_name || email,
+      role,
+    });
+
     // Insert into auth_users
     await query(
       `INSERT INTO auth_users (id, email, encrypted_password, created_at, updated_at) 
@@ -80,6 +88,9 @@ export async function POST(request: NextRequest) {
       full_name,
       role,
     });
+
+    // 🔥 LOG AUDIT ACTIVITY - USER REGISTRATION
+    await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_USER, userId, { email }, SYSCONFIG.SUCCESS);
 
     // Return success response
     return NextResponse.json(

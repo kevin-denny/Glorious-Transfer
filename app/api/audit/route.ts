@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
 import { formatToIST } from '@/lib/utils';
+import { AuditLogger } from '@/lib/activity-logger.server';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,6 +13,13 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -99,6 +107,9 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / pageSize);
     const hasNextPage = page < totalPages;
     const hasPreviousPage = page > 1;
+
+    // 🔥 LOG AUDIT ACTIVITY - AUDIT LOGS RETRIEVAL (MULTIPLE)
+    await auditLogger.logReadMultiple('audit_log', formattedAuditLogs.map(log => log.id));
 
     return NextResponse.json({
       data: formattedAuditLogs,

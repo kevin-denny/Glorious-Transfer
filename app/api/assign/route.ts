@@ -3,6 +3,7 @@ import { query, queryOne } from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
 import { generateUniqueAssignmentId } from "@/lib/id-generator";
 import { SYSCONFIG, formatToIST } from "@/lib/utils";
+import { AuditLogger } from "@/lib/activity-logger.server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,6 +14,13 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    // initialize audit logger (server-side)
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
 
     // Get pagination parameters from query string
     const { searchParams } = new URL(request.url);
@@ -110,6 +118,9 @@ export async function GET(request: NextRequest) {
     const hasNextPage = page < totalPages;
     const hasPreviousPage = page > 1;
 
+    // 🔥 LOG AUDIT ACTIVITY - ASSIGNMENTS RETRIEVAL (MULTIPLE)
+    await auditLogger.logReadMultiple(SYSCONFIG.ENTITY_TYPE_ASSIGNMENT, assignments.map(a => a.id));
+
     return NextResponse.json({
       data: formattedAssignments,
       pagination: {
@@ -147,6 +158,13 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
+
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
 
     const body = await request.json();
     const { tour_id, driver_id } = body;
@@ -269,6 +287,9 @@ export async function POST(request: NextRequest) {
       SYSCONFIG.ASSIIGNED,
       tour_id,
     ]);
+
+    // 🔥 LOG AUDIT ACTIVITY - ASSIGNMENT CREATION
+    await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_ASSIGNMENT, assignmentId, newAssignment, SYSCONFIG.SUCCESS);
 
     return NextResponse.json(
       {

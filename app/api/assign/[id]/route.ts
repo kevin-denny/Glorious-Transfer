@@ -10,8 +10,6 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
 
-  let auditLogger: AuditLogger | null = null;
-
   try {
     const authHeader = request.headers.get("authorization");
     const token = authHeader?.substring(7);
@@ -22,7 +20,7 @@ export async function GET(
     }
 
     // Initialize audit logger with user information
-    auditLogger = new AuditLogger({
+    const auditLogger = new AuditLogger({
       id: user.id,
       name: user.full_name || user.email,
       role: user.role,
@@ -80,7 +78,7 @@ export async function GET(
     };
 
     // 🔥 LOG AUDIT ACTIVITY - ASSIGNMENT RETRIEVAL
-    await auditLogger.logRead('assignment', assignmentId, formattedAssignment);
+    await auditLogger.logRead(SYSCONFIG.ENTITY_TYPE_ASSIGNMENT, assignmentId, formattedAssignment);
 
     return NextResponse.json({ assignment: formattedAssignment });
   } catch (error: any) {
@@ -231,8 +229,8 @@ export async function PUT(
       [assignmentId]
     );
 
-    // 🔥 LOG AUDIT ACTIVITY - ASSIGNMENT UPDATE
-    await auditLogger.logUpdate('assignment', assignmentId, existingAssignment, updatedAssignment, {
+    // LOG AUDIT ACTIVITY - ASSIGNMENT UPDATE
+    await auditLogger.logUpdate(SYSCONFIG.ENTITY_TYPE_ASSIGNMENT, assignmentId, existingAssignment, updatedAssignment, SYSCONFIG.SUCCESS, {
       change_type: 'driver_reassignment',
       old_driver_id: existingAssignment.driver_id,
       new_driver_id: driver_id,
@@ -302,7 +300,7 @@ export async function DELETE(
     await query("DELETE FROM assignments WHERE id = ?", [assignmentId]);
 
     // 🔥 LOG AUDIT ACTIVITY - ASSIGNMENT DELETION
-    await auditLogger.logDelete('assignment', assignmentId, assignment, {
+    await auditLogger.logDelete(SYSCONFIG.ENTITY_TYPE_ASSIGNMENT, assignmentId, assignment, SYSCONFIG.SUCCESS, {
       reason: 'manual_deletion',
       tour_id: assignment.tour_id,
       driver_id: assignment.driver_id,

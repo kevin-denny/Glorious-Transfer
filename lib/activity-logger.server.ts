@@ -2,6 +2,7 @@ import 'server-only';
 import { query } from './db';
 import { generateUniqueAuditLogId } from './id-generator';
 import type { AuditLogData, AuditLogOptions } from './activity-logger';
+import { SYSCONFIG } from './utils';
 
 /**
  * Log audit activity to activity_logs table (SERVER-ONLY)
@@ -13,6 +14,11 @@ export async function logAuditActivity(
   options: AuditLogOptions = {}
 ) {
   try {
+
+    if (!SYSCONFIG.IS_AUDIT_ENABLED) {
+      return; // Skip logging if audit is disabled
+    }
+
     const { user_id, user_name, user_role, action, entity_type, entity_id, status } = logData;
     const { oldData, newData, additionalDetails } = options;
 

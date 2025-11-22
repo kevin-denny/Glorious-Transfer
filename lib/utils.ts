@@ -46,4 +46,6 @@ export const SYSCONFIG = {
   ENTITY_TYPE_ACTIVITY_LOG: 'activity_log',
   ENTITY_TYPE_LOGIN: 'login',
   ENTITY_TYPE_USER: 'user',
+
+  IS_AUDIT_ENABLED: true,
 };

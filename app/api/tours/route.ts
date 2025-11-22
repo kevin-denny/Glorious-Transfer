@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, queryOne } from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
-import { formatToIST } from "@/lib/utils";
+import { formatToIST, SYSCONFIG } from "@/lib/utils";
+import { AuditLogger } from "@/lib/activity-logger.server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +13,13 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
+
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
 
     // Get search term and pagination from body
     const body = await request.json();
@@ -115,6 +123,12 @@ export async function POST(request: NextRequest) {
     const totalPages = Math.ceil(total / pageSize);
     const hasNextPage = page < totalPages;
     const hasPreviousPage = page > 1;
+
+    // 🔥 LOG AUDIT ACTIVITY - TOURS LIST RETRIEVAL
+    await auditLogger.logReadMultiple(SYSCONFIG.ENTITY_TYPE_TOUR, formattedTours.map(t => t.id), SYSCONFIG.SUCCESS, {
+      filter: searchTerm ? { searchTerm } : {},
+      result_count: formattedTours.length,
+    });
 
     return NextResponse.json({
       data: formattedTours,

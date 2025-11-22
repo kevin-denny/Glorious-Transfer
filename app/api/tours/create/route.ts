@@ -3,6 +3,7 @@ import { query, queryOne } from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
 import { generateUniqueTourId } from "@/lib/id-generator";
 import { SYSCONFIG } from "@/lib/utils";
+import { AuditLogger } from "@/lib/activity-logger.server";
 
 interface CreateTourRequest {
   booking_date: string;
@@ -32,6 +33,13 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
     }
+
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
 
     const body: CreateTourRequest = await request.json();
 
@@ -101,6 +109,11 @@ export async function POST(request: NextRequest) {
     );
 
     const tour = await queryOne(`SELECT * FROM tours WHERE id = ?`, [tourId]);
+
+    // 🔥 LOG AUDIT ACTIVITY - TOUR CREATION
+    await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_TOUR, tour.id, tour, SYSCONFIG.SUCCESS, {
+      change_type: 'tour_creation',
+    });
 
     return NextResponse.json(
       {

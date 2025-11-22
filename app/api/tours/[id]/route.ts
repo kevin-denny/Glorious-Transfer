@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne, transaction } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
 import { formatToIST, SYSCONFIG } from '@/lib/utils';
+import { AuditLogger } from '@/lib/activity-logger.server';
 
 // GET tour by ID
 export async function GET(
@@ -16,6 +17,13 @@ export async function GET(
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
 
     const tourId = params.id;
 
@@ -71,6 +79,9 @@ export async function GET(
       } : null
     };
 
+    // 🔥 LOG AUDIT ACTIVITY - TOUR INFO RETRIEVAL
+    await auditLogger.logRead(SYSCONFIG.ENTITY_TYPE_TOUR, tour.id, SYSCONFIG.SUCCESS, formattedTour);
+
     return NextResponse.json({ tour: formattedTour });
 
   } catch (error: any) {
@@ -95,6 +106,13 @@ export async function PUT(
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
 
     const tourId = params.id;
     const body = await request.json();
@@ -266,6 +284,11 @@ export async function PUT(
       } : null
     };
 
+    // 🔥 LOG AUDIT ACTIVITY - TOUR UPDATE
+    await auditLogger.logUpdate(SYSCONFIG.ENTITY_TYPE_TOUR, formattedTour.id, existingTour, formattedTour, SYSCONFIG.SUCCESS, {
+      change_type: 'tour_update',
+    });
+
     return NextResponse.json({
       message: 'Tour updated successfully',
       tour: formattedTour
@@ -293,6 +316,13 @@ export async function DELETE(
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
 
     const tourId = params.id;
 
@@ -329,6 +359,13 @@ export async function DELETE(
       'DELETE FROM tours WHERE id = ?',
       [tourId]
     );
+
+    // 🔥 LOG AUDIT ACTIVITY - TOUR DELETION
+    await auditLogger.logDelete(SYSCONFIG.ENTITY_TYPE_TOUR, tourId, tour, SYSCONFIG.SUCCESS, {
+      reason: 'manual_deletion',
+      customer_name: tour.customer_name,
+      status: tour.status
+    });
 
     return NextResponse.json({
       message: 'Tour deleted successfully',

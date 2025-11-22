@@ -3,6 +3,7 @@ import { query, queryOne } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
 import { formatToIST } from '@/lib/utils';
 import { SYSCONFIG } from '@/lib/utils';
+import { AuditLogger } from '@/lib/activity-logger.server';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ message: 'Unauthorized access!' }, { status: 403 });
     }
 
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
+
     const driver = await queryOne(`SELECT * FROM drivers WHERE id = ?`, [params.id]);
 
     if (!driver) {
@@ -24,6 +32,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     driver.created_at = formatToIST(driver.created_at);
     driver.updated_at = formatToIST(driver.updated_at);
+
+    // 🔥 LOG AUDIT ACTIVITY - DRIVER INFO RETRIEVAL
+    await auditLogger.logRead(SYSCONFIG.ENTITY_TYPE_DRIVER, driver.id);
 
     return NextResponse.json(driver);
   } catch (error: any) {
@@ -41,8 +52,21 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ message: 'Unauthorized access!' }, { status: 403 });
     }
 
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
+
     const data = await request.json();
     const { name, languages, vehicle_type, vehicle_plate, status } = data;
+
+    const old_data = await queryOne(`SELECT * FROM drivers WHERE id = ?`, [params.id]);
+
+    if (!old_data) {
+      return NextResponse.json({ message: 'Driver not found' }, { status: 404 });
+    }
 
     await query(
       `UPDATE drivers 
@@ -52,6 +76,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     );
 
     const driver = await queryOne(`SELECT * FROM drivers WHERE id = ?`, [params.id]);
+
+    // 🔥 LOG AUDIT ACTIVITY - DRIVER UPDATE
+    await auditLogger.logUpdate(SYSCONFIG.ENTITY_TYPE_DRIVER, driver.id, old_data, driver, SYSCONFIG.SUCCESS, {
+      change_type: 'driver_update',
+      updated_fields: Object.keys(data),
+    });
 
     return NextResponse.json(driver);
   } catch (error: any) {
@@ -69,6 +99,13 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ message: 'Unauthorized access!' }, { status: 403 });
     }
 
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
+
     // Check if driver exists
     const driver = await queryOne(`SELECT * FROM drivers WHERE id = ?`, [params.id]);
 
@@ -82,6 +119,11 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     if (result.affectedRows === 0) {
       return NextResponse.json({ message: 'Failed to delete driver' }, { status: 500 });
     }
+
+    // 🔥 LOG AUDIT ACTIVITY - DRIVER DELETION
+    await auditLogger.logDelete(SYSCONFIG.ENTITY_TYPE_DRIVER, driver.id, driver, SYSCONFIG.SUCCESS, {
+      reason: 'manual_deletion',
+    });
 
     return NextResponse.json({ message: 'Driver deleted successfully' });
   } catch (error: any) {

@@ -3,6 +3,7 @@ import { query, queryOne } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
 import { generateUniqueDriverId } from '@/lib/id-generator';
 import { SYSCONFIG } from '@/lib/utils';
+import { AuditLogger } from '@/lib/activity-logger.server';
 
 interface RegisterDriverRequest {
   driver_number: string;
@@ -23,6 +24,13 @@ export async function POST(request: NextRequest) {
     if (!user || user.role !== SYSCONFIG.ADMINISTRATOR) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
+
+    // Initialize audit logger
+    const auditLogger = new AuditLogger({
+      id: user.id,
+      name: user.full_name || user.email,
+      role: user.role,
+    });
 
     const body: RegisterDriverRequest = await request.json();
 
@@ -70,6 +78,11 @@ export async function POST(request: NextRequest) {
       `SELECT * FROM drivers WHERE id = ?`, 
       [driverId]
     );
+
+    // 🔥 LOG AUDIT ACTIVITY - DRIVER REGISTRATION
+    await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_DRIVER, driver.id, driver, SYSCONFIG.SUCCESS, {
+      change_type: 'driver_registration',
+    });
 
     return NextResponse.json(
       { message: 'Driver registered successfully'},

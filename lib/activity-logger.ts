@@ -7,6 +7,7 @@ export interface AuditLogData {
   entity_type: string;
   entity_id?: string | null;
   details?: any;
+  status?: string;
 }
 
 export interface AuditLogOptions {

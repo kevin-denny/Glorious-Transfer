@@ -13,7 +13,7 @@ export async function logAuditActivity(
   options: AuditLogOptions = {}
 ) {
   try {
-    const { user_id, user_name, user_role, action, entity_type, entity_id } = logData;
+    const { user_id, user_name, user_role, action, entity_type, entity_id, status } = logData;
     const { oldData, newData, additionalDetails } = options;
 
     // Prepare details JSON
@@ -35,8 +35,8 @@ export async function logAuditActivity(
     // Insert audit log
     await query(
       `INSERT INTO activity_logs 
-       (id, user_id, user_name, user_role, action, entity_type, entity_id, details) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, user_id, user_name, user_role, action, entity_type, entity_id, details, status) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         logId,
         user_id,
@@ -45,7 +45,8 @@ export async function logAuditActivity(
         action,
         entity_type,
         entity_id || null,
-        JSON.stringify(details)
+        JSON.stringify(details),
+        status || null
       ]
     );
 
@@ -73,7 +74,7 @@ export class AuditLogger {
   /**
    * Log CREATE operation
    */
-  async logCreate(entity_type: string, entity_id: string, newData: any, additionalDetails?: any) {
+  async logCreate(entity_type: string, entity_id: string, newData: any, status: string, additionalDetails?: any) {
     await logAuditActivity(
       {
         user_id: this.user.id,
@@ -81,7 +82,8 @@ export class AuditLogger {
         user_role: this.user.role,
         action: `CREATE_${entity_type.toUpperCase()}`,
         entity_type,
-        entity_id
+        entity_id,
+        status
       },
       {
         newData,
@@ -93,7 +95,7 @@ export class AuditLogger {
   /**
    * Log READ operation
    */
-  async logRead(entity_type: string, entity_id?: string, additionalDetails?: any) {
+  async logRead(entity_type: string, entity_id?: string, status?: string, additionalDetails?: any) {
     await logAuditActivity(
       {
         user_id: this.user.id,
@@ -101,7 +103,8 @@ export class AuditLogger {
         user_role: this.user.role,
         action: `READ_${entity_type.toUpperCase()}`,
         entity_type,
-        entity_id
+        entity_id,
+        status
       },
       {
         additionalDetails
@@ -110,9 +113,32 @@ export class AuditLogger {
   }
 
   /**
+   * Log Read Multiple operation
+   */
+  async logReadMultiple(entity_type: string, entity_ids: string[], status?: string, additionalDetails?: any) {
+    await logAuditActivity(
+      {
+        user_id: this.user.id,
+        user_name: this.user.name,
+        user_role: this.user.role,
+        action: `READ_MULTIPLE_${entity_type.toUpperCase()}`,
+        entity_type,
+        entity_id: null,
+        status
+      },
+      {
+        additionalDetails: {
+          entity_ids,
+          ...additionalDetails
+        }
+      }
+    );
+  }
+
+  /**
    * Log UPDATE operation
    */
-  async logUpdate(entity_type: string, entity_id: string, oldData: any, newData: any, additionalDetails?: any) {
+  async logUpdate(entity_type: string, entity_id: string, oldData: any, newData: any, status: string, additionalDetails?: any) {
     await logAuditActivity(
       {
         user_id: this.user.id,
@@ -120,7 +146,8 @@ export class AuditLogger {
         user_role: this.user.role,
         action: `UPDATE_${entity_type.toUpperCase()}`,
         entity_type,
-        entity_id
+        entity_id,
+        status
       },
       {
         oldData,
@@ -133,7 +160,7 @@ export class AuditLogger {
   /**
    * Log DELETE operation
    */
-  async logDelete(entity_type: string, entity_id: string, oldData: any, additionalDetails?: any) {
+  async logDelete(entity_type: string, entity_id: string, oldData: any, status?: string, additionalDetails?: any) {
     await logAuditActivity(
       {
         user_id: this.user.id,
@@ -141,7 +168,8 @@ export class AuditLogger {
         user_role: this.user.role,
         action: `DELETE_${entity_type.toUpperCase()}`,
         entity_type,
-        entity_id
+        entity_id,
+        status
       },
       {
         oldData,
@@ -153,7 +181,7 @@ export class AuditLogger {
   /**
    * Log ASSIGN operation (specific to assignments)
    */
-  async logAssign(tour_id: string, driver_id: string, additionalDetails?: any) {
+  async logAssign(tour_id: string, driver_id: string, status?: string, additionalDetails?: any) {
     await logAuditActivity(
       {
         user_id: this.user.id,
@@ -161,7 +189,8 @@ export class AuditLogger {
         user_role: this.user.role,
         action: 'ASSIGN_TOUR',
         entity_type: 'assignment',
-        entity_id: tour_id
+        entity_id: tour_id,
+        status
       },
       {
         additionalDetails: {
@@ -176,7 +205,7 @@ export class AuditLogger {
   /**
    * Log UNASSIGN operation (specific to assignments)
    */
-  async logUnassign(tour_id: string, driver_id: string, additionalDetails?: any) {
+  async logUnassign(tour_id: string, driver_id: string, status?: string, additionalDetails?: any) {
     await logAuditActivity(
       {
         user_id: this.user.id,
@@ -184,7 +213,8 @@ export class AuditLogger {
         user_role: this.user.role,
         action: 'UNASSIGN_TOUR',
         entity_type: 'assignment',
-        entity_id: tour_id
+        entity_id: tour_id,
+        status
       },
       {
         additionalDetails: {

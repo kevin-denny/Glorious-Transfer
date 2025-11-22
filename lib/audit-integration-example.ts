@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     `, [assignmentId]);
 
     // 🔥 LOG AUDIT ACTIVITY - ASSIGNMENT CREATION
-    await auditLogger.logAssign(tour_id, driver_id, {
+    await auditLogger.logAssign(tour_id, driver_id, SYSCONFIG.SUCCESS, {
       assignment_id: assignmentId,
       tour_details: {
         customer_name: tour.customer_name,
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
     // 🔥 LOG AUDIT ACTIVITY - FAILED ASSIGNMENT ATTEMPT
     if (auditLogger) {
       const requestBody = await request.json().catch(() => ({}));
-      await auditLogger.logCreate('assignment', assignmentId || 'unknown', null, {
+      await auditLogger.logCreate('assignment', assignmentId || 'unknown', null, SYSCONFIG.FAILED, {
         error: error.message,
         status: 'failed',
         attempted_tour_id: requestBody?.tour_id,
@@ -181,7 +181,7 @@ export async function PUT(request: NextRequest) {
     );
 
     // 🔥 LOG AUDIT ACTIVITY - ASSIGNMENT UPDATE
-    await auditLogger.logUpdate('assignment', assignment_id, oldAssignment, newAssignment, {
+    await auditLogger.logUpdate('assignment', assignment_id, oldAssignment, newAssignment, SYSCONFIG.SUCCESS, {
       change_type: 'driver_reassignment',
       old_driver_id: oldAssignment.driver_id,
       new_driver_id: new_driver_id
@@ -240,7 +240,7 @@ export async function DELETE(request: NextRequest) {
     await query("DELETE FROM assignments WHERE id = ?", [assignment_id]);
 
     // 🔥 LOG AUDIT ACTIVITY - ASSIGNMENT DELETION
-    await auditLogger.logDelete('assignment', assignment_id, assignmentToDelete, {
+    await auditLogger.logDelete('assignment', assignment_id, assignmentToDelete, SYSCONFIG.SUCCESS, {
       reason: 'manual_deletion',
       tour_id: assignmentToDelete.tour_id,
       driver_id: assignmentToDelete.driver_id

@@ -31,11 +31,19 @@ export const SYSCONFIG = {
   CANCELLED: 'Cancelled',
 
   SUCCESS: 'Success',
-  FAIL: 'Fail',
+  FAILED: 'Failed',
 
   DRIVER: 'driver',
   TOUR: 'tour',
   PAYMENT: 'payment',
   ACTIVITY_LOG: 'activity_log',
-  ALL: 'all'
+  ALL: 'all',
+
+  ENTITY_TYPE_ASSIGNMENT: 'assignment',
+  ENTITY_TYPE_TOUR: 'tour',
+  ENTITY_TYPE_DRIVER: 'driver',
+  ENTITY_TYPE_PAYMENT: 'payment',
+  ENTITY_TYPE_ACTIVITY_LOG: 'activity_log',
+  ENTITY_TYPE_LOGIN: 'login',
+  ENTITY_TYPE_USER: 'user',
 };

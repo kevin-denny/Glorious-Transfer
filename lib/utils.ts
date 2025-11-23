@@ -22,8 +22,9 @@ export const SYSCONFIG = {
   OPERATIONS: 'operations',
   FINANCE: 'finance',
 
-  ACTIVE: 'Active',
-  INACTIVE: 'Inactive',
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  DEACTIVE: 'deactive',
 
   PENDING: 'Pending',
   ASSIIGNED: 'Assigned',
@@ -48,4 +49,10 @@ export const SYSCONFIG = {
   ENTITY_TYPE_USER: 'user',
 
   IS_AUDIT_ENABLED: true,
+
+  MANUAL_USER_NAME: 'manualuser',
+  MANUAL_USER_ID: 'UMANUAL',
+  MANUAL_USER_ROLE: 'administrator',
+  MANUAL_USER_EMAIL: 'manualuser@glorioustransfer.com',
+  MANUAL_USER_PASSWORD: 'ChangeMe@123',
 };

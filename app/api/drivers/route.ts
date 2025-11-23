@@ -71,11 +71,14 @@ export async function POST(request: NextRequest) {
     const hasNextPage = page < totalPages;
     const hasPreviousPage = page > 1;
 
-    // 🔥 LOG AUDIT ACTIVITY - DRIVER LIST RETRIEVAL
-    await auditLogger.logReadMultiple(SYSCONFIG.ENTITY_TYPE_DRIVER, formattedDrivers.map(d => d.id), SYSCONFIG.SUCCESS, {
-      filter: searchTerm ? { searchTerm } : {},
-      result_count: formattedDrivers.length,
-    });
+    // avoid logging if searchTerm is not empty
+    if (searchTerm.trim().length === 1) {
+      // 🔥 LOG AUDIT ACTIVITY - DRIVER LIST RETRIEVAL
+      await auditLogger.logReadMultiple(SYSCONFIG.ENTITY_TYPE_DRIVER, formattedDrivers.map(d => d.id), SYSCONFIG.SUCCESS, {
+        filter: searchTerm ? { searchTerm } : {},
+        result_count: formattedDrivers.length,
+      });
+    }
 
     return NextResponse.json({
       data: formattedDrivers,

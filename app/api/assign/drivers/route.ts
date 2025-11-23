@@ -35,10 +35,10 @@ export async function GET(request: NextRequest) {
     }));
 
     // LOG AUDIT ACTIVITY - ACTIVE DRIVERS RETRIEVAL
-    await auditLogger.logReadMultiple(SYSCONFIG.ENTITY_TYPE_DRIVER, formattedDrivers.map(d => d.driver_id), SYSCONFIG.SUCCESS, {
-      filter: { status: SYSCONFIG.ACTIVE },
-      result_count: formattedDrivers.length,
-    });
+    // await auditLogger.logReadMultiple(SYSCONFIG.ENTITY_TYPE_DRIVER, formattedDrivers.map(d => d.driver_id), SYSCONFIG.SUCCESS, {
+    //   filter: { status: SYSCONFIG.ACTIVE },
+    //   result_count: formattedDrivers.length,
+    // });
 
     return NextResponse.json({
       data: formattedDrivers,

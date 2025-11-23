@@ -124,11 +124,14 @@ export async function POST(request: NextRequest) {
     const hasNextPage = page < totalPages;
     const hasPreviousPage = page > 1;
 
-    // 🔥 LOG AUDIT ACTIVITY - TOURS LIST RETRIEVAL
-    await auditLogger.logReadMultiple(SYSCONFIG.ENTITY_TYPE_TOUR, formattedTours.map(t => t.id), SYSCONFIG.SUCCESS, {
-      filter: searchTerm ? { searchTerm } : {},
-      result_count: formattedTours.length,
-    });
+    // avoid logging if searchTerm is not empty
+    if (searchTerm.trim().length === 1) {
+      // 🔥 LOG AUDIT ACTIVITY - TOURS LIST RETRIEVAL
+      await auditLogger.logReadMultiple(SYSCONFIG.ENTITY_TYPE_TOUR, formattedTours.map(t => t.id), SYSCONFIG.SUCCESS, {
+        filter: searchTerm ? { searchTerm } : {},
+        result_count: formattedTours.length,
+      });
+    }
 
     return NextResponse.json({
       data: formattedTours,

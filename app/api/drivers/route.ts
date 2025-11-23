@@ -40,8 +40,8 @@ export async function POST(request: NextRequest) {
     const totalResult = await queryOne<{ total: number }>(
       `SELECT COUNT(*) as total FROM drivers`
     );
-    const total = totalResult?.total || 0;
-
+    let total;
+    
     let drivers = [];
     if(searchTerm && searchTerm.trim().length > 0) {
       // Get search results
@@ -49,14 +49,16 @@ export async function POST(request: NextRequest) {
         `SELECT * FROM drivers 
         WHERE id LIKE ? OR name LIKE ? OR driver_number LIKE ?
         ORDER BY created_at DESC
-        LIMIT ${limit}`,
+        LIMIT ${limit} OFFSET ${offset}`,
         [`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`]
       ) as any[];
+      total = drivers.length;
     } else {
       // Get paginated drivers
       drivers = await query(
         `SELECT * FROM drivers ORDER BY created_at DESC LIMIT ${pageSize} OFFSET ${offset}`
       ) as any[];
+      total = totalResult?.total || 0;
     }
 
     // Format timestamps for all drivers

@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const totalResult = await queryOne<{ total: number }>(
       `SELECT COUNT(*) as total FROM tours`
     );
-    const total = totalResult?.total || 0;
+    let total;
 
     let tours = [];
     // Get paginated tours with assignment details
@@ -64,8 +64,9 @@ export async function POST(request: NextRequest) {
         LEFT JOIN drivers d ON a.driver_id = d.id
         WHERE t.id LIKE ? OR t.customer_name LIKE ?
         ORDER BY t.created_at DESC 
-        LIMIT ${limit}
+        LIMIT ${limit} OFFSET ${offset}
       `, [`%${searchTerm}%`, `%${searchTerm}%`])) as any[];
+      total = tours.length;
     } else {
       tours = (await query(`
         SELECT 
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
         ORDER BY t.created_at DESC 
         LIMIT ${pageSize} OFFSET ${offset}
       `)) as any[];
+      total = totalResult?.total || 0;
     }
 
     // Format timestamps and structure assignment data for all tours

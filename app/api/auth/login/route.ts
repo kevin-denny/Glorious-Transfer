@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     // check user status
     if (user.status !== SYSCONFIG.ACTIVE) {
       // 🔥 LOG AUDIT ACTIVITY - USER LOGIN FAILED DUE TO INACTIVE STATUS
-      await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_LOGIN, user.id, { email: user.email }, SYSCONFIG.FAILED, 'User inactive during login attempt');
+      await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_USER, user.id, { email: user.email }, SYSCONFIG.FAILED, 'User inactive during login attempt');
       return NextResponse.json({ message: 'User is not active' }, { status: 403 });
     }
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     );
 
     // 🔥 LOG AUDIT ACTIVITY - USER LOGIN
-    await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_LOGIN, user.id, { email: user.email }, SYSCONFIG.SUCCESS);
+    await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_USER, user.id, { email: user.email }, SYSCONFIG.SUCCESS);
 
     const token = generateToken({
       id: user.id,

@@ -4,7 +4,7 @@ import { getUserFromToken } from '@/lib/auth';
 import { formatToIST, SYSCONFIG } from '@/lib/utils';
 import { AuditLogger } from '@/lib/activity-logger.server';
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.substring(7);
@@ -21,16 +21,11 @@ export async function GET(request: NextRequest) {
       role: user.role,
     });
 
-    // Get query parameters
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '20');
-    const entity_type = searchParams.get('entity_type');
-    const action = searchParams.get('action');
-    const user_id = searchParams.get('user_id');
-    const entity_id = searchParams.get('entity_id');
-    const date_from = searchParams.get('date_from');
-    const date_to = searchParams.get('date_to');
+    // Get parameters from request body
+    const body = await request.json();
+    const page = parseInt(body.page || '1');
+    const pageSize = parseInt(body.pageSize || '20');
+    const searchTerm = body.searchTerm || '';
 
     // Validate pagination parameters
     if (page < 1 || pageSize < 1 || pageSize > 100) {
@@ -43,38 +38,13 @@ export async function GET(request: NextRequest) {
     // Calculate offset
     const offset = (page - 1) * pageSize;
 
-    // Build WHERE conditions
+    // Build WHERE conditions for search
     const whereConditions: string[] = [];
     const queryParams: any[] = [];
 
-    if (entity_type) {
-      whereConditions.push('entity_type = ?');
-      queryParams.push(entity_type);
-    }
-
-    if (action) {
-      whereConditions.push('action LIKE ?');
-      queryParams.push(`%${action}%`);
-    }
-
-    if (user_id) {
-      whereConditions.push('user_id = ?');
-      queryParams.push(user_id);
-    }
-
-    if (entity_id) {
-      whereConditions.push('entity_id = ?');
-      queryParams.push(entity_id);
-    }
-
-    if (date_from) {
-      whereConditions.push('DATE(created_at) >= ?');
-      queryParams.push(date_from);
-    }
-
-    if (date_to) {
-      whereConditions.push('DATE(created_at) <= ?');
-      queryParams.push(date_to);
+    if (searchTerm) {
+      whereConditions.push('(user_name LIKE ? OR action LIKE ? OR entity_type LIKE ? OR user_id LIKE ?)');
+      queryParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
     }
 
     const whereClause = whereConditions.length > 0 
@@ -122,12 +92,7 @@ export async function GET(request: NextRequest) {
         hasPreviousPage
       },
       filters: {
-        entity_type,
-        action,
-        user_id,
-        entity_id,
-        date_from,
-        date_to
+        searchTerm
       }
     });
 

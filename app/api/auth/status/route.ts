@@ -38,6 +38,13 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // can not activate or deactivate manual user
+    if (userid === SYSCONFIG.MANUAL_USER_ID && (status === 'active' || status === 'deactive')) {
+      return NextResponse.json({ 
+        message: 'Cannot activate or deactivate manual user' 
+      }, { status: 400 });
+    }
+
     // Validate status value
     const validStatuses = ['inactive', 'active', 'deactive'];
     if (!validStatuses.includes(status)) {

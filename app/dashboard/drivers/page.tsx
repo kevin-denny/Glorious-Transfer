@@ -106,30 +106,33 @@ export default function DriversPage() {
   }, [page, pageSize]);
 
   useEffect(() => {
-    const filtered = drivers.filter(
-      (driver) =>
-        driver.name.toLowerCase().includes(search.toLowerCase()) ||
-        driver.id.includes(search) ||
-        driver.vehicle_plate.includes(search)
-    );
-    setFilteredDrivers(filtered);
-  }, [search, drivers]);
+    // const filtered = drivers.filter(
+    //   (driver) =>
+    //     driver.name.toLowerCase().includes(search.toLowerCase()) ||
+    //     driver.id.includes(search) ||
+    //     driver.vehicle_plate.includes(search)
+    // );
+    // setFilteredDrivers(filtered);
+    fetchDrivers();
+  }, [search]);
 
   async function fetchDrivers() {
     setLoading(true);
     try {
       if (!token) throw new Error("No auth token found");
 
-      const response = await fetch(
-        `${getdrivers}?page=${page}&pageSize=${pageSize}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`${getdrivers}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          searchTerm: search,
+          page: page,
+          pageSize: pageSize,
+        }),
+      });
 
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);

@@ -120,29 +120,32 @@ export default function ToursPage() {
   }, []);
 
   useEffect(() => {
-    const filtered = tours.filter(
-      (tour) =>
-        // tour.booking_ref.toLowerCase().includes(search.toLowerCase()) ||
-        tour.customer_name.includes(search) || tour.agent.includes(search)
-    );
-    setFilteredTours(filtered);
-  }, [search, tours]);
+    // const filtered = tours.filter(
+    //   (tour) =>
+    //     // tour.booking_ref.toLowerCase().includes(search.toLowerCase()) ||
+    //     tour.customer_name.includes(search) || tour.agent.includes(search)
+    // );
+    // setFilteredTours(filtered);
+    fetchTours();
+  }, [search]);
 
   async function fetchTours() {
     setLoading(true);
     try {
       if (!token) throw new Error("No auth token found");
 
-      const response = await fetch(
-        `${gettours}?page=${page}&pageSize=${pageSize}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`${gettours}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          searchTerm: search,
+          page: page,
+          pageSize: pageSize,
+        }),
+      });
 
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);

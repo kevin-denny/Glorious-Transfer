@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const { email, password } = await request.json();
 
     const user = await queryOne<any>(
-      `SELECT u.id, u.email, u.encrypted_password, p.full_name, p.role 
+      `SELECT u.id, u.email, u.encrypted_password, p.full_name, p.role, u.status
        FROM auth_users u 
        JOIN profiles p ON u.id = p.id 
        WHERE u.email = ?`,
@@ -26,6 +26,19 @@ export async function POST(request: NextRequest) {
       name: user.full_name || user.email,
       role: user.role,
     });
+
+    // check user status
+    if (user.status !== SYSCONFIG.ACTIVE) {
+      // 🔥 LOG AUDIT ACTIVITY - USER LOGIN FAILED DUE TO INACTIVE STATUS
+      await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_LOGIN, user.id, { email: user.email }, SYSCONFIG.FAILED, 'User inactive during login attempt');
+      return NextResponse.json({ message: 'User is not active' }, { status: 403 });
+    }
+
+    // update last_login timestamp
+    await queryOne(
+      `UPDATE auth_users SET last_login_at = NOW() WHERE id = ?`,
+      [user.id]
+    );
 
     // 🔥 LOG AUDIT ACTIVITY - USER LOGIN
     await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_LOGIN, user.id, { email: user.email }, SYSCONFIG.SUCCESS);

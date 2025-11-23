@@ -24,3 +24,8 @@ ADD COLUMN last_login_at TIMESTAMP;
 
 ALTER TABLE activity_logs
 ADD COLUMN status VARCHAR(50);
+
+-- 23-11-2025
+
+ALTER TABLE auth_users
+ADD COLUMN status ENUM('inactive', 'active', 'deactive') DEFAULT 'inactive';

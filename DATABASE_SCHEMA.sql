@@ -13,8 +13,10 @@ CREATE TABLE auth_users (
   encrypted_password VARCHAR(255) NOT NULL,
   email_confirmed_at TIMESTAMP NULL,
   raw_user_meta_data JSON,
+  status ENUM('inactive', 'active', 'deactive') DEFAULT 'inactive',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  last_login_at TIMESTAMP,
   INDEX idx_email (email)
 ) ENGINE=InnoDB;
 
@@ -66,6 +68,7 @@ CREATE TABLE tours (
   arrival_datetime TIMESTAMP NOT NULL,
   departure_datetime TIMESTAMP NOT NULL,
   flight_no VARCHAR(50),
+  flight_time TIME,
   remarks TEXT,
   status VARCHAR(50) NOT NULL DEFAULT 'Pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -114,6 +117,7 @@ CREATE TABLE activity_logs (
   entity_id CHAR(36),
   details JSON,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  status VARCHAR(50),
   FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE SET NULL,
   INDEX idx_user_id (user_id),
   INDEX idx_entity_type (entity_type),

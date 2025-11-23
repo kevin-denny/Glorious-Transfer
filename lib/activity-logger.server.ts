@@ -78,6 +78,26 @@ export class AuditLogger {
   }
 
   /**
+   * Log Login operation
+   */
+  async logLogin(status?: string, additionalDetails?: any) {
+    await logAuditActivity(
+      {
+        user_id: this.user.id,
+        user_name: this.user.name,
+        user_role: this.user.role,
+        action: 'USER_LOGIN',
+        entity_type: SYSCONFIG.ENTITY_TYPE_USER,
+        entity_id: this.user.id,
+        status
+      },
+      {
+        additionalDetails
+      }
+    );
+  }
+
+  /**
    * Log CREATE operation
    */
   async logCreate(entity_type: string, entity_id: string, newData: any, status: string, additionalDetails?: any) {

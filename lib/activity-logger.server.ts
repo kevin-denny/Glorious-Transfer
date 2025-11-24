@@ -122,43 +122,43 @@ export class AuditLogger {
    * Log READ operation
    */
   async logRead(entity_type: string, entity_id?: string, status?: string, additionalDetails?: any) {
-    await logAuditActivity(
-      {
-        user_id: this.user.id,
-        user_name: this.user.name,
-        user_role: this.user.role,
-        action: `READ_${entity_type.toUpperCase()}`,
-        entity_type,
-        entity_id,
-        status
-      },
-      {
-        additionalDetails
-      }
-    );
+    // await logAuditActivity(
+    //   {
+    //     user_id: this.user.id,
+    //     user_name: this.user.name,
+    //     user_role: this.user.role,
+    //     action: `READ_${entity_type.toUpperCase()}`,
+    //     entity_type,
+    //     entity_id,
+    //     status
+    //   },
+    //   {
+    //     additionalDetails
+    //   }
+    // );
   }
 
   /**
    * Log Read Multiple operation
    */
   async logReadMultiple(entity_type: string, entity_ids: string[], status?: string, additionalDetails?: any) {
-    await logAuditActivity(
-      {
-        user_id: this.user.id,
-        user_name: this.user.name,
-        user_role: this.user.role,
-        action: `READ_MULTIPLE_${entity_type.toUpperCase()}`,
-        entity_type,
-        entity_id: null,
-        status
-      },
-      {
-        additionalDetails: {
-          entity_ids,
-          ...additionalDetails
-        }
-      }
-    );
+    // await logAuditActivity(
+    //   {
+    //     user_id: this.user.id,
+    //     user_name: this.user.name,
+    //     user_role: this.user.role,
+    //     action: `READ_MULTIPLE_${entity_type.toUpperCase()}`,
+    //     entity_type,
+    //     entity_id: null,
+    //     status
+    //   },
+    //   {
+    //     additionalDetails: {
+    //       entity_ids,
+    //       ...additionalDetails
+    //     }
+    //   }
+    // );
   }
 
   /**

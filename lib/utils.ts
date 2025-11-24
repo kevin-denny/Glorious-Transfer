@@ -22,9 +22,9 @@ export const SYSCONFIG = {
   OPERATIONS: 'operations',
   FINANCE: 'finance',
 
-  ACTIVE: 'active',
-  INACTIVE: 'inactive',
-  DEACTIVE: 'deactive',
+  ACTIVE: 'Active',
+  INACTIVE: 'Inactive',
+  DEACTIVE: 'Deactive',
 
   PENDING: 'Pending',
   ASSIIGNED: 'Assigned',

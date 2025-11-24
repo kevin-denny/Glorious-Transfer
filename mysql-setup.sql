@@ -29,3 +29,14 @@ ADD COLUMN status VARCHAR(50);
 
 ALTER TABLE auth_users
 ADD COLUMN status ENUM('inactive', 'active', 'deactive') DEFAULT 'inactive';
+
+-- 24-11-2025
+
+ALTER TABLE auth_users
+MODIFY COLUMN status ENUM('Inactive', 'Active', 'Deactive') DEFAULT 'Inactive';
+
+UPDATE auth_users
+SET status='Inactive' WHERE status = 'inactive';
+
+UPDATE auth_users
+SET status='Active' WHERE status = 'active';

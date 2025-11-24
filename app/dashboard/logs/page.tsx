@@ -183,7 +183,7 @@ export default function ActivityLogsPage() {
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Log Details:{selectedLog?.id}</DialogTitle>
+            <DialogTitle>Log Details</DialogTitle>
           </DialogHeader>
           {selectedLog && (
             <div className="space-y-6">
@@ -203,6 +203,10 @@ export default function ActivityLogsPage() {
                 <div>
                   <Label className="text-gray-500">Action</Label>
                   <p className="font-medium">{selectedLog.action}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Effected ID</Label>
+                  <p className="font-medium">{selectedLog.entity_id}</p>
                 </div>
                 <div>
                   <Label className="text-gray-500">Status</Label>

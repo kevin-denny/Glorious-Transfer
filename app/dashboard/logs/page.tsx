@@ -62,28 +62,8 @@ export default function ActivityLogsPage() {
   }, [page, pageSize]);
 
   useEffect(() => {
-    let filtered = logs;
-
-    // if (filterAction !== "all") {
-    //   filtered = filtered.filter((log) => log.action === filterAction);
-    // }
-
-    // if (filterTable !== "all") {
-    //   filtered = filtered.filter((log) => log.table_name === filterTable);
-    // }
-
-    // if (search) {
-    //   filtered = filtered.filter(
-    //     (log) =>
-    //       log.profiles?.full_name
-    //         .toLowerCase()
-    //         .includes(search.toLowerCase()) ||
-    //       log.table_name.toLowerCase().includes(search.toLowerCase())
-    //   );
-    // }
-
-    setFilteredLogs(filtered);
-  }, [search, filterAction, filterTable, logs]);
+    fetchLogs();
+  }, [search]);
 
   async function fetchLogs() {
     setLoading(true);
@@ -109,6 +89,9 @@ export default function ActivityLogsPage() {
       const res = await response.json();
       setLogs(res.data || []);
       setFilteredLogs(res.data || []);
+
+      // Save pagination info
+      setPagination(res.pagination);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -125,25 +108,6 @@ export default function ActivityLogsPage() {
     fetchLogs();
     setDetailsOpen(true);
   }
-
-  const getActionColor = (action: string) => {
-    switch (action) {
-      case "create":
-        return "bg-green-100 text-green-800";
-      case "read":
-        return "bg-blue-100 text-blue-800";
-      case "update":
-        return "bg-orange-100 text-orange-800";
-      case "delete":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  // const uniqueTables = Array.from(
-  //   new Set(logs.map((log) => log.table_name))
-  // ).sort();
 
   const columns = [
     {
@@ -219,7 +183,7 @@ export default function ActivityLogsPage() {
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Log Details:{selectedLog?.id}</DialogTitle>
+            <DialogTitle>Log Details</DialogTitle>
           </DialogHeader>
           {selectedLog && (
             <div className="space-y-6">
@@ -239,6 +203,10 @@ export default function ActivityLogsPage() {
                 <div>
                   <Label className="text-gray-500">Action</Label>
                   <p className="font-medium">{selectedLog.action}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Effected ID</Label>
+                  <p className="font-medium">{selectedLog.entity_id}</p>
                 </div>
                 <div>
                   <Label className="text-gray-500">Status</Label>

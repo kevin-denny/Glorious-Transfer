@@ -7,7 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
-import { Plus, Search, Edit, UserPlus, Eye, Trash } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Edit,
+  UserPlus,
+  Eye,
+  Trash,
+  Clipboard,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +36,12 @@ import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/lib/activity-logger";
 import DataTable from "@/components/ui/DataTable";
 import Swal from "sweetalert2";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Tour {
   id: string;
@@ -54,7 +68,9 @@ interface Driver {
   driver_id: string;
   name: string;
   driver_number: string;
+  phone: string;
   vehicle_type: string;
+  vehicle_number: string;
 }
 
 export default function ToursPage() {
@@ -858,7 +874,41 @@ export default function ToursPage() {
       <Dialog open={viewMode} onOpenChange={setViewMode}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Tour Details: {selectedTour?.id}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <span>Tour Details: {selectedTour?.id}</span>
+
+              {selectedTour && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center gap-1"
+                  onClick={() => {
+                    const textToCopy = `
+Booking Date: ${selectedTour.booking_date}
+Customer Name: ${selectedTour.customer_name}
+Pax: ${selectedTour.pax}
+Contact Details: ${selectedTour.contact_details}
+Arrival Date-Time: ${selectedTour.arrival_datetime}
+Departure Time: ${selectedTour.departure_datetime}
+Flight Number: ${selectedTour.flight_no ?? ""}
+Pickup: ${selectedTour.pickup ?? ""}
+Destination: ${selectedTour.destination ?? ""}
+Remarks: ${selectedTour.remarks ?? ""}
+        `.trim();
+
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                      toast({
+                        title: "Copied!",
+                        description: "Tour details copied to clipboard.",
+                      });
+                    });
+                  }}
+                >
+                  <Clipboard className="h-4 w-4" />
+                  Copy
+                </Button>
+              )}
+            </DialogTitle>
           </DialogHeader>
           {selectedTour && (
             <div className="space-y-6">
@@ -909,6 +959,59 @@ export default function ToursPage() {
                   <Label className="text-gray-500">Status</Label>
                   <p className="font-medium">{selectedTour.status}</p>
                 </div>
+                {selectedTour?.assignment && (
+                  <div>
+                    <div className="flex items-center gap-1">
+                      <Label className="text-gray-500">Driver</Label>
+
+                      {/* Copy Driver Details Button */}
+                      <TooltipProvider delayDuration={0}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => {
+                                const driver = selectedTour.assignment?.driver;
+                                const textToCopy = `
+Booking Date: ${selectedTour.booking_date}
+Driver Name: ${driver?.name ?? ""}
+Driver Contact: ${driver?.phone ?? ""}
+Vehicle Type: ${driver?.vehicle_type ?? ""}
+Vehicle Number: ${driver?.vehicle_number ?? ""}
+Arrival Date-Time: ${selectedTour.arrival_datetime}
+Departure Time: ${selectedTour.departure_datetime}
+Pickup: ${selectedTour.pickup ?? ""}
+Destination: ${selectedTour.destination ?? ""}
+          `.trim();
+
+                                navigator.clipboard
+                                  .writeText(textToCopy)
+                                  .then(() => {
+                                    toast({
+                                      title: "Copied!",
+                                      description:
+                                        "Driver details copied to clipboard.",
+                                    });
+                                  });
+                              }}
+                            >
+                              <Clipboard className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+
+                          <TooltipContent>Copy Driver Details</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+
+                    <p className="font-medium">
+                      {selectedTour.assignment.driver?.name}
+                    </p>
+                  </div>
+                )}
+
                 <div>
                   <Label className="text-gray-500">Remarks</Label>
                   <p className="font-medium">{selectedTour.remarks}</p>

@@ -40,3 +40,13 @@ SET status='Inactive' WHERE status = 'inactive';
 
 UPDATE auth_users
 SET status='Active' WHERE status = 'active';
+
+-- 25-11-2025
+
+ALTER TABLE `glorious_transfer`.`payments` 
+CHANGE COLUMN `status` `status` VARCHAR(50) NOT NULL DEFAULT 'Pending' ;
+
+ALTER TABLE payments
+ADD COLUMN paid_amount DECIMAL(10, 2),
+ADD COLUMN currency CHAR(10),
+ADD COLUMN type CHAR(50);

@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // Calculate offset
     const offset = (page - 1) * pageSize;
 
-    let whereClause = '1=1';
+    let whereClause = 'p.type = "tour_payment"';
     let queryParams: any[] = [];
 
     // Add tour filter if provided

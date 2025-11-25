@@ -47,23 +47,33 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     // Set paid_at timestamp if status is changing to Completed
-    const paid_at = (status === 'Completed' && existingPayment.status !== 'Completed') 
-      ? new Date().toISOString() 
-      : existingPayment.paid_at;
+    let paid_at = existingPayment.paid_at;
+    if (status === 'Completed' && existingPayment.status !== 'Completed') {
+      // Convert to MySQL datetime format (YYYY-MM-DD HH:MM:SS)
+      const now = new Date();
+      paid_at = now.toISOString().slice(0, 19).replace('T', ' ');
+    }
+
+    // Prepare update values, replacing undefined with existing values
+    const updateAmount = amount !== undefined ? amount : existingPayment.amount;
+    const updateStatus = status !== undefined ? status : existingPayment.status;
+    const updatePaidAmount = paid_amount !== undefined ? paid_amount : existingPayment.paid_amount;
+    const updateCurrency = currency !== undefined ? currency : existingPayment.currency;
+    const updateType = type !== undefined ? type : existingPayment.type;
 
     // Update payment
     await query(
       `UPDATE payments SET 
-        amount = COALESCE(?, amount),
-        status = COALESCE(?, status),
-        paid_amount = COALESCE(?, paid_amount),
-        currency = COALESCE(?, currency),
-        type = COALESCE(?, type),
+        amount = ?,
+        status = ?,
+        paid_amount = ?,
+        currency = ?,
+        type = ?,
         paid_at = ?,
         updated_by = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?`,
-      [amount, status, paid_amount, currency, type, paid_at, user.id, paymentId]
+      [updateAmount, updateStatus, updatePaidAmount, updateCurrency, updateType, paid_at, user.id, paymentId]
     );
 
     // Get updated payment with related data

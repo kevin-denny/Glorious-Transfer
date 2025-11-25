@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // Calculate offset
     const offset = (page - 1) * pageSize;
 
-    let whereClause = '1=1';
+    let whereClause = 'p.type = "driver_payment"';
     let queryParams: any[] = [];
 
     // Add driver filter if provided

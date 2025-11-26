@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
-import { Plus, Search, Check, DollarSign } from "lucide-react";
+import { Plus, Search, Check, DollarSign, Eye, Edit, Trash } from "lucide-react";
 
 import {
   Dialog,
@@ -32,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/lib/activity-logger";
 import { currencyList } from "@/lib/utils";
+import DataTable from "@/components/ui/DataTable";
 
 // Interfaces
 interface DriverPayment {
@@ -74,6 +75,7 @@ interface Tour {
   client_name: string;
   value: string;
   label: string;
+  status: string;
 }
 
 export default function PaymentsPage() {
@@ -346,7 +348,7 @@ export default function PaymentsPage() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            driver_id: formData.driver_id,
+            driver_id: "--",
             tour_id: formData.tour_id,
             amount: formData.amount,
             currency: formData.currency,
@@ -451,6 +453,69 @@ export default function PaymentsPage() {
     .filter((p) => p.status === "paid")
     .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
 
+      const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "Assigned":
+        return "bg-blue-100 text-blue-800";
+      case "Completed":
+        return "bg-green-100 text-green-800";
+      case "Cancelled":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const tourcolumns = [
+    {
+      key: "name",
+      label: "Tour",
+    },
+    {
+      key: "amount",
+      label: "Amount",
+    },
+
+    {
+      key: "created_at",
+      label: "Payment Date",
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (row: Tour) => (
+        <Badge className={getStatusColor(row.status)}>{row.status}</Badge>
+      ),
+    },
+  ];
+  const drivercolumns = [
+    {
+      key: "name",
+      label: "Driver",
+    },
+    {
+      key: "amount",
+      label: "Amount",
+    },
+
+    {
+      key: "created_at",
+      label: "Payment Date",
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (row: Tour) => (
+        <Badge className={getStatusColor(row.status)}>{row.status}</Badge>
+      ),
+    },
+  ];
+
+
+
+
   // -------------------------
   // MAIN RENDER
   // -------------------------
@@ -535,15 +600,7 @@ export default function PaymentsPage() {
                       </Select>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Notes</Label>
-                      <Textarea
-                        value={formData.notes}
-                        onChange={(e) =>
-                          setFormData({ ...formData, notes: e.target.value })
-                        }
-                      />
-                    </div>
+                 
 
                     <div className="flex justify-end gap-2">
                       <Button
@@ -620,101 +677,48 @@ export default function PaymentsPage() {
             </div>
 
             {/* Table */}
-            {/* <Card className="mt-6">
-              <CardHeader>
-                <div className="flex gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 text-gray-400" />
-                    <Input
-                      placeholder="Search drivers..."
-                      className="pl-10"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                    />
-                  </div>
 
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="paid">Paid</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-
-              <CardContent>
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b text-left text-sm text-gray-500">
-                      <th className="pb-3 font-medium">Driver</th>
-                      <th className="pb-3 font-medium">Amount</th>
-                      <th className="pb-3 font-medium">Status</th>
-                      <th className="pb-3 font-medium">Payment Date</th>
-                      <th className="pb-3 font-medium">Notes</th>
-                      <th className="pb-3 font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredDriverPayments.map((p) => (
-                      <tr key={p.id} className="border-b">
-                        <td className="py-4">
-                          <p className="font-medium">{p.drivers.name}</p>
-                          <p className="text-xs text-gray-500">
-                            {p.drivers.driver_number}
-                          </p>
-                        </td>
-
-                        <td className="py-4 font-mono">
-                          ${parseFloat(p.amount.toString()).toFixed(2)}
-                        </td>
-
-                        <td className="py-4">
-                          <Badge
-                            className={
-                              p.status === "paid"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-orange-100 text-orange-800"
-                            }
+                  <DataTable
+                      columns={drivercolumns}
+                      data={filteredDrivers}
+                      searchValue={searchDriver}
+                      onSearchChange={setSearchDriver}
+                      pagination={paginationDriver}
+                      pageSize={pageSizeDriver}
+                      onPageChange={setPageDriver}
+                      onPageSizeChange={(size) => {
+                        setPageSizeDriver(size);
+                        setPageDriver(1);
+                      }}
+                      renderActions={(tour: Tour) => (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            // onClick={() => handleView(tour)}
                           >
-                            {p.status}
-                          </Badge>
-                        </td>
-
-                        <td className="py-4 text-sm">
-                          {p.payment_date
-                            ? new Date(p.payment_date).toLocaleDateString()
-                            : "-"}
-                        </td>
-
-                        <td className="py-4 text-sm">{p.notes || "-"}</td>
-
-                        <td className="py-4">
-                          {p.status === "pending" && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleMarkAsPaid(p)}
-                            >
-                              <Check className="h-4 w-4 mr-2" />
-                              Mark Paid
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {filteredDriverPayments.length === 0 && (
-                  <div className="py-12 text-center text-gray-500">
-                    No payments found
-                  </div>
-                )}
-              </CardContent>
-            </Card> */}
+                            <Eye className="h-4 w-4" />
+                          </Button>
+            
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            // onClick={() => handleEdit(tour)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+            
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            // onClick={() => handleDelete(tour.id)}
+                          >
+                            <Trash className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      )}
+                    />
+        
           </TabsContent>
 
           {/* ==================================
@@ -788,16 +792,7 @@ export default function PaymentsPage() {
                       </Select>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Notes</Label>
-                      <Textarea
-                        value={formData.notes}
-                        onChange={(e) =>
-                          setFormData({ ...formData, notes: e.target.value })
-                        }
-                      />
-                    </div>
-
+                  
                     <div className="flex justify-end gap-2">
                       <Button
                         type="button"
@@ -870,101 +865,46 @@ export default function PaymentsPage() {
             </div>
 
             {/* Table */}
-            {/* <Card className="mt-6">
-              <CardHeader>
-                <div className="flex gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 text-gray-400" />
-                    <Input
-                      placeholder="Search tours..."
-                      className="pl-10"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                    />
-                  </div>
-
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="paid">Paid</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-
-              <CardContent>
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b text-left text-sm text-gray-500">
-                      <th className="pb-3 font-medium">Tour</th>
-                      <th className="pb-3 font-medium">Amount</th>
-                      <th className="pb-3 font-medium">Status</th>
-                      <th className="pb-3 font-medium">Payment Date</th>
-                      <th className="pb-3 font-medium">Notes</th>
-                      <th className="pb-3 font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTourPayments.map((p) => (
-                      <tr key={p.id} className="border-b">
-                        <td className="py-4">
-                          <p className="font-medium">{p.tours.booking_ref}</p>
-                          <p className="text-xs text-gray-500">
-                            {p.tours.client_name}
-                          </p>
-                        </td>
-
-                        <td className="py-4 font-mono">
-                          ${parseFloat(p.amount.toString()).toFixed(2)}
-                        </td>
-
-                        <td className="py-4">
-                          <Badge
-                            className={
-                              p.status === "paid"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-orange-100 text-orange-800"
-                            }
+                     <DataTable
+                      columns={tourcolumns}
+                      data={filteredTours}
+                      searchValue={searchTour}
+                      onSearchChange={setSearchTour}
+                      pagination={paginationTour}
+                      pageSize={pageSizeTour}
+                      onPageChange={setPageTour}
+                      onPageSizeChange={(size) => {
+                        setPageSizeTour(size);
+                        setPageTour(1);
+                      }}
+                      renderActions={(tour: Tour) => (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            // onClick={() => handleView(tour)}
                           >
-                            {p.status}
-                          </Badge>
-                        </td>
-
-                        <td className="py-4 text-sm">
-                          {p.payment_date
-                            ? new Date(p.payment_date).toLocaleDateString()
-                            : "-"}
-                        </td>
-
-                        <td className="py-4 text-sm">{p.notes || "-"}</td>
-
-                        <td className="py-4">
-                          {p.status === "pending" && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleMarkAsPaid(p)}
-                            >
-                              <Check className="h-4 w-4 mr-2" />
-                              Mark Paid
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {filteredTourPayments.length === 0 && (
-                  <div className="py-12 text-center text-gray-500">
-                    No payments found
-                  </div>
-                )}
-              </CardContent>
-            </Card> */}
+                            <Eye className="h-4 w-4" />
+                          </Button>
+            
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            // onClick={() => handleEdit(tour)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+            
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            // onClick={() => handleDelete(tour.id)}
+                          >
+                            <Trash className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      )}
+                    />
           </TabsContent>
         </Tabs>
       </div>

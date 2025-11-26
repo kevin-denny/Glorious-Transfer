@@ -50,3 +50,11 @@ ALTER TABLE payments
 ADD COLUMN paid_amount DECIMAL(10, 2),
 ADD COLUMN currency CHAR(10),
 ADD COLUMN type CHAR(50);
+
+-- 26-11-2025
+
+ALTER TABLE payments 
+DROP FOREIGN KEY payments_ibfk_1;
+
+ALTER TABLE payments 
+DROP INDEX idx_driver_id;

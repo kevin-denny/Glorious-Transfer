@@ -95,10 +95,8 @@ CREATE TABLE payments (
   paid_amount DECIMAL(10, 2),
   currency CHAR(10),
   type CHAR(50),
-  FOREIGN KEY (driver_id) REFERENCES drivers(id) ON DELETE CASCADE,
   FOREIGN KEY (tour_id) REFERENCES tours(id) ON DELETE CASCADE,
   FOREIGN KEY (updated_by) REFERENCES auth_users(id) ON DELETE SET NULL,
-  INDEX idx_driver_id (driver_id),
   INDEX idx_tour_id (tour_id),
   INDEX idx_status (status),
   INDEX idx_paid_at (paid_at)

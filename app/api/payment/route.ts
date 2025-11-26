@@ -127,53 +127,11 @@ export async function POST(request: NextRequest) {
     let driver: any = null;
 
     // Validate required fields
-    if (!body.type) {
-        return NextResponse.json(
-            { message: 'Payment type is required' },
-            { status: 400 }
-        );
-    } else {
-        const validTypes = ['tour_payment', 'driver_payment'];
-        if (!validTypes.includes(body.type)) {
-            return NextResponse.json(
-                { message: 'Invalid payment type. Must be: tour_payment or driver_payment' },
-                { status: 400 }
-            );
-        } else {
-            if (body.type === 'tour_payment' && !body.tour_id) {
-                return NextResponse.json(
-                    { message: 'tour_id is required for tour_payment type' },
-                    { status: 400 }
-                );
-            }
-            if (body.type === 'driver_payment' && !body.driver_id) {
-                // tour_id is required for driver_payment type
-                if (!body.tour_id) {
-                    return NextResponse.json(
-                        { message: 'tour_id is required for driver_payment type' },
-                        { status: 400 }
-                    );
-                }
-                // Verify driver exists
-                driver = await queryOne(
-                    'SELECT id, name FROM drivers WHERE id = ?',
-                    [body.driver_id]
-                );
-  
-                if (!driver) {
-                    return NextResponse.json(
-                        { message: 'Driver not found' },
-                        { status: 404 }
-                    );
-                }
-            }
-        }
-    }
-    if (!body.amount) {
-        return NextResponse.json(
-            { message: 'Amount is required' },
-            { status: 400 }
-        );
+    if (!body.tour_id || !body.amount || !body.type) {
+      return NextResponse.json(
+        { message: 'Missing required fields: tour_id, amount, type' },
+        { status: 400 }
+      );
     }
 
     // Validate amount
@@ -182,6 +140,38 @@ export async function POST(request: NextRequest) {
         { message: 'Amount must be greater than 0' },
         { status: 400 }
       );
+    }
+
+    // Validate type
+    const validTypes = ['tour_payment', 'driver_payment'];
+    if (!validTypes.includes(body.type)) {
+      return NextResponse.json(
+        { message: 'Invalid payment type. Must be: tour_payment or driver_payment' },
+        { status: 400 }
+      );
+    }
+
+    // Only validate driver_id for driver_payment type
+    if (body.type === 'driver_payment') {
+      if (!body.driver_id) {
+        return NextResponse.json(
+          { message: 'driver_id is required for driver_payment type' },
+          { status: 400 }
+        );
+      }
+
+      // Verify driver exists
+      driver = await queryOne(
+        'SELECT id, name FROM drivers WHERE id = ?',
+        [body.driver_id]
+      );
+
+      if (!driver) {
+        return NextResponse.json(
+          { message: 'Driver not found' },
+          { status: 404 }
+        );
+      }
     }
 
     // Verify tour exists
@@ -197,15 +187,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if payment already exists for this tour-driver-type combination
-    const existingPayment = await queryOne(
-      'SELECT id FROM payments WHERE driver_id = ? AND tour_id = ? AND type = ?',
-      [body.driver_id, body.tour_id, body.type]
-    );
+    // For tour_payment, check if payment already exists for this tour-type combination
+    // For driver_payment, check if payment already exists for this tour-driver-type combination
+    let existingPaymentQuery;
+    let existingPaymentParams;
+
+    if (body.type === 'tour_payment') {
+      existingPaymentQuery = 'SELECT id FROM payments WHERE tour_id = ? AND type = ?';
+      existingPaymentParams = [body.tour_id, body.type];
+    } else {
+      existingPaymentQuery = 'SELECT id FROM payments WHERE driver_id = ? AND tour_id = ? AND type = ?';
+      existingPaymentParams = [body.driver_id, body.tour_id, body.type];
+    }
+
+    const existingPayment = await queryOne(existingPaymentQuery, existingPaymentParams);
 
     if (existingPayment) {
       return NextResponse.json(
-        { message: `Payment of type '${body.type}' already exists for this tour-driver combination` },
+        { message: `Payment of type '${body.type}' already exists for this ${body.type === 'tour_payment' ? 'tour' : 'tour-driver combination'}` },
         { status: 409 }
       );
     }
@@ -213,7 +212,7 @@ export async function POST(request: NextRequest) {
     // Generate unique payment ID
     const paymentId = await generateUniquePaymentId();
 
-    // Insert payment
+    // Insert payment (driver_id can be null for tour_payment)
     await query(
       `INSERT INTO payments (
         id, driver_id, tour_id, amount, currency, type, 
@@ -221,7 +220,7 @@ export async function POST(request: NextRequest) {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         paymentId,
-        body.driver_id,
+        body.driver_id || null, // null for tour_payment
         body.tour_id,
         body.amount,
         body.currency || 'USD',
@@ -244,23 +243,16 @@ export async function POST(request: NextRequest) {
       [paymentId]
     );
 
-    if(body.type === 'driver_payment') {
-        // 🔥 LOG AUDIT ACTIVITY - PAYMENT CREATION
-        await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_PAYMENT, payment.id, payment, SYSCONFIG.SUCCESS, {
-            change_type: 'payment_creation',
-            driver_id: body.driver_id,
-            driver_name: driver.name,
-            customer_name: tour.customer_name
-        });
-    } else {
-        // 🔥 LOG AUDIT ACTIVITY - PAYMENT CREATION
-        await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_PAYMENT, payment.id, payment, SYSCONFIG.SUCCESS, {
-            change_type: 'payment_creation',
-            tour_id: tour.id,
-            customer_name: tour.customer_name
-        });
-    }
+    // 🔥 LOG AUDIT ACTIVITY - PAYMENT CREATION
+    const auditData = {
+      change_type: 'payment_creation',
+      tour_id: tour.id,
+      customer_name: tour.customer_name,
+      driver_id: body.driver_id || null,
+      driver_name: driver ? driver.name : null
+    };
 
+    await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_PAYMENT, payment.id, payment, SYSCONFIG.SUCCESS, auditData);
 
     return NextResponse.json(
       {

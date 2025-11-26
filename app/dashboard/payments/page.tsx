@@ -7,7 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
-import { Plus, Search, Check, DollarSign, Eye, Edit, Trash } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Check,
+  DollarSign,
+  Eye,
+  Edit,
+  Trash,
+} from "lucide-react";
 
 import {
   Dialog,
@@ -65,6 +73,7 @@ interface TourPayment {
 
 interface Driver {
   id: string;
+  driver_id: string;
   name: string;
   driver_number: string;
 }
@@ -145,6 +154,10 @@ export default function PaymentsPage() {
     hasNextPage: false,
     hasPreviousPage: false,
   });
+
+  useEffect(() => {
+    resetForm();
+  }, [activeTab]);
 
   useEffect(() => {
     fetchTourPayments();
@@ -453,7 +466,7 @@ export default function PaymentsPage() {
     .filter((p) => p.status === "paid")
     .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
 
-      const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case "Pending":
         return "bg-yellow-100 text-yellow-800";
@@ -470,8 +483,12 @@ export default function PaymentsPage() {
 
   const tourcolumns = [
     {
-      key: "name",
+      key: "tour_id",
       label: "Tour",
+    },
+    {
+      key: "customer_name",
+      label: "Customer Name",
     },
     {
       key: "amount",
@@ -492,7 +509,7 @@ export default function PaymentsPage() {
   ];
   const drivercolumns = [
     {
-      key: "name",
+      key: "driver_name",
       label: "Driver",
     },
     {
@@ -512,9 +529,6 @@ export default function PaymentsPage() {
       ),
     },
   ];
-
-
-
 
   // -------------------------
   // MAIN RENDER
@@ -560,14 +574,33 @@ export default function PaymentsPage() {
                         </SelectTrigger>
                         <SelectContent>
                           {drivers.map((d) => (
-                            <SelectItem key={d.id} value={d.id}>
+                            <SelectItem key={d.driver_id} value={d.driver_id}>
                               {d.name} — {d.driver_number}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-
+                    <div className="space-y-2">
+                      <Label>Tour</Label>
+                      <Select
+                        value={formData.tour_id}
+                        onValueChange={(v) =>
+                          setFormData({ ...formData, tour_id: v })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select tour" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {tours.map((t) => (
+                            <SelectItem key={t.value} value={t.value}>
+                              {t.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="space-y-2">
                       <Label>Amount</Label>
                       <Input
@@ -599,8 +632,6 @@ export default function PaymentsPage() {
                         </SelectContent>
                       </Select>
                     </div>
-
-                 
 
                     <div className="flex justify-end gap-2">
                       <Button
@@ -678,47 +709,46 @@ export default function PaymentsPage() {
 
             {/* Table */}
 
-                  <DataTable
-                      columns={drivercolumns}
-                      data={filteredDrivers}
-                      searchValue={searchDriver}
-                      onSearchChange={setSearchDriver}
-                      pagination={paginationDriver}
-                      pageSize={pageSizeDriver}
-                      onPageChange={setPageDriver}
-                      onPageSizeChange={(size) => {
-                        setPageSizeDriver(size);
-                        setPageDriver(1);
-                      }}
-                      renderActions={(tour: Tour) => (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            // onClick={() => handleView(tour)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-            
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            // onClick={() => handleEdit(tour)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-            
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            // onClick={() => handleDelete(tour.id)}
-                          >
-                            <Trash className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      )}
-                    />
-        
+            <DataTable
+              columns={drivercolumns}
+              data={filteredDrivers}
+              searchValue={searchDriver}
+              onSearchChange={setSearchDriver}
+              pagination={paginationDriver}
+              pageSize={pageSizeDriver}
+              onPageChange={setPageDriver}
+              onPageSizeChange={(size) => {
+                setPageSizeDriver(size);
+                setPageDriver(1);
+              }}
+              renderActions={(tour: Tour) => (
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    // onClick={() => handleView(tour)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    // onClick={() => handleEdit(tour)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    // onClick={() => handleDelete(tour.id)}
+                  >
+                    <Trash className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              )}
+            />
           </TabsContent>
 
           {/* ==================================
@@ -792,7 +822,6 @@ export default function PaymentsPage() {
                       </Select>
                     </div>
 
-                  
                     <div className="flex justify-end gap-2">
                       <Button
                         type="button"
@@ -865,46 +894,46 @@ export default function PaymentsPage() {
             </div>
 
             {/* Table */}
-                     <DataTable
-                      columns={tourcolumns}
-                      data={filteredTours}
-                      searchValue={searchTour}
-                      onSearchChange={setSearchTour}
-                      pagination={paginationTour}
-                      pageSize={pageSizeTour}
-                      onPageChange={setPageTour}
-                      onPageSizeChange={(size) => {
-                        setPageSizeTour(size);
-                        setPageTour(1);
-                      }}
-                      renderActions={(tour: Tour) => (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            // onClick={() => handleView(tour)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-            
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            // onClick={() => handleEdit(tour)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-            
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            // onClick={() => handleDelete(tour.id)}
-                          >
-                            <Trash className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      )}
-                    />
+            <DataTable
+              columns={tourcolumns}
+              data={filteredTours}
+              searchValue={searchTour}
+              onSearchChange={setSearchTour}
+              pagination={paginationTour}
+              pageSize={pageSizeTour}
+              onPageChange={setPageTour}
+              onPageSizeChange={(size) => {
+                setPageSizeTour(size);
+                setPageTour(1);
+              }}
+              renderActions={(tour: Tour) => (
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    // onClick={() => handleView(tour)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    // onClick={() => handleEdit(tour)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    // onClick={() => handleDelete(tour.id)}
+                  >
+                    <Trash className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              )}
+            />
           </TabsContent>
         </Tabs>
       </div>

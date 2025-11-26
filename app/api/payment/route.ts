@@ -124,6 +124,7 @@ export async function POST(request: NextRequest) {
     });
 
     const body: CreatePaymentRequest = await request.json();
+    let driver: any = null;
 
     // Validate required fields
     if (!body.type) {
@@ -153,6 +154,18 @@ export async function POST(request: NextRequest) {
                         { status: 400 }
                     );
                 }
+                // Verify driver exists
+                driver = await queryOne(
+                    'SELECT id, name FROM drivers WHERE id = ?',
+                    [body.driver_id]
+                );
+  
+                if (!driver) {
+                    return NextResponse.json(
+                        { message: 'Driver not found' },
+                        { status: 404 }
+                    );
+                }
             }
         }
     }
@@ -168,19 +181,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { message: 'Amount must be greater than 0' },
         { status: 400 }
-      );
-    }
-
-    // Verify driver exists
-    const driver = await queryOne(
-      'SELECT id, name FROM drivers WHERE id = ?',
-      [body.driver_id]
-    );
-
-    if (!driver) {
-      return NextResponse.json(
-        { message: 'Driver not found' },
-        { status: 404 }
       );
     }
 
@@ -244,12 +244,23 @@ export async function POST(request: NextRequest) {
       [paymentId]
     );
 
-    // 🔥 LOG AUDIT ACTIVITY - PAYMENT CREATION
-    await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_PAYMENT, payment.id, payment, SYSCONFIG.SUCCESS, {
-      change_type: 'payment_creation',
-      driver_name: driver.name,
-      customer_name: tour.customer_name
-    });
+    if(body.type === 'driver_payment') {
+        // 🔥 LOG AUDIT ACTIVITY - PAYMENT CREATION
+        await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_PAYMENT, payment.id, payment, SYSCONFIG.SUCCESS, {
+            change_type: 'payment_creation',
+            driver_id: body.driver_id,
+            driver_name: driver.name,
+            customer_name: tour.customer_name
+        });
+    } else {
+        // 🔥 LOG AUDIT ACTIVITY - PAYMENT CREATION
+        await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_PAYMENT, payment.id, payment, SYSCONFIG.SUCCESS, {
+            change_type: 'payment_creation',
+            tour_id: tour.id,
+            customer_name: tour.customer_name
+        });
+    }
+
 
     return NextResponse.json(
       {

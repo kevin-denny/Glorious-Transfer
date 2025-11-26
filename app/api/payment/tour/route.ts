@@ -144,3 +144,50 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function GET(request: NextRequest) {
+    try {
+      const authHeader = request.headers.get('authorization');
+      const token = authHeader?.substring(7);
+      const user = await getUserFromToken(token!);
+  
+      if (!user) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }
+  
+      // Get all tours with id and customer_name for dropdown
+      const tours = await query(
+        `SELECT 
+          id as tour_id, 
+          customer_name,
+          agent,
+          status,
+          pax
+        FROM tours 
+        WHERE status IN ('${SYSCONFIG.PENDING}', '${SYSCONFIG.ASSIIGNED}')
+        ORDER BY created_at DESC`
+      ) as any[];
+  
+      // Format for dropdown
+      const formattedTours = tours.map(tour => ({
+        value: tour.tour_id,
+        label: `${tour.tour_id} - ${tour.customer_name}`,
+        customer_name: tour.customer_name,
+        agent: tour.agent,
+        status: tour.status,
+        pax: tour.pax
+      }));
+  
+      return NextResponse.json({
+        tours: formattedTours,
+        count: formattedTours.length
+      });
+  
+    } catch (error: any) {
+      console.error('Tours dropdown error:', error);
+      return NextResponse.json(
+        { message: 'Failed to get tours dropdown', error: error.message },
+        { status: 500 }
+      );
+    }
+  }

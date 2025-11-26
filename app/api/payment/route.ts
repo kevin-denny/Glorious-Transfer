@@ -6,7 +6,7 @@ import { generateUniquePaymentId } from '@/lib/id-generator';
 import { AuditLogger } from '@/lib/activity-logger.server';
 
 interface CreatePaymentRequest {
-  driver_id: string;
+  driver_id?: string;
   tour_id: string;
   amount: number;
   currency?: string;
@@ -126,26 +126,44 @@ export async function POST(request: NextRequest) {
     const body: CreatePaymentRequest = await request.json();
 
     // Validate required fields
-    if (!body.driver_id || !body.tour_id || !body.amount || !body.type) {
-      return NextResponse.json(
-        { message: 'Missing required fields: driver_id, tour_id, amount, type' },
-        { status: 400 }
-      );
+    if (!body.type) {
+        return NextResponse.json(
+            { message: 'Payment type is required' },
+            { status: 400 }
+        );
+    } else {
+        const validTypes = ['tour_payment', 'driver_payment'];
+        if (!validTypes.includes(body.type)) {
+            return NextResponse.json(
+                { message: 'Invalid payment type. Must be: tour_payment or driver_payment' },
+                { status: 400 }
+            );
+        } else {
+            if (body.type === 'tour_payment' && !body.tour_id) {
+                return NextResponse.json(
+                    { message: 'tour_id is required for tour_payment type' },
+                    { status: 400 }
+                );
+            }
+            if (body.type === 'driver_payment' && !body.driver_id) {
+                return NextResponse.json(
+                    { message: 'driver_id is required for driver_payment type' },
+                    { status: 400 }
+                );
+            }
+        }
+    }
+    if (!body.amount) {
+        return NextResponse.json(
+            { message: 'Amount is required' },
+            { status: 400 }
+        );
     }
 
     // Validate amount
     if (body.amount <= 0) {
       return NextResponse.json(
         { message: 'Amount must be greater than 0' },
-        { status: 400 }
-      );
-    }
-
-    // Validate type
-    const validTypes = ['tour_payment', 'driver_payment'];
-    if (!validTypes.includes(body.type)) {
-      return NextResponse.json(
-        { message: 'Invalid payment type. Must be: tour_payment or driver_payment' },
         { status: 400 }
       );
     }

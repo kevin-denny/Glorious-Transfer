@@ -1,25 +1,38 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { DashboardLayout } from '@/components/dashboard-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/lib/auth-context';
-import { Plus, Search, Check, DollarSign } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { logActivity } from '@/lib/activity-logger';
+import { useEffect, useState } from "react";
+import { DashboardLayout } from "@/components/dashboard-layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/lib/auth-context";
+import { Plus, Search, Check, DollarSign } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { logActivity } from "@/lib/activity-logger";
+import { currencyList } from "@/lib/utils";
 
 interface Payment {
   id: string;
   driver_id: string;
   tour_id: string | null;
-  amount: number;
+  amount: number | string;
   status: string;
   payment_date: string | null;
   notes: string | null;
@@ -51,8 +64,8 @@ export default function PaymentsPage() {
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
-  const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
@@ -60,10 +73,11 @@ export default function PaymentsPage() {
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    driver_id: '',
-    tour_id: '',
-    amount: '',
-    notes: '',
+    driver_id: "",
+    tour_id: "",
+    amount: "",
+    currency: "",
+    notes: "",
   });
 
   useEffect(() => {
@@ -75,7 +89,7 @@ export default function PaymentsPage() {
   useEffect(() => {
     let filtered = payments;
 
-    if (filterStatus !== 'all') {
+    if (filterStatus !== "all") {
       filtered = filtered.filter((p) => p.status === filterStatus);
     }
 
@@ -83,8 +97,12 @@ export default function PaymentsPage() {
       filtered = filtered.filter(
         (payment) =>
           payment.drivers.name.toLowerCase().includes(search.toLowerCase()) ||
-          payment.drivers.driver_number.toLowerCase().includes(search.toLowerCase()) ||
-          payment.tours?.booking_ref.toLowerCase().includes(search.toLowerCase())
+          payment.drivers.driver_number
+            .toLowerCase()
+            .includes(search.toLowerCase()) ||
+          payment.tours?.booking_ref
+            .toLowerCase()
+            .includes(search.toLowerCase())
       );
     }
 
@@ -105,13 +123,13 @@ export default function PaymentsPage() {
       // if (error) throw error;
       // setPayments(data || []);
       // setFilteredPayments(data || []);
-      setPayments( []);
-      setFilteredPayments( []);
+      setPayments([]);
+      setFilteredPayments([]);
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: "Error",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -128,9 +146,9 @@ export default function PaymentsPage() {
 
       // if (error) throw error;
       // setDrivers(data || []);
-      setDrivers( []);
+      setDrivers([]);
     } catch (error: any) {
-      console.error('Error fetching drivers:', error);
+      console.error("Error fetching drivers:", error);
     }
   }
 
@@ -146,7 +164,7 @@ export default function PaymentsPage() {
       // setTours(data || []);
       setTours([]);
     } catch (error: any) {
-      console.error('Error fetching tours:', error);
+      console.error("Error fetching tours:", error);
     }
   }
 
@@ -165,11 +183,11 @@ export default function PaymentsPage() {
 
       // if (error) throw error;
 
-      await logActivity('create', 'driver_payments', null, formData);
+      await logActivity("create", "driver_payments", null, formData);
 
       toast({
-        title: 'Success',
-        description: 'Payment record created successfully',
+        title: "Success",
+        description: "Payment record created successfully",
       });
 
       fetchPayments();
@@ -177,9 +195,9 @@ export default function PaymentsPage() {
       resetForm();
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: "Error",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -200,22 +218,22 @@ export default function PaymentsPage() {
 
       // if (error) throw error;
 
-      await logActivity('update', 'driver_payments', payment.id, {
-        action: 'marked_as_paid',
+      await logActivity("update", "driver_payments", payment.id, {
+        action: "marked_as_paid",
         payment_date: new Date().toISOString(),
       });
 
       toast({
-        title: 'Success',
-        description: 'Payment marked as paid',
+        title: "Success",
+        description: "Payment marked as paid",
       });
 
       fetchPayments();
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: "Error",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -224,20 +242,21 @@ export default function PaymentsPage() {
 
   function resetForm() {
     setFormData({
-      driver_id: '',
-      tour_id: '',
-      amount: '',
-      notes: '',
+      driver_id: "",
+      tour_id: "",
+      amount: "",
+      currency: "",
+      notes: "",
     });
     setSelectedPayment(null);
   }
 
   const totalPending = payments
-    .filter((p) => p.status === 'pending')
+    .filter((p) => p.status === "pending")
     .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
 
   const totalPaid = payments
-    .filter((p) => p.status === 'paid')
+    .filter((p) => p.status === "paid")
     .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
 
   return (
@@ -258,70 +277,78 @@ export default function PaymentsPage() {
                 Add Payment
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create Payment Record</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="driver_id">Driver</Label>
-                  <Select
-                    value={formData.driver_id}
-                    onValueChange={(value) => setFormData({ ...formData, driver_id: value })}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select driver" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {drivers.map((driver) => (
-                        <SelectItem key={driver.id} value={driver.id}>
-                          {driver.name} ({driver.driver_number})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tour_id">Tour (Optional)</Label>
-                  <Select
-                    value={formData.tour_id}
-                    onValueChange={(value) => setFormData({ ...formData, tour_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select tour" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="tour_id">Tour</Label>
+                    <Select
+                      value={formData.tour_id}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, tour_id: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select tour" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* <SelectItem value="">None</SelectItem>
                       {tours.map((tour) => (
                         <SelectItem key={tour.id} value={tour.id}>
                           {tour.booking_ref} - {tour.client_name}
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                      ))} */}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Amount</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    required
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">Amount</Label>
+                    <Input
+                      id="amount"
+                      value={formData.amount}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          amount: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="currency">Currency</Label>
+                    <Select
+                      value={formData.currency}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, currency: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currencyList.map((c) => (
+                          <SelectItem key={c.code} value={c.code}>
+                            {c.code} — {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="notes">Notes</Label>
                   <Textarea
                     id="notes"
                     value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, notes: e.target.value })
+                    }
                     rows={3}
                   />
                 </div>
@@ -355,22 +382,26 @@ export default function PaymentsPage() {
               <DollarSign className="h-5 w-5 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalPending.toFixed(2)}</div>
+              <div className="text-2xl font-bold">
+                ${totalPending.toFixed(2)}
+              </div>
               <p className="text-xs text-gray-500 mt-1">
-                {payments.filter((p) => p.status === 'pending').length} pending
+                {payments.filter((p) => p.status === "pending").length} pending
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Paid Total</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Paid Total
+              </CardTitle>
               <Check className="h-5 w-5 text-green-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">${totalPaid.toFixed(2)}</div>
               <p className="text-xs text-gray-500 mt-1">
-                {payments.filter((p) => p.status === 'paid').length} completed
+                {payments.filter((p) => p.status === "paid").length} completed
               </p>
             </CardContent>
           </Card>
@@ -386,7 +417,9 @@ export default function PaymentsPage() {
               <div className="text-2xl font-bold">
                 ${(totalPending + totalPaid).toFixed(2)}
               </div>
-              <p className="text-xs text-gray-500 mt-1">{payments.length} total</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {payments.length} total
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -443,8 +476,12 @@ export default function PaymentsPage() {
                       <td className="py-4 text-sm">
                         {payment.tours ? (
                           <div>
-                            <p className="font-medium">{payment.tours.booking_ref}</p>
-                            <p className="text-xs text-gray-500">{payment.tours.client_name}</p>
+                            <p className="font-medium">
+                              {payment.tours.booking_ref}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {payment.tours.client_name}
+                            </p>
                           </div>
                         ) : (
                           <span className="text-gray-400">N/A</span>
@@ -455,11 +492,13 @@ export default function PaymentsPage() {
                       </td>
                       <td className="py-4">
                         <Badge
-                          variant={payment.status === 'paid' ? 'default' : 'secondary'}
+                          variant={
+                            payment.status === "paid" ? "default" : "secondary"
+                          }
                           className={
-                            payment.status === 'paid'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-orange-100 text-orange-800'
+                            payment.status === "paid"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-orange-100 text-orange-800"
                           }
                         >
                           {payment.status}
@@ -468,11 +507,11 @@ export default function PaymentsPage() {
                       <td className="py-4 text-sm">
                         {payment.payment_date
                           ? new Date(payment.payment_date).toLocaleDateString()
-                          : '-'}
+                          : "-"}
                       </td>
-                      <td className="py-4 text-sm">{payment.notes || '-'}</td>
+                      <td className="py-4 text-sm">{payment.notes || "-"}</td>
                       <td className="py-4">
-                        {payment.status === 'pending' && (
+                        {payment.status === "pending" && (
                           <Button
                             size="sm"
                             variant="default"
@@ -489,7 +528,9 @@ export default function PaymentsPage() {
                 </tbody>
               </table>
               {filteredPayments.length === 0 && (
-                <div className="py-12 text-center text-gray-500">No payments found</div>
+                <div className="py-12 text-center text-gray-500">
+                  No payments found
+                </div>
               )}
             </div>
           </CardContent>

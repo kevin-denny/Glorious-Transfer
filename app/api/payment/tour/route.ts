@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
         FROM payments p
         LEFT JOIN drivers d ON p.driver_id = d.id
         LEFT JOIN tours t ON p.tour_id = t.id
-        WHERE ${whereClause} AND (p.id LIKE ? OR d.name LIKE ? OR t.customer_name LIKE ?)
+        WHERE ${whereClause} AND (p.id LIKE ? OR t.id LIKE ? OR t.customer_name LIKE ?)
         ORDER BY p.created_at DESC 
         LIMIT ${limit} OFFSET ${offset}`,
         searchParams

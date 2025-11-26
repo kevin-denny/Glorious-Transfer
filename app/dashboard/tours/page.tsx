@@ -212,10 +212,7 @@ export default function ToursPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    //www.linkedin.com/in/kevin-denny-0b332b218/
-    https: console.log("Cool", selectedTour);
     try {
-      const token = localStorage.getItem("auth_token");
       if (!token) throw new Error("No auth token found");
       let response: Response;
       if (selectedTour) {

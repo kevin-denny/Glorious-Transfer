@@ -146,10 +146,13 @@ export async function POST(request: NextRequest) {
                 );
             }
             if (body.type === 'driver_payment' && !body.driver_id) {
-                return NextResponse.json(
-                    { message: 'driver_id is required for driver_payment type' },
-                    { status: 400 }
-                );
+                // tour_id is required for driver_payment type
+                if (!body.tour_id) {
+                    return NextResponse.json(
+                        { message: 'tour_id is required for driver_payment type' },
+                        { status: 400 }
+                    );
+                }
             }
         }
     }

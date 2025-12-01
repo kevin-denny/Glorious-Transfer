@@ -70,6 +70,10 @@ export async function GET(
       updated_at: formatToIST(tour.updated_at),
       pickup: tour.pickup,
       destination: tour.destination,
+      amount: tour.amount,
+      currency: tour.currency,
+      agent_ref: tour.agent_ref,
+      pickup_datetime: formatToIST(tour.pickup_datetime),
       assignment: tour.assignment_id
         ? {
             id: tour.assignment_id,
@@ -138,6 +142,10 @@ export async function PUT(
       pickup,
       destination,
       category,
+      amount,
+      currency,
+      agent_ref,
+      pickup_datetime
     } = body;
 
     // Check if tour exists
@@ -230,6 +238,10 @@ export async function PUT(
         pickup || null,
         destination || null,
         category || "-",
+        amount || 0,
+        currency || null,
+        agent_ref || null,
+        pickup_datetime || null,
         tourId
       ]);
 
@@ -278,6 +290,10 @@ export async function PUT(
       pickup: result.pickup,
       destination: result.destination,
       category: result.category,
+      amount: result.amount,
+      currency: result.currency,
+      agent_ref: result.agent_ref,
+      pickup_datetime: formatToIST(result.pickup_datetime),
       created_at: formatToIST(result.created_at),
       updated_at: formatToIST(result.updated_at),
       created_by: result.created_by,

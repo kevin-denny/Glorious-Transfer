@@ -11,8 +11,8 @@ interface CreateTourRequest {
   agent: string;
   pax: number;
   contact_details: string;
-  arrival_datetime: string;
-  departure_datetime: string;
+  arrival_datetime?: string;
+  departure_datetime?: string;
   flight_no?: string;
   remarks?: string;
   driver_id?: string;
@@ -20,6 +20,10 @@ interface CreateTourRequest {
   pickup?: string;
   destination?: string;
   category: string;
+  amount?: number;
+  currency?: string;
+  agent_ref?: string;
+  pickup_datetime?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -51,8 +55,6 @@ export async function POST(request: NextRequest) {
       !body.agent ||
       !body.pax ||
       !body.contact_details ||
-      !body.arrival_datetime ||
-      !body.departure_datetime ||
       !body.pickup ||
       !body.destination ||
       !body.category
@@ -86,8 +88,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate arrival is before departure
-    const arrivalDate = new Date(body.arrival_datetime);
-    const departureDate = new Date(body.departure_datetime);
+    const arrivalDate = new Date(body.arrival_datetime || '');
+    const departureDate = new Date(body.departure_datetime || '');
+    const pickupDate = new Date(body.pickup_datetime || '');
 
     if (arrivalDate >= departureDate) {
       return NextResponse.json(
@@ -104,9 +107,9 @@ export async function POST(request: NextRequest) {
       `INSERT INTO tours (
         id, booking_date, customer_name, agent, pax,
         contact_details, arrival_datetime, departure_datetime,
-        flight_no, remarks, pickup, destination, category,
+        flight_no, remarks, pickup, destination, category, amount, currency, agent_ref, pickup_datetime,
         created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         tourId,
         body.booking_date,
@@ -114,13 +117,17 @@ export async function POST(request: NextRequest) {
         body.agent,
         body.pax,
         body.contact_details,
-        body.arrival_datetime,
-        body.departure_datetime,
+        body.arrival_datetime || null,
+        body.departure_datetime || null,
         body.flight_no || null,
         body.remarks || null,
         body.pickup || null,
         body.destination || null,
         body.category || '-',
+        body.amount || 0,
+        body.currency || null,
+        body.agent_ref || null,
+        body.pickup_datetime || null,
         user.id,
       ]
     );

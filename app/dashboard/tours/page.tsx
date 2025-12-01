@@ -49,13 +49,14 @@ interface Tour {
   booking_date: string;
   // booking_ref: string;
   customer_name: string;
-  trip: string;
+  category: string;
   agent: string;
   agent_ref: string;
   pax: number;
   contact_details: string;
   currency: string;
-  income_amount: string;
+  amount: string;
+  pickup_datetime: string;
   arrival_datetime: string;
   departure_datetime: string;
   pickup: string | null;
@@ -113,13 +114,14 @@ export default function ToursPage() {
   const [formData, setFormData] = useState({
     booking_date: new Date().toISOString().split("T")[0],
     customer_name: "",
-    trip: "",
+    category: "",
     agent: "",
     agent_ref: "",
     pax: 1,
     contact_details: "",
-    income_amount: "",
+    amount: "",
     currency: "LKR",
+    pickup_datetime: "",
     arrival_datetime: "",
     departure_datetime: "",
     pickup: "",
@@ -245,14 +247,15 @@ export default function ToursPage() {
           body: JSON.stringify({
             booking_date: formData.booking_date,
             customer_name: formData.customer_name,
-            trip: formData.trip,
+            category: formData.category,
             agent: formData.agent,
             agent_ref: formData.agent_ref,
             pax: formData.pax,
             contact_details: formData.contact_details,
+            pickup_datetime: formData.pickup_datetime,
             arrival_datetime: formData.arrival_datetime,
             currency: formData.currency,
-            income_amount: formData.income_amount,
+            amount: formData.amount,
             pickup: formData.pickup,
             destination: formData.destination,
             departure_datetime: formData.departure_datetime,
@@ -290,14 +293,15 @@ export default function ToursPage() {
           body: JSON.stringify({
             booking_date: formData.booking_date,
             customer_name: formData.customer_name,
-            trip: formData.trip,
+            category: formData.category,
             agent: formData.agent,
             agent_ref: formData.agent_ref,
             pax: formData.pax,
             contact_details: formData.contact_details,
+            pickup_datetime: formData.pickup_datetime,
             arrival_datetime: formData.arrival_datetime,
             currency: formData.currency,
-            income_amount: formData.income_amount,
+            amount: formData.amount,
             pickup: formData.pickup,
             destination: formData.destination,
             departure_datetime: formData.departure_datetime,
@@ -391,13 +395,14 @@ export default function ToursPage() {
     setFormData({
       booking_date: new Date().toISOString().split("T")[0],
       customer_name: "",
-      trip: "",
+      category: "",
       agent: "",
       agent_ref: "",
       pax: 1,
       contact_details: "",
-      income_amount: "",
+      amount: "",
       currency: "LKR",
+      pickup_datetime: "",
       arrival_datetime: "",
       pickup: "",
       destination: "",
@@ -419,13 +424,14 @@ export default function ToursPage() {
     setFormData({
       booking_date: tour.booking_date,
       customer_name: tour.customer_name,
-      trip: tour.trip,
+      category: tour.category,
       agent: tour.agent,
       agent_ref: tour.agent_ref,
       pax: tour.pax,
       contact_details: tour.contact_details,
-      income_amount: tour.income_amount,
+      amount: tour.amount,
       currency: tour.currency,
+      pickup_datetime: tour.pickup_datetime,
       arrival_datetime: tour.arrival_datetime,
       departure_datetime: tour.departure_datetime,
       pickup: tour.pickup || "",
@@ -664,24 +670,20 @@ export default function ToursPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="trip">Trip Type</Label>
+                    <Label htmlFor="category">Trip Type</Label>
                     <Select
-                      value={formData.trip}
+                      value={formData.category}
                       onValueChange={(value) =>
-                        setFormData({ ...formData, trip: value })
+                        setFormData({ ...formData, category: value })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a Trip Type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Arrival Transfer">
-                          Arrival Transfer
-                        </SelectItem>
-                        <SelectItem value="Departure Transfer">
-                          Departure Transfer
-                        </SelectItem>
-                        <SelectItem value="RoundTour">Round Tour</SelectItem>
+                        <SelectItem value="Arrival">Arrival</SelectItem>
+                        <SelectItem value="Departure">Departure</SelectItem>
+                        <SelectItem value="Round Tour">Round Tour</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -716,14 +718,14 @@ export default function ToursPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="income_amount">Income Amount</Label>
+                    <Label htmlFor="amount">Income Amount</Label>
                     <Input
-                      id="income_amount"
-                      value={formData.income_amount}
+                      id="amount"
+                      value={formData.amount}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          income_amount: e.target.value,
+                          amount: e.target.value,
                         })
                       }
                     />
@@ -748,40 +750,63 @@ export default function ToursPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="arrival_datetime">
-                      Arrival Date & Time
-                    </Label>
-                    <Input
-                      id="arrival_datetime"
-                      type="datetime-local"
-                      value={formData.arrival_datetime}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          arrival_datetime: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="departure_datetime">
-                      Departure Date & Time
-                    </Label>
-                    <Input
-                      id="departure_datetime"
-                      type="datetime-local"
-                      value={formData.departure_datetime}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          departure_datetime: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
+                  {formData?.category == "Round Tour" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="arrival_datetime">
+                          Arrival Date & Time
+                        </Label>
+                        <Input
+                          id="arrival_datetime"
+                          type="datetime-local"
+                          value={formData.arrival_datetime}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              arrival_datetime: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="departure_datetime">
+                          Departure Date & Time
+                        </Label>
+                        <Input
+                          id="departure_datetime"
+                          type="datetime-local"
+                          value={formData.departure_datetime}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              departure_datetime: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {(formData?.category == "Departure" ||
+                    formData?.category == "Arrival") && (
+                    <div className="space-y-2">
+                      <Label htmlFor="pickup_datetime">
+                        Pickup Date & Time
+                      </Label>
+                      <Input
+                        id="pickup_datetime"
+                        type="datetime-local"
+                        value={formData.pickup_datetime}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            pickup_datetime: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="flight_no">Flight Number</Label>
                     <Input
@@ -972,9 +997,9 @@ export default function ToursPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="income_amount">Paid Amount</Label>
+                <Label htmlFor="amount">Paid Amount</Label>
                 <Input
-                  id="income_amount"
+                  id="amount"
                   value={assignData.paid_amount}
                   onChange={(e) =>
                     setAssignData({

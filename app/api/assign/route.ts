@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
     });
 
     const body = await request.json();
-    const { tour_id, driver_id } = body;
+    const { tour_id, driver_id, amount } = body;
     tour_id_revert = tour_id;
 
     // Validate required fields
@@ -253,8 +253,8 @@ export async function POST(request: NextRequest) {
 
     // Create the assignment
     await query(
-      "INSERT INTO assignments (id, tour_id, driver_id, assigned_by) VALUES (?, ?, ?, ?)",
-      [assignmentId, tour_id, driver_id, user.id]
+      "INSERT INTO assignments (id, tour_id, driver_id, assigned_by, amount) VALUES (?, ?, ?, ?, ?)",
+      [assignmentId, tour_id, driver_id, user.id, amount || 0]
     );
 
     // Get the created assignment with driver details
@@ -266,6 +266,7 @@ export async function POST(request: NextRequest) {
         a.driver_id,
         a.assigned_at,
         a.assigned_by,
+        a.amount,
         d.name as driver_name,
         d.driver_number,
         d.vehicle_type,

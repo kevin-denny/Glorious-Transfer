@@ -42,15 +42,21 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { currencyList } from "@/lib/utils";
 
 interface Tour {
   id: string;
   booking_date: string;
   // booking_ref: string;
   customer_name: string;
+  category: string;
   agent: string;
+  agent_ref: string;
   pax: number;
   contact_details: string;
+  currency: string;
+  amount: string;
+  pickup_datetime: string;
   arrival_datetime: string;
   departure_datetime: string;
   pickup: string | null;
@@ -62,6 +68,11 @@ interface Tour {
   updated_at: string;
   assigned_driver_id: string | null;
   assignment?: { driver: Driver; driver_number: string } | null;
+}
+interface Assign {
+  selectedDriver: string;
+  paid_amount: string;
+  currency: string;
 }
 
 interface Driver {
@@ -103,9 +114,14 @@ export default function ToursPage() {
   const [formData, setFormData] = useState({
     booking_date: new Date().toISOString().split("T")[0],
     customer_name: "",
+    category: "",
     agent: "",
+    agent_ref: "",
     pax: 1,
     contact_details: "",
+    amount: "",
+    currency: "LKR",
+    pickup_datetime: "",
     arrival_datetime: "",
     departure_datetime: "",
     pickup: "",
@@ -113,6 +129,12 @@ export default function ToursPage() {
     flight_no: "",
     remarks: "",
     status: "Pending",
+  });
+
+  const [assignData, setAssignData] = useState({
+    selectedDriver: "",
+    paid_amount: "",
+    currency: "LKR",
   });
 
   const [page, setPage] = useState(1);
@@ -225,10 +247,15 @@ export default function ToursPage() {
           body: JSON.stringify({
             booking_date: formData.booking_date,
             customer_name: formData.customer_name,
+            category: formData.category,
             agent: formData.agent,
+            agent_ref: formData.agent_ref,
             pax: formData.pax,
             contact_details: formData.contact_details,
+            pickup_datetime: formData.pickup_datetime,
             arrival_datetime: formData.arrival_datetime,
+            currency: formData.currency,
+            amount: formData.amount,
             pickup: formData.pickup,
             destination: formData.destination,
             departure_datetime: formData.departure_datetime,
@@ -266,10 +293,15 @@ export default function ToursPage() {
           body: JSON.stringify({
             booking_date: formData.booking_date,
             customer_name: formData.customer_name,
+            category: formData.category,
             agent: formData.agent,
+            agent_ref: formData.agent_ref,
             pax: formData.pax,
             contact_details: formData.contact_details,
+            pickup_datetime: formData.pickup_datetime,
             arrival_datetime: formData.arrival_datetime,
+            currency: formData.currency,
+            amount: formData.amount,
             pickup: formData.pickup,
             destination: formData.destination,
             departure_datetime: formData.departure_datetime,
@@ -309,7 +341,7 @@ export default function ToursPage() {
     }
   }
 
-  async function handleAssignDriver(driver: string) {
+  async function handleAssignDriver() {
     if (!selectedTour) return;
 
     setLoading(true);
@@ -324,7 +356,9 @@ export default function ToursPage() {
         },
         body: JSON.stringify({
           tour_id: selectedTour.id,
-          driver_id: driver,
+          driver_id: assignData?.selectedDriver,
+          paid_amount: assignData?.paid_amount,
+          currency: assignData?.currency,
         }),
       });
 
@@ -361,9 +395,14 @@ export default function ToursPage() {
     setFormData({
       booking_date: new Date().toISOString().split("T")[0],
       customer_name: "",
+      category: "",
       agent: "",
+      agent_ref: "",
       pax: 1,
       contact_details: "",
+      amount: "",
+      currency: "LKR",
+      pickup_datetime: "",
       arrival_datetime: "",
       pickup: "",
       destination: "",
@@ -373,6 +412,11 @@ export default function ToursPage() {
       status: "Pending",
     });
     setSelectedTour(null);
+    setAssignData({
+      selectedDriver: "",
+      paid_amount: "",
+      currency: "LKR",
+    });
   }
 
   function handleEdit(tour: Tour) {
@@ -380,9 +424,14 @@ export default function ToursPage() {
     setFormData({
       booking_date: tour.booking_date,
       customer_name: tour.customer_name,
+      category: tour.category,
       agent: tour.agent,
+      agent_ref: tour.agent_ref,
       pax: tour.pax,
       contact_details: tour.contact_details,
+      amount: tour.amount,
+      currency: tour.currency,
+      pickup_datetime: tour.pickup_datetime,
       arrival_datetime: tour.arrival_datetime,
       departure_datetime: tour.departure_datetime,
       pickup: tour.pickup || "",
@@ -392,6 +441,11 @@ export default function ToursPage() {
       status: tour.status,
     });
     setDialogOpen(true);
+    setAssignData({
+      selectedDriver: "",
+      paid_amount: "",
+      currency: "LKR",
+    });
   }
 
   function handleView(tour: Tour) {
@@ -524,7 +578,7 @@ export default function ToursPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Tours Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Trips Management</h1>
           <Dialog
             open={dialogOpen}
             onOpenChange={(open) => {
@@ -603,6 +657,37 @@ export default function ToursPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="agent_ref">Agent Reference</Label>
+                    <Input
+                      id="agent_ref"
+                      value={formData.agent_ref}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          agent_ref: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Trip Type</Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, category: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a Trip Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Arrival">Arrival</SelectItem>
+                        <SelectItem value="Departure">Departure</SelectItem>
+                        <SelectItem value="Round Tour">Round Tour</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="pax">Number of Passengers</Label>
                     <Input
                       id="pax"
@@ -633,39 +718,95 @@ export default function ToursPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="arrival_datetime">
-                      Arrival Date & Time
-                    </Label>
+                    <Label htmlFor="amount">Income Amount</Label>
                     <Input
-                      id="arrival_datetime"
-                      type="datetime-local"
-                      value={formData.arrival_datetime}
+                      id="amount"
+                      value={formData.amount}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          arrival_datetime: e.target.value,
+                          amount: e.target.value,
                         })
                       }
-                      required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="departure_datetime">
-                      Departure Date & Time
-                    </Label>
-                    <Input
-                      id="departure_datetime"
-                      type="datetime-local"
-                      value={formData.departure_datetime}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          departure_datetime: e.target.value,
-                        })
+                    <Label>Currency</Label>
+                    <Select
+                      value={formData.currency}
+                      onValueChange={(v) =>
+                        setFormData({ ...formData, currency: v })
                       }
-                      required
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currencyList.map((c) => (
+                          <SelectItem key={c.code} value={c.code}>
+                            {c.code} — {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                  {formData?.category == "Round Tour" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="arrival_datetime">
+                          Arrival Date & Time
+                        </Label>
+                        <Input
+                          id="arrival_datetime"
+                          type="datetime-local"
+                          value={formData.arrival_datetime}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              arrival_datetime: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="departure_datetime">
+                          Departure Date & Time
+                        </Label>
+                        <Input
+                          id="departure_datetime"
+                          type="datetime-local"
+                          value={formData.departure_datetime}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              departure_datetime: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {(formData?.category == "Departure" ||
+                    formData?.category == "Arrival") && (
+                    <div className="space-y-2">
+                      <Label htmlFor="pickup_datetime">
+                        Pickup Date & Time
+                      </Label>
+                      <Input
+                        id="pickup_datetime"
+                        type="datetime-local"
+                        value={formData.pickup_datetime}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            pickup_datetime: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="flight_no">Flight Number</Label>
                     <Input
@@ -804,7 +945,7 @@ export default function ToursPage() {
       </div>
 
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Assign Driver to Tour</DialogTitle>
           </DialogHeader>
@@ -818,46 +959,83 @@ export default function ToursPage() {
                 </p>
               </div>
             )}
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Driver dropdown */}
+              <div className="space-y-2">
+                <Label>Select Driver</Label>
 
-            {/* Driver dropdown */}
-            <div className="space-y-2">
-              <Label>Select Driver</Label>
+                <Select
+                  onValueChange={(v) =>
+                    setAssignData({ ...assignData, selectedDriver: v })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose a driver" />
+                  </SelectTrigger>
 
-              <Select onValueChange={(val) => setSelectedDriver(val as any)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose a driver" />
-                </SelectTrigger>
+                  <SelectContent>
+                    {drivers.map((driver) => (
+                      <SelectItem
+                        key={driver.driver_id}
+                        value={String(driver.driver_id)}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">{driver.name}</span>
+                          <span className="text-xs text-gray-500">
+                            {driver.driver_number}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
 
-                <SelectContent>
-                  {drivers.map((driver) => (
-                    <SelectItem
-                      key={driver.driver_id}
-                      value={String(driver.driver_id)}
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-medium">{driver.name}</span>
-                        <span className="text-xs text-gray-500">
-                          {driver.driver_number}
-                        </span>
+                    {drivers.length === 0 && (
+                      <div className="p-2 text-sm text-gray-500">
+                        No active drivers available
                       </div>
-                    </SelectItem>
-                  ))}
-
-                  {drivers.length === 0 && (
-                    <div className="p-2 text-sm text-gray-500">
-                      No active drivers available
-                    </div>
-                  )}
-                </SelectContent>
-              </Select>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="amount">Paid Amount</Label>
+                <Input
+                  id="amount"
+                  value={assignData.paid_amount}
+                  onChange={(e) =>
+                    setAssignData({
+                      ...assignData,
+                      paid_amount: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Currency</Label>
+                <Select
+                  value={assignData.currency}
+                  onValueChange={(v) =>
+                    setAssignData({ ...assignData, currency: v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencyList.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.code} — {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-
             {/* OK Button */}
             <div className="flex justify-end pt-4">
               <Button
-                disabled={!selectedDriver}
+                // disabled={!selectedDriver}
                 onClick={() => {
-                  handleAssignDriver(selectedDriver as any);
+                  handleAssignDriver();
                   setAssignDialogOpen(false);
                 }}
               >
@@ -881,7 +1059,10 @@ export default function ToursPage() {
                   className="flex items-center gap-1"
                   onClick={() => {
                     const textToCopy = `
-Booking Date: ${selectedTour.booking_date}
+                    Hello from Glorious Transfer!
+We have received your booking for transport and please review the transfer date and time below and let us know if everything is correct. 
+Thank you!
+
 Customer Name: ${selectedTour.customer_name}
 Pax: ${selectedTour.pax}
 Contact Details: ${selectedTour.contact_details}
@@ -891,6 +1072,11 @@ Flight Number: ${selectedTour.flight_no ?? ""}
 Pickup: ${selectedTour.pickup ?? ""}
 Destination: ${selectedTour.destination ?? ""}
 Remarks: ${selectedTour.remarks ?? ""}
+
+Attention:
+1. Please connect free WiFi at the CMB airport & notify us on WhatsApp once you land.
+
+2. Follow the map to go to the meeting point.
         `.trim();
 
                     navigator.clipboard.writeText(textToCopy).then(() => {

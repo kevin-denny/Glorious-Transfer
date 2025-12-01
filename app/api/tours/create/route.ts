@@ -19,6 +19,7 @@ interface CreateTourRequest {
   status?: string;
   pickup?: string;
   destination?: string;
+  category: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -53,10 +54,25 @@ export async function POST(request: NextRequest) {
       !body.arrival_datetime ||
       !body.departure_datetime ||
       !body.pickup ||
-      !body.destination
+      !body.destination ||
+      !body.category
     ) {
       return NextResponse.json(
         { message: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Validate category
+    const validCategories = [
+      SYSCONFIG.TRIP_CAT_ARRIVAL,
+      SYSCONFIG.TRIP_CAT_DEPARTURE,
+      SYSCONFIG.TRIP_CAT_ROUND,
+      '-'
+    ];
+    if (!validCategories.includes(body.category)) {
+      return NextResponse.json(
+        { message: "Invalid trip category" },
         { status: 400 }
       );
     }
@@ -88,9 +104,9 @@ export async function POST(request: NextRequest) {
       `INSERT INTO tours (
         id, booking_date, customer_name, agent, pax,
         contact_details, arrival_datetime, departure_datetime,
-        flight_no, remarks, pickup, destination,
+        flight_no, remarks, pickup, destination, category,
         created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         tourId,
         body.booking_date,
@@ -104,6 +120,7 @@ export async function POST(request: NextRequest) {
         body.remarks || null,
         body.pickup || null,
         body.destination || null,
+        body.category || '-',
         user.id,
       ]
     );

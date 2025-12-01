@@ -39,14 +39,14 @@ export async function PUT(request: NextRequest) {
     }
 
     // can not activate or deactivate manual user
-    if (userid === SYSCONFIG.MANUAL_USER_ID && (status === 'active' || status === 'deactive')) {
+    if (userid === SYSCONFIG.MANUAL_USER_ID && (status === 'Active' || status === 'Deactive')) {
       return NextResponse.json({ 
         message: 'Cannot activate or deactivate manual user' 
       }, { status: 400 });
     }
 
     // Validate status value
-    const validStatuses = ['inactive', 'active', 'deactive'];
+    const validStatuses = ['Inactive', 'Active', 'Deactive'];
     if (!validStatuses.includes(status)) {
       return NextResponse.json({ 
         message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` 

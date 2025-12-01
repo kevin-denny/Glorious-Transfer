@@ -55,28 +55,35 @@ export async function GET(
     // Format tour data
     const formattedTour = {
       id: tour.id,
+      booking_date: formatToIST(tour.booking_date).split(" ")[0],
       customer_name: tour.customer_name,
-      customer_phone: tour.customer_phone,
-      pickup: tour.pickup,
-      destination: tour.destination,
+      agent: tour.agent,
+      pax: tour.pax,
+      category: tour.category,
+      contact_details: tour.contact_details,
       arrival_datetime: formatToIST(tour.arrival_datetime),
       departure_datetime: formatToIST(tour.departure_datetime),
-      passenger_count: tour.passenger_count,
+      flight_no: tour.flight_no,
+      remarks: tour.remarks,
       status: tour.status,
       created_at: formatToIST(tour.created_at),
       updated_at: formatToIST(tour.updated_at),
-      assignment: tour.assignment_id ? {
-        id: tour.assignment_id,
-        assigned_at: formatToIST(tour.assigned_at),
-        assigned_by: tour.assigned_by,
-        driver: {
-          id: tour.driver_id,
-          name: tour.driver_name,
-          phone: tour.driver_phone,
-          vehicle_type: tour.driver_vehicle_type,
-          vehicle_number: tour.driver_vehicle_number
-        }
-      } : null
+      pickup: tour.pickup,
+      destination: tour.destination,
+      assignment: tour.assignment_id
+        ? {
+            id: tour.assignment_id,
+            assigned_at: formatToIST(tour.assigned_at),
+            assigned_by: tour.assigned_by,
+            driver: {
+              id: tour.driver_id,
+              name: tour.driver_name,
+              phone: tour.driver_number,
+              vehicle_type: tour.driver_vehicle_type,
+              vehicle_number: tour.driver_vehicle_plate,
+            },
+          }
+        : null,
     };
 
     // 🔥 LOG AUDIT ACTIVITY - TOUR INFO RETRIEVAL
@@ -129,7 +136,8 @@ export async function PUT(
       remarks,
       status,
       pickup,
-      destination
+      destination,
+      category,
     } = body;
 
     // Check if tour exists
@@ -147,9 +155,9 @@ export async function PUT(
 
     // Validate required fields
     if (!booking_date || !customer_name || !agent || !pax || !contact_details || 
-        !arrival_datetime || !departure_datetime) {
+        !arrival_datetime || !departure_datetime || !category) {
       return NextResponse.json(
-        { message: 'Missing required fields: booking_date, customer_name, agent, pax, contact_details, arrival_datetime, departure_datetime' },
+        { message: 'Missing required fields: booking_date, customer_name, agent, pax, contact_details, arrival_datetime, departure_datetime, category' },
         { status: 400 }
       );
     }
@@ -205,6 +213,7 @@ export async function PUT(
           status = ?,
           pickup = ?,
           destination = ?,
+          category = ?,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `, [
@@ -220,6 +229,7 @@ export async function PUT(
         status || existingTour.status,
         pickup || null,
         destination || null,
+        category || "-",
         tourId
       ]);
 
@@ -267,6 +277,7 @@ export async function PUT(
       status: result.status,
       pickup: result.pickup,
       destination: result.destination,
+      category: result.category,
       created_at: formatToIST(result.created_at),
       updated_at: formatToIST(result.updated_at),
       created_by: result.created_by,

@@ -95,6 +95,7 @@ export async function POST(request: NextRequest) {
       customer_name: tour.customer_name,
       agent: tour.agent,
       pax: tour.pax,
+      category: tour.category,
       contact_details: tour.contact_details,
       arrival_datetime: formatToIST(tour.arrival_datetime),
       departure_datetime: formatToIST(tour.departure_datetime),

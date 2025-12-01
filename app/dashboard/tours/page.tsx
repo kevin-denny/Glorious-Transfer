@@ -544,6 +544,10 @@ export default function ToursPage() {
       label: "Agent",
     },
     {
+      key: "agent_ref",
+      label: "Agent Ref",
+    },
+    {
       key: "pax",
       label: "Pax",
     },
@@ -1109,6 +1113,14 @@ Attention:
                   <p className="font-medium">{selectedTour.agent}</p>
                 </div>
                 <div>
+                  <Label className="text-gray-500">Agent Reference</Label>
+                  <p className="font-medium">{selectedTour.agent_ref}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Trip Type</Label>
+                  <p className="font-medium">{selectedTour.category}</p>
+                </div>
+                <div>
                   <Label className="text-gray-500">Pax</Label>
                   <p className="font-medium">{selectedTour.pax}</p>
                 </div>
@@ -1116,16 +1128,33 @@ Attention:
                   <Label className="text-gray-500">Contact Details</Label>
                   <p className="font-medium">{selectedTour.contact_details}</p>
                 </div>
-                <div>
-                  <Label className="text-gray-500">Arrival Date-Time</Label>
-                  <p className="font-medium">{selectedTour.arrival_datetime}</p>
-                </div>
-                <div>
-                  <Label className="text-gray-500">Departure Date-Time</Label>
-                  <p className="font-medium">
-                    {selectedTour.departure_datetime}
-                  </p>
-                </div>
+                {selectedTour?.category == "Round Tour" && (
+                  <>
+                    <div>
+                      <Label className="text-gray-500">Arrival Date-Time</Label>
+                      <p className="font-medium">
+                        {selectedTour.arrival_datetime}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-gray-500">
+                        Departure Date-Time
+                      </Label>
+                      <p className="font-medium">
+                        {selectedTour.departure_datetime}
+                      </p>
+                    </div>
+                  </>
+                )}
+                {(selectedTour?.category == "Departure" ||
+                  selectedTour?.category == "Arrival") && (
+                  <div>
+                    <Label className="text-gray-500">Pickup Date & Time</Label>
+                    <p className="font-medium">
+                      {selectedTour.pickup_datetime}
+                    </p>
+                  </div>
+                )}
                 <div>
                   <Label className="text-gray-500">Flight Number</Label>
                   <p className="font-medium">{selectedTour.flight_no}</p>

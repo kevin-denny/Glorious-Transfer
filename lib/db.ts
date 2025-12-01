@@ -1,5 +1,13 @@
 import mysql from 'mysql2/promise';
 
+// Validate environment variables
+if (!process.env.DB_HOST || !process.env.DB_USER || !process.env.DB_NAME) {
+  console.error('Missing required database environment variables');
+  console.error('DB_HOST:', process.env.DB_HOST ? 'set' : 'missing');
+  console.error('DB_USER:', process.env.DB_USER ? 'set' : 'missing');
+  console.error('DB_NAME:', process.env.DB_NAME ? 'set' : 'missing');
+}
+
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -8,17 +16,41 @@ const pool = mysql.createPool({
   timezone: '+05:30', // Set timezone to IST
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
+  queueLimit: 50,
 });
 
 export async function query(sql: string, params?: any[]) {
-  const [results] = await pool.execute(sql, params);
-  return results;
+  try {
+    // Call pool.execute with or without params based on whether params are provided
+    let result;
+    if (params && params.length > 0) {
+      result = await pool.execute(sql, params);
+    } else {
+      result = await pool.execute(sql);
+    }
+    
+    if (!result || !Array.isArray(result)) {
+      console.error('Invalid query result:', result);
+      return [];
+    }
+    const [results] = result;
+    return results || [];
+  } catch (error) {
+    console.error('Database query error:', error);
+    console.error('SQL:', sql);
+    console.error('Params:', params);
+    throw error;
+  }
 }
 
 export async function queryOne<T = any>(sql: string, params?: any[]): Promise<T | null> {
-  const results = await query(sql, params) as T[];
-  return results[0] || null;
+  try {
+    const results = await query(sql, params) as T[];
+    return (results && results.length > 0) ? results[0] : null;
+  } catch (error) {
+    console.error('Database queryOne error:', error);
+    throw error;
+  }
 }
 
 // Get a connection for transaction

@@ -45,10 +45,10 @@ export async function POST(request: NextRequest) {
     );
     let total;
 
-    let tours = [];
+    let tours: any[] = [];
     // Get paginated tours with assignment details
     if(searchTerm && searchTerm.trim().length > 0) {
-      tours = (await query(`
+      const queryResult = await query(`
         SELECT 
           t.*,
           a.id as assignment_id,
@@ -65,10 +65,11 @@ export async function POST(request: NextRequest) {
         WHERE t.id LIKE ? OR t.customer_name LIKE ?
         ORDER BY t.created_at DESC 
         LIMIT ${limit} OFFSET ${offset}
-      `, [`%${searchTerm}%`, `%${searchTerm}%`])) as any[];
+      `, [`%${searchTerm}%`, `%${searchTerm}%`]);
+      tours = Array.isArray(queryResult) ? queryResult : [];
       total = tours.length;
     } else {
-      tours = (await query(`
+      const queryResult = await query(`
         SELECT 
           t.*,
           a.id as assignment_id,
@@ -84,12 +85,13 @@ export async function POST(request: NextRequest) {
         LEFT JOIN drivers d ON a.driver_id = d.id
         ORDER BY t.created_at DESC 
         LIMIT ${pageSize} OFFSET ${offset}
-      `)) as any[];
+      `);
+      tours = Array.isArray(queryResult) ? queryResult : [];
       total = totalResult?.total || 0;
     }
 
     // Format timestamps and structure assignment data for all tours
-    const formattedTours = tours.map((tour) => ({
+    const formattedTours = Array.isArray(tours) ? tours.map((tour) => ({
       id: tour.id,
       booking_date: formatToIST(tour.booking_date).split(" ")[0],
       customer_name: tour.customer_name,
@@ -97,8 +99,9 @@ export async function POST(request: NextRequest) {
       pax: tour.pax,
       category: tour.category,
       contact_details: tour.contact_details,
-      arrival_datetime: formatToIST(tour.arrival_datetime),
-      departure_datetime: formatToIST(tour.departure_datetime),
+      arrival_datetime: tour.arrival_datetime ? formatToIST(tour.arrival_datetime) : null,
+      departure_datetime: tour.departure_datetime ? formatToIST(tour.departure_datetime) : null,
+      pickup_datetime: tour.pickup_datetime ? formatToIST(tour.pickup_datetime) : null,
       flight_no: tour.flight_no,
       remarks: tour.remarks,
       status: tour.status,
@@ -109,7 +112,6 @@ export async function POST(request: NextRequest) {
       amount: tour.amount,
       currency: tour.currency,
       agent_ref: tour.agent_ref,
-      pickup_datetime: formatToIST(tour.pickup_datetime),
       assignment: tour.assignment_id
         ? {
             id: tour.assignment_id,
@@ -124,7 +126,7 @@ export async function POST(request: NextRequest) {
             },
           }
         : null,
-    }));
+    })) : [];
 
     // Calculate pagination metadata
     const totalPages = Math.ceil(total / pageSize);

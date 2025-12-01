@@ -95,6 +95,7 @@ export async function POST(request: NextRequest) {
       customer_name: tour.customer_name,
       agent: tour.agent,
       pax: tour.pax,
+      category: tour.category,
       contact_details: tour.contact_details,
       arrival_datetime: formatToIST(tour.arrival_datetime),
       departure_datetime: formatToIST(tour.departure_datetime),
@@ -105,6 +106,10 @@ export async function POST(request: NextRequest) {
       updated_at: formatToIST(tour.updated_at),
       pickup: tour.pickup,
       destination: tour.destination,
+      amount: tour.amount,
+      currency: tour.currency,
+      agent_ref: tour.agent_ref,
+      pickup_datetime: formatToIST(tour.pickup_datetime),
       assignment: tour.assignment_id
         ? {
             id: tour.assignment_id,

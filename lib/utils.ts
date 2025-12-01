@@ -54,6 +54,10 @@ export const SYSCONFIG = {
   MANUAL_USER_ROLE: 'administrator',
   MANUAL_USER_EMAIL: 'manualuser@glorioustransfer.com',
   MANUAL_USER_PASSWORD: 'ChangeMe@123',
+
+  TRIP_CAT_ARRIVAL: 'Arrival',
+  TRIP_CAT_DEPARTURE: 'Departure',
+  TRIP_CAT_ROUND: 'Round Tour',
 };
 
 export const currencyList = [

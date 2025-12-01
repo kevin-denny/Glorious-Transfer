@@ -42,15 +42,20 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { currencyList } from "@/lib/utils";
 
 interface Tour {
   id: string;
   booking_date: string;
   // booking_ref: string;
   customer_name: string;
+  trip: string;
   agent: string;
+  agent_ref: string;
   pax: number;
   contact_details: string;
+  currency: string;
+  income_amount: string;
   arrival_datetime: string;
   departure_datetime: string;
   pickup: string | null;
@@ -62,6 +67,11 @@ interface Tour {
   updated_at: string;
   assigned_driver_id: string | null;
   assignment?: { driver: Driver; driver_number: string } | null;
+}
+interface Assign {
+  selectedDriver: string;
+  paid_amount: string;
+  currency: string;
 }
 
 interface Driver {
@@ -103,9 +113,13 @@ export default function ToursPage() {
   const [formData, setFormData] = useState({
     booking_date: new Date().toISOString().split("T")[0],
     customer_name: "",
+    trip: "",
     agent: "",
+    agent_ref: "",
     pax: 1,
     contact_details: "",
+    income_amount: "",
+    currency: "LKR",
     arrival_datetime: "",
     departure_datetime: "",
     pickup: "",
@@ -113,6 +127,12 @@ export default function ToursPage() {
     flight_no: "",
     remarks: "",
     status: "Pending",
+  });
+
+  const [assignData, setAssignData] = useState({
+    selectedDriver: "",
+    paid_amount: "",
+    currency: "LKR",
   });
 
   const [page, setPage] = useState(1);
@@ -225,10 +245,14 @@ export default function ToursPage() {
           body: JSON.stringify({
             booking_date: formData.booking_date,
             customer_name: formData.customer_name,
+            trip: formData.trip,
             agent: formData.agent,
+            agent_ref: formData.agent_ref,
             pax: formData.pax,
             contact_details: formData.contact_details,
             arrival_datetime: formData.arrival_datetime,
+            currency: formData.currency,
+            income_amount: formData.income_amount,
             pickup: formData.pickup,
             destination: formData.destination,
             departure_datetime: formData.departure_datetime,
@@ -266,10 +290,14 @@ export default function ToursPage() {
           body: JSON.stringify({
             booking_date: formData.booking_date,
             customer_name: formData.customer_name,
+            trip: formData.trip,
             agent: formData.agent,
+            agent_ref: formData.agent_ref,
             pax: formData.pax,
             contact_details: formData.contact_details,
             arrival_datetime: formData.arrival_datetime,
+            currency: formData.currency,
+            income_amount: formData.income_amount,
             pickup: formData.pickup,
             destination: formData.destination,
             departure_datetime: formData.departure_datetime,
@@ -309,7 +337,7 @@ export default function ToursPage() {
     }
   }
 
-  async function handleAssignDriver(driver: string) {
+  async function handleAssignDriver() {
     if (!selectedTour) return;
 
     setLoading(true);
@@ -324,7 +352,9 @@ export default function ToursPage() {
         },
         body: JSON.stringify({
           tour_id: selectedTour.id,
-          driver_id: driver,
+          driver_id: assignData?.selectedDriver,
+          paid_amount: assignData?.paid_amount,
+          currency: assignData?.currency,
         }),
       });
 
@@ -361,9 +391,13 @@ export default function ToursPage() {
     setFormData({
       booking_date: new Date().toISOString().split("T")[0],
       customer_name: "",
+      trip: "",
       agent: "",
+      agent_ref: "",
       pax: 1,
       contact_details: "",
+      income_amount: "",
+      currency: "LKR",
       arrival_datetime: "",
       pickup: "",
       destination: "",
@@ -373,6 +407,11 @@ export default function ToursPage() {
       status: "Pending",
     });
     setSelectedTour(null);
+    setAssignData({
+      selectedDriver: "",
+      paid_amount: "",
+      currency: "LKR",
+    });
   }
 
   function handleEdit(tour: Tour) {
@@ -380,9 +419,13 @@ export default function ToursPage() {
     setFormData({
       booking_date: tour.booking_date,
       customer_name: tour.customer_name,
+      trip: tour.trip,
       agent: tour.agent,
+      agent_ref: tour.agent_ref,
       pax: tour.pax,
       contact_details: tour.contact_details,
+      income_amount: tour.income_amount,
+      currency: tour.currency,
       arrival_datetime: tour.arrival_datetime,
       departure_datetime: tour.departure_datetime,
       pickup: tour.pickup || "",
@@ -392,6 +435,11 @@ export default function ToursPage() {
       status: tour.status,
     });
     setDialogOpen(true);
+    setAssignData({
+      selectedDriver: "",
+      paid_amount: "",
+      currency: "LKR",
+    });
   }
 
   function handleView(tour: Tour) {
@@ -603,6 +651,41 @@ export default function ToursPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="agent_ref">Agent Reference</Label>
+                    <Input
+                      id="agent_ref"
+                      value={formData.agent_ref}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          agent_ref: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="trip">Trip Type</Label>
+                    <Select
+                      value={formData.trip}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, trip: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a Trip Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Arrival Transfer">
+                          Arrival Transfer
+                        </SelectItem>
+                        <SelectItem value="Departure Transfer">
+                          Departure Transfer
+                        </SelectItem>
+                        <SelectItem value="RoundTour">Round Tour</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="pax">Number of Passengers</Label>
                     <Input
                       id="pax"
@@ -631,6 +714,39 @@ export default function ToursPage() {
                       }
                       required
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="income_amount">Income Amount</Label>
+                    <Input
+                      id="income_amount"
+                      value={formData.income_amount}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          income_amount: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Currency</Label>
+                    <Select
+                      value={formData.currency}
+                      onValueChange={(v) =>
+                        setFormData({ ...formData, currency: v })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currencyList.map((c) => (
+                          <SelectItem key={c.code} value={c.code}>
+                            {c.code} — {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="arrival_datetime">
@@ -804,7 +920,7 @@ export default function ToursPage() {
       </div>
 
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Assign Driver to Tour</DialogTitle>
           </DialogHeader>
@@ -818,46 +934,83 @@ export default function ToursPage() {
                 </p>
               </div>
             )}
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Driver dropdown */}
+              <div className="space-y-2">
+                <Label>Select Driver</Label>
 
-            {/* Driver dropdown */}
-            <div className="space-y-2">
-              <Label>Select Driver</Label>
+                <Select
+                  onValueChange={(v) =>
+                    setAssignData({ ...assignData, selectedDriver: v })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose a driver" />
+                  </SelectTrigger>
 
-              <Select onValueChange={(val) => setSelectedDriver(val as any)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose a driver" />
-                </SelectTrigger>
+                  <SelectContent>
+                    {drivers.map((driver) => (
+                      <SelectItem
+                        key={driver.driver_id}
+                        value={String(driver.driver_id)}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">{driver.name}</span>
+                          <span className="text-xs text-gray-500">
+                            {driver.driver_number}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
 
-                <SelectContent>
-                  {drivers.map((driver) => (
-                    <SelectItem
-                      key={driver.driver_id}
-                      value={String(driver.driver_id)}
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-medium">{driver.name}</span>
-                        <span className="text-xs text-gray-500">
-                          {driver.driver_number}
-                        </span>
+                    {drivers.length === 0 && (
+                      <div className="p-2 text-sm text-gray-500">
+                        No active drivers available
                       </div>
-                    </SelectItem>
-                  ))}
-
-                  {drivers.length === 0 && (
-                    <div className="p-2 text-sm text-gray-500">
-                      No active drivers available
-                    </div>
-                  )}
-                </SelectContent>
-              </Select>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="income_amount">Paid Amount</Label>
+                <Input
+                  id="income_amount"
+                  value={assignData.paid_amount}
+                  onChange={(e) =>
+                    setAssignData({
+                      ...assignData,
+                      paid_amount: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Currency</Label>
+                <Select
+                  value={assignData.currency}
+                  onValueChange={(v) =>
+                    setAssignData({ ...assignData, currency: v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencyList.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.code} — {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-
             {/* OK Button */}
             <div className="flex justify-end pt-4">
               <Button
-                disabled={!selectedDriver}
+                // disabled={!selectedDriver}
                 onClick={() => {
-                  handleAssignDriver(selectedDriver as any);
+                  handleAssignDriver();
                   setAssignDialogOpen(false);
                 }}
               >
@@ -881,7 +1034,10 @@ export default function ToursPage() {
                   className="flex items-center gap-1"
                   onClick={() => {
                     const textToCopy = `
-Booking Date: ${selectedTour.booking_date}
+                    Hello from Glorious Transfer!
+We have received your booking for transport and please review the transfer date and time below and let us know if everything is correct. 
+Thank you!
+
 Customer Name: ${selectedTour.customer_name}
 Pax: ${selectedTour.pax}
 Contact Details: ${selectedTour.contact_details}
@@ -891,6 +1047,11 @@ Flight Number: ${selectedTour.flight_no ?? ""}
 Pickup: ${selectedTour.pickup ?? ""}
 Destination: ${selectedTour.destination ?? ""}
 Remarks: ${selectedTour.remarks ?? ""}
+
+Attention:
+1. Please connect free WiFi at the CMB airport & notify us on WhatsApp once you land.
+
+2. Follow the map to go to the meeting point.
         `.trim();
 
                     navigator.clipboard.writeText(textToCopy).then(() => {

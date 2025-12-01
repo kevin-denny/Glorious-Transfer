@@ -72,3 +72,10 @@ ADD COLUMN currency CHAR(10);
 
 ALTER TABLE tours
 ADD COLUMN agent_ref CHAR(50);
+
+ALTER TABLE `glorious_transfer`.`tours` 
+CHANGE COLUMN `arrival_datetime` `arrival_datetime` TIMESTAMP NULL ,
+CHANGE COLUMN `departure_datetime` `departure_datetime` TIMESTAMP NULL ;
+
+ALTER TABLE tours
+ADD COLUMN pickup_datetime TIMESTAMP;

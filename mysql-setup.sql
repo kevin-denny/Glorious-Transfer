@@ -28,7 +28,7 @@ ADD COLUMN status VARCHAR(50);
 -- 23-11-2025
 
 ALTER TABLE auth_users
-ADD COLUMN status ENUM('inactive', 'active', 'deactive') DEFAULT 'inactive';
+ADD COLUMN status ENUM('Inactive', 'Active', 'Deactive') DEFAULT 'Inactive';
 
 -- 24-11-2025
 
@@ -58,3 +58,17 @@ DROP FOREIGN KEY payments_ibfk_1;
 
 ALTER TABLE payments 
 DROP INDEX idx_driver_id;
+
+-- 01-12-2025
+
+ALTER TABLE tours
+ADD COLUMN category ENUM('Arrival', 'Departure', 'Round Tour', '-') DEFAULT '-';
+
+ALTER TABLE tours
+ADD COLUMN amount DECIMAL(10, 2) NOT NULL DEFAULT 0;
+
+ALTER TABLE tours
+ADD COLUMN currency CHAR(10);
+
+ALTER TABLE tours
+ADD COLUMN agent_ref CHAR(50);

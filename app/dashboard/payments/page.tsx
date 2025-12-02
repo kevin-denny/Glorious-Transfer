@@ -47,11 +47,14 @@ interface DriverPayment {
   driver_number: string;
   updated_at: string;
   currency: string;
-  paid_amount: string;
+  paid_amount: string | number;
   driver_name: string;
+  customer_name: string;
   id: string;
   driver_id: string;
+  tour_id: string;
   amount: number | string;
+  tobe_paid: number | string;
   status: string;
   payment_date: string | null;
   notes: string | null;
@@ -132,12 +135,16 @@ export default function PaymentsPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formDriverData, setFormDriverData] = useState({
+    id: "",
     driver_id: "",
+    driver_name: "",
+    customer_name: "",
     tour_id: "",
-    amount: "",
+    amount: 0,
+    tobe_paid: 0,
     currency: "",
-    notes: "",
+    paid_amount: 0,
     status: "",
   });
 
@@ -337,19 +344,14 @@ export default function PaymentsPage() {
 
       if (activeTab === "driver") {
         // DRIVER PAYMENT
-        response = await fetch(createpayments, {
-          method: "POST",
+        response = await fetch(`${createpayments}/${formDriverData?.id}`, {
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            driver_id: formData.driver_id,
-            tour_id: formData.tour_id,
-            amount: formData.amount,
-            currency: formData.currency,
-            type: "driver_payment",
-            status: formData.status,
+            paid_amount: Number(formDriverData.tobe_paid),
           }),
         });
 
@@ -360,7 +362,7 @@ export default function PaymentsPage() {
           );
         }
 
-        await logActivity("create", "driver_payment", null, formData);
+        // await logActivity("create", "driver_payment", null, formData);
         fetchDriverPayments(); // <-- only for driver tab
       } else {
         // TOUR PAYMENT
@@ -371,12 +373,12 @@ export default function PaymentsPage() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            driver_id: "--",
-            tour_id: formData.tour_id,
-            amount: formData.amount,
-            currency: formData.currency,
-            type: "tour_payment",
-            status: formData.status,
+            // driver_id: "--",
+            // tour_id: formData.tour_id,
+            // amount: formData.amount,
+            // currency: formData.currency,
+            // type: "tour_payment",
+            // status: formData.status,
           }),
         });
 
@@ -387,7 +389,7 @@ export default function PaymentsPage() {
           );
         }
 
-        await logActivity("create", "tour_payment", null, formData);
+        // await logActivity("create", "tour_payment", null, formData);
         fetchTourPayments(); // <-- only for tour tab
       }
 
@@ -446,12 +448,16 @@ export default function PaymentsPage() {
   // RESET FORM
   // -------------------------
   function resetForm() {
-    setFormData({
+    setFormDriverData({
+      id: "",
       driver_id: "",
+      driver_name: "",
+      customer_name: "",
       tour_id: "",
-      amount: "",
+      amount: 0,
+      tobe_paid: 0,
       currency: "",
-      notes: "",
+      paid_amount: 0,
       status: "",
     });
   }
@@ -551,6 +557,28 @@ export default function PaymentsPage() {
       ),
     },
   ];
+  function handleEdit(type: string, obj: Tour | DriverPayment) {
+    if (type === "driver") {
+      const driver = obj as DriverPayment;
+
+      setDriverPayment(driver);
+
+      setFormDriverData({
+        id: driver.id,
+        driver_id: driver.driver_id,
+        tour_id: driver.tour_id,
+        driver_name: driver.driver_name,
+        customer_name: driver.customer_name,
+        amount: Number(driver.amount),
+        tobe_paid: Number(driver.tobe_paid),
+        currency: driver.currency,
+        paid_amount: Number(driver.paid_amount),
+        status: driver.status,
+      });
+
+      setDialogOpen(true);
+    }
+  }
 
   function handleView(type: String, obj: Tour | DriverPayment) {
     if (type == "driver") {
@@ -578,89 +606,61 @@ export default function PaymentsPage() {
           <TabsContent value="driver">
             <div className="flex justify-end">
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
+                {/* <DialogTrigger asChild>
                   <Button className="gap-2">
                     <Plus className="h-4 w-4" />
                     Add Driver Payment
                   </Button>
-                </DialogTrigger>
+                </DialogTrigger> */}
 
                 <DialogContent className="max-w-3xl">
                   <DialogHeader>
-                    <DialogTitle>Create Driver Payment</DialogTitle>
+                    <DialogTitle>Update Driver Payment</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Driver</Label>
-                      <Select
-                        value={formData.driver_id}
-                        onValueChange={(v) =>
-                          setFormData({ ...formData, driver_id: v })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select driver" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {drivers.map((d) => (
-                            <SelectItem key={d.driver_id} value={d.driver_id}>
-                              {d.name} — {d.driver_number}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div>
+                      <Label className="text-gray-500">Driver</Label>
+                      <p className="font-medium">{`${formDriverData.driver_id} - ${formDriverData.driver_name}`}</p>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Tour</Label>
-                      <Select
-                        value={formData.tour_id}
-                        onValueChange={(v) =>
-                          setFormData({ ...formData, tour_id: v })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select tour" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {tours.map((t) => (
-                            <SelectItem key={t.value} value={t.value}>
-                              {t.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div>
+                      <Label className="text-gray-500">Trip</Label>
+                      <p className="font-medium">{`${formDriverData.tour_id} - ${formDriverData.customer_name}`}</p>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Amount</Label>
-                      <Input
-                        value={formData.amount}
-                        onChange={(e) =>
-                          setFormData({ ...formData, amount: e.target.value })
-                        }
-                        required
-                      />
+                    <div>
+                      <Label className="text-gray-500">Amount</Label>
+                      <p className="font-medium">{`${formDriverData.amount} ${formDriverData.currency}`}</p>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label>Currency</Label>
-                      <Select
-                        value={formData.currency}
-                        onValueChange={(v) =>
-                          setFormData({ ...formData, currency: v })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Currency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {currencyList.map((c) => (
-                            <SelectItem key={c.code} value={c.code}>
-                              {c.code} — {c.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {(Number(formDriverData?.amount) ?? 0) -
+                      (Number(formDriverData?.paid_amount) ?? 0) >
+                      0 && (
+                      <>
+                        <div>
+                          <Label className="text-gray-500">To be Paid</Label>
+                          <p className="font-medium">
+                            {`${
+                              Number(formDriverData.amount) -
+                              Number(formDriverData.paid_amount)
+                            } ${formDriverData.currency}`}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="tobe_paid">Payment Amount</Label>
+                          <Input
+                            id="tobe_paid"
+                            value={formDriverData.tobe_paid || ""}
+                            onChange={(e) =>
+                              setFormDriverData({
+                                ...formDriverData,
+                                tobe_paid:
+                                  e.target.value === ""
+                                    ? 0
+                                    : Number(e.target.value),
+                              })
+                            }
+                          />
+                        </div>
+                      </>
+                    )}
 
                     <div className="flex justify-end gap-2">
                       <Button
@@ -763,7 +763,7 @@ export default function PaymentsPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    // onClick={() => handleEdit(driver)}
+                    onClick={() => handleEdit("driver", driver)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -862,7 +862,7 @@ export default function PaymentsPage() {
           {/* ==================================
               TOUR PAYMENTS
           ================================== */}
-          <TabsContent value="tour">
+          {/* <TabsContent value="tour">
             <div className="flex justify-end">
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
@@ -946,7 +946,7 @@ export default function PaymentsPage() {
             </div>
 
             {/* Stats */}
-            <div className="grid gap-4 md:grid-cols-3">
+          {/* <div className="grid gap-4 md:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-gray-600">
@@ -999,10 +999,10 @@ export default function PaymentsPage() {
                   </p>
                 </CardContent>
               </Card>
-            </div>
+            </div> */}
 
-            {/* Table */}
-            <DataTable
+          {/* Table */}
+          {/* <DataTable
               columns={tourcolumns}
               data={filteredTours}
               searchValue={searchTour}
@@ -1042,7 +1042,7 @@ export default function PaymentsPage() {
                 </div>
               )}
             />
-          </TabsContent>
+          </TabsContent> */}
         </Tabs>
       </div>
     </DashboardLayout>

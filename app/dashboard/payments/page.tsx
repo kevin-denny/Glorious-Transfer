@@ -512,7 +512,7 @@ export default function PaymentsPage() {
   const tourcolumns = [
     {
       key: "tour_id",
-      label: "Tour",
+      label: "Trip ID",
     },
     {
       key: "customer_name",

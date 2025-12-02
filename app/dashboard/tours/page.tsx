@@ -134,6 +134,7 @@ export default function ToursPage() {
   const [assignData, setAssignData] = useState({
     selectedDriver: "",
     amount: "",
+    paid_amount: "",
     currency: "LKR",
   });
 
@@ -358,6 +359,7 @@ export default function ToursPage() {
           tour_id: selectedTour.id,
           driver_id: assignData?.selectedDriver,
           amount: assignData?.amount,
+          paid_amount: assignData?.paid_amount,
           currency: assignData?.currency,
         }),
       });
@@ -415,6 +417,7 @@ export default function ToursPage() {
     setAssignData({
       selectedDriver: "",
       amount: "",
+      paid_amount: "",
       currency: "LKR",
     });
   }
@@ -444,6 +447,7 @@ export default function ToursPage() {
     setAssignData({
       selectedDriver: "",
       amount: "",
+      paid_amount: "",
       currency: "LKR",
     });
   }
@@ -1001,7 +1005,7 @@ export default function ToursPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="amount">Paid Amount</Label>
+                <Label htmlFor="amount">Total Amount</Label>
                 <Input
                   id="amount"
                   value={assignData.amount}
@@ -1009,6 +1013,19 @@ export default function ToursPage() {
                     setAssignData({
                       ...assignData,
                       amount: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="paid_amount">Paid Amount</Label>
+                <Input
+                  id="paid_amount"
+                  value={assignData.paid_amount}
+                  onChange={(e) =>
+                    setAssignData({
+                      ...assignData,
+                      paid_amount: e.target.value,
                     })
                   }
                 />

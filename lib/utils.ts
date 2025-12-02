@@ -30,6 +30,7 @@ export const SYSCONFIG = {
   ASSIIGNED: 'Assigned',
   COMPLETED: 'Completed',
   CANCELLED: 'Cancelled',
+  PARTIAL: 'Partial',
 
   SUCCESS: 'Success',
   FAILED: 'Failed',
@@ -58,6 +59,13 @@ export const SYSCONFIG = {
   TRIP_CAT_ARRIVAL: 'Arrival',
   TRIP_CAT_DEPARTURE: 'Departure',
   TRIP_CAT_ROUND: 'Round Tour',
+
+  PAYMENT_TYPE_TOUR: 'tour_payment',
+  PAYMENT_TYPE_DRIVER: 'driver_payment',
+
+  ASSIGNMENT_ONGOING: 'Ongoing',
+  ASSIGNMENT_COMPLETED: 'Completed',
+  ASSIGNMENT_CANCELLED: 'Cancelled'
 };
 
 export const currencyList = [

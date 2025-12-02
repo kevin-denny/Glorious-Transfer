@@ -90,3 +90,9 @@ ADD COLUMN currency CHAR(10);
 
 ALTER TABLE assignments
 ADD COLUMN paid_amount DECIMAL(10, 2) NOT NULL DEFAULT 0;
+
+ALTER TABLE payments
+ADD COLUMN assignment_id CHAR(36) DEFAULT NULL;
+
+ALTER TABLE assignments
+ADD COLUMN status CHAR(20);

@@ -15,18 +15,26 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   timezone: '+05:30', // Set timezone to IST
   waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 50,
+  connectionLimit: 20, // Increased from 10
+  queueLimit: 0, // Don't queue, fail fast
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
+  maxIdle: 10, // Maximum idle connections
+  idleTimeout: 60000, // Close idle connections after 60 seconds
 });
 
 export async function query(sql: string, params?: any[]) {
+  let connection;
   try {
-    // Call pool.execute with or without params based on whether params are provided
+    // Get a connection from the pool
+    connection = await pool.getConnection();
+    
+    // Execute query with or without params
     let result;
     if (params && params.length > 0) {
-      result = await pool.execute(sql, params);
+      result = await connection.execute(sql, params);
     } else {
-      result = await pool.execute(sql);
+      result = await connection.execute(sql);
     }
     
     if (!result || !Array.isArray(result)) {
@@ -35,11 +43,21 @@ export async function query(sql: string, params?: any[]) {
     }
     const [results] = result;
     return results || [];
-  } catch (error) {
+  } catch (error: any) {
     console.error('Database query error:', error);
     console.error('SQL:', sql);
     console.error('Params:', params);
+    
+    // Log connection pool status on error
+    if (error.code === 'ER_CON_COUNT_ERROR') {
+      console.error('Connection pool exhausted. Consider increasing connectionLimit or checking for connection leaks.');
+    }
     throw error;
+  } finally {
+    // Always release the connection back to the pool
+    if (connection) {
+      connection.release();
+    }
   }
 }
 

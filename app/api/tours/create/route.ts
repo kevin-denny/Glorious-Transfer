@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, queryOne } from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
-import { generateUniqueTourId } from "@/lib/id-generator";
+import { generateUniquePaymentId, generateUniqueTourId } from "@/lib/id-generator";
 import { SYSCONFIG } from "@/lib/utils";
 import { AuditLogger } from "@/lib/activity-logger.server";
 
@@ -138,6 +138,38 @@ export async function POST(request: NextRequest) {
     await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_TOUR, tour.id, tour, SYSCONFIG.SUCCESS, {
       change_type: 'tour_creation',
     });
+
+    // Add payment record if amount > 0
+    if(body.amount && body.amount > 0) {
+      const paymentId = await generateUniquePaymentId();
+      await query(
+        `INSERT INTO payments (
+          id, tour_id, driver_id, amount, currency, type, updated_by, agent_ref
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          paymentId,
+          tour.id,
+          "-",
+          body.amount,
+          body.currency || null,
+          SYSCONFIG.PAYMENT_TYPE_TOUR,
+          user.id,
+          body.agent_ref || null,
+        ]
+      );
+
+      // 🔥 LOG AUDIT ACTIVITY - PAYMENT CREATION
+      await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_PAYMENT, paymentId, {
+        id: paymentId,
+        reference_id: tour.id,
+        amount: body.amount,
+        currency: body.currency || null,
+        type: SYSCONFIG.PAYMENT_TYPE_TOUR,
+        created_by: user.id,
+      }, SYSCONFIG.SUCCESS, {
+        change_type: 'payment_creation',
+      });
+    }
 
     return NextResponse.json(
       {

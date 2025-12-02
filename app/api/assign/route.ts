@@ -254,8 +254,8 @@ export async function POST(request: NextRequest) {
 
     // Create the assignment
     await query(
-      "INSERT INTO assignments (id, tour_id, driver_id, assigned_by, amount, currency, paid_amount) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [assignmentId, tour_id, driver_id, user.id, amount || 0, currency || null, paid_amount || null]
+      "INSERT INTO assignments (id, tour_id, driver_id, assigned_by, amount, currency, paid_amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [assignmentId, tour_id, driver_id, user.id, amount || 0, currency || null, paid_amount || null, SYSCONFIG.ASSIGNMENT_ONGOING]
     );
 
     // Get the created assignment with driver details

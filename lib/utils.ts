@@ -62,6 +62,10 @@ export const SYSCONFIG = {
 
   PAYMENT_TYPE_TOUR: 'tour_payment',
   PAYMENT_TYPE_DRIVER: 'driver_payment',
+
+  ASSIGNMENT_ONGOING: 'Ongoing',
+  ASSIGNMENT_COMPLETED: 'Completed',
+  ASSIGNMENT_CANCELLED: 'Cancelled'
 };
 
 export const currencyList = [

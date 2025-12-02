@@ -162,18 +162,15 @@ export async function PUT(
     }
 
     // Validate required fields
-    if (!booking_date || !customer_name || !agent || !pax || !contact_details || 
-        !arrival_datetime || !departure_datetime || !category) {
+    if (!booking_date || !customer_name || !agent || !pax || !contact_details || !category) {
       return NextResponse.json(
-        { message: 'Missing required fields: booking_date, customer_name, agent, pax, contact_details, arrival_datetime, departure_datetime, category' },
+        { message: 'Missing required fields: booking_date, customer_name, agent, pax, contact_details, category' },
         { status: 400 }
       );
     }
 
     // Validate date and datetime formats
     const bookingDate = new Date(booking_date);
-    const arrivalDate = new Date(arrival_datetime);
-    const departureDate = new Date(departure_datetime);
 
     if (isNaN(bookingDate.getTime())) {
       return NextResponse.json(
@@ -182,18 +179,24 @@ export async function PUT(
       );
     }
 
-    if (isNaN(arrivalDate.getTime()) || isNaN(departureDate.getTime())) {
-      return NextResponse.json(
-        { message: 'Invalid datetime format. Use ISO format (YYYY-MM-DDTHH:MM:SS)' },
-        { status: 400 }
-      );
-    }
+    // Validate arrival and departure datetimes if provided
+    if (arrival_datetime && departure_datetime) {
+      const arrivalDate = new Date(arrival_datetime);
+      const departureDate = new Date(departure_datetime);
 
-    if (departureDate <= arrivalDate) {
-      return NextResponse.json(
-        { message: 'Departure datetime must be after arrival datetime' },
-        { status: 400 }
-      );
+      if (isNaN(arrivalDate.getTime()) || isNaN(departureDate.getTime())) {
+        return NextResponse.json(
+          { message: 'Invalid datetime format. Use ISO format (YYYY-MM-DDTHH:MM:SS)' },
+          { status: 400 }
+        );
+      }
+
+      if (departureDate <= arrivalDate) {
+        return NextResponse.json(
+          { message: 'Departure datetime must be after arrival datetime' },
+          { status: 400 }
+        );
+      }
     }
 
     // Validate pax (passenger count)
@@ -222,6 +225,10 @@ export async function PUT(
           pickup = ?,
           destination = ?,
           category = ?,
+          amount = ?,
+          currency = ?,
+          agent_ref = ?,
+          pickup_datetime = ?,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `, [
@@ -246,10 +253,18 @@ export async function PUT(
       ]);
 
       // Delete assignment if status is Cancelled or Completed
-      if (status === SYSCONFIG.CANCELLED || status === SYSCONFIG.COMPLETED) {
+      // if (status === SYSCONFIG.CANCELLED || status === SYSCONFIG.COMPLETED) {
+      //   await connection.execute(
+      //     'DELETE FROM assignments WHERE tour_id = ?',
+      //     [tourId]
+      //   );
+      // }
+
+      // Update assignment status if tour is Completed or Cancelled
+      if (status === SYSCONFIG.COMPLETED || status === SYSCONFIG.CANCELLED) {
         await connection.execute(
-          'DELETE FROM assignments WHERE tour_id = ?',
-          [tourId]
+          'UPDATE assignments SET status = ? WHERE tour_id = ?',
+          [status === SYSCONFIG.COMPLETED ? SYSCONFIG.ASSIGNMENT_COMPLETED : SYSCONFIG.ASSIGNMENT_CANCELLED, tourId]
         );
       }
 

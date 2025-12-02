@@ -56,10 +56,19 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     // Prepare update values, replacing undefined with existing values
     const updateAmount = amount !== undefined ? amount : existingPayment.amount;
-    const updateStatus = status !== undefined ? status : existingPayment.status;
+    let updateStatus = status !== undefined ? status : existingPayment.status;
     const updatePaidAmount = paid_amount !== undefined ? paid_amount : existingPayment.paid_amount;
     const updateCurrency = currency !== undefined ? currency : existingPayment.currency;
     const updateType = type !== undefined ? type : existingPayment.type;
+
+    // validate payment amount
+    if (updatePaidAmount >= updateAmount) {
+      updateStatus = SYSCONFIG.COMPLETED;
+    } else if (updatePaidAmount > 0 && updatePaidAmount < updateAmount) {
+      updateStatus = SYSCONFIG.PARTIAL;
+    } else if (updatePaidAmount === 0) {
+      updateStatus = SYSCONFIG.PENDING;
+    }
 
     // Update payment
     await query(

@@ -138,6 +138,7 @@ CREATE TABLE assignments (
     assigned_by CHAR(36),
     amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
     currency CHAR(10),
+    paid_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
     FOREIGN KEY (tour_id) REFERENCES tours(id) ON DELETE SET NULL,
     FOREIGN KEY (driver_id) REFERENCES drivers(id) ON DELETE SET NULL,
     INDEX idx_tour_id (tour_id),

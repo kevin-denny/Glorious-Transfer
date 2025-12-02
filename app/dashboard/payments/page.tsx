@@ -90,6 +90,9 @@ interface Tour {
   id: string;
   booking_ref: string;
   client_name: string;
+  amount: string;
+  paid_amount: string;
+  currency: string;
   value: string;
   label: string;
   status: string;
@@ -516,10 +519,18 @@ export default function PaymentsPage() {
       label: "Customer Name",
     },
     {
+      key: "agent",
+      label: "Agent",
+    },
+    {
+      key: "agent_ref",
+      label: "Agent Ref",
+    },
+    {
       key: "amount",
       label: "Amount",
+      render: (row: Tour) => `${row.amount} ${row.currency}`,
     },
-
     {
       key: "created_at",
       label: "Payment Date",
@@ -532,6 +543,7 @@ export default function PaymentsPage() {
       ),
     },
   ];
+
   const drivercolumns = [
     {
       key: "driver_name",
@@ -544,16 +556,13 @@ export default function PaymentsPage() {
     {
       key: "amount",
       label: "Total Amount",
+      render: (row: Tour) => `${row.amount} ${row.currency}`,
     },
     {
       key: "paid_amount",
       label: "Paid Amount",
+      render: (row: Tour) => `${row.paid_amount} ${row.currency}`,
     },
-    {
-      key: "currency",
-      label: "Currency",
-    },
-
     {
       key: "created_at",
       label: "Payment Date",

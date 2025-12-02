@@ -670,7 +670,7 @@ export default function PaymentsPage() {
                       >
                         Cancel
                       </Button>
-                      <Button type="submit">Create</Button>
+                      <Button type="submit">Update</Button>
                     </div>
                   </form>
                 </DialogContent>

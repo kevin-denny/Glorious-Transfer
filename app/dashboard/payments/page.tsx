@@ -44,6 +44,11 @@ import DataTable from "@/components/ui/DataTable";
 
 // Interfaces
 interface DriverPayment {
+  driver_number: string;
+  updated_at: string;
+  currency: string;
+  paid_amount: string;
+  driver_name: string;
   id: string;
   driver_id: string;
   amount: number | string;
@@ -106,6 +111,9 @@ export default function PaymentsPage() {
 
   // Driver data
   const [driverPayments, setDriverPayments] = useState<DriverPayment[]>([]);
+  const [driverPayment, setDriverPayment] = useState<DriverPayment | null>(
+    null
+  );
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [filteredDrivers, setFilteredDrivers] = useState<Driver[]>([]);
 
@@ -119,6 +127,8 @@ export default function PaymentsPage() {
   const [searchTour, setSearchTour] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [viewDriverMode, setViewDriverMode] = useState(false);
+  const [viewTourMode, setViewTourMode] = useState(false);
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -542,6 +552,13 @@ export default function PaymentsPage() {
     },
   ];
 
+  function handleView(type: String, obj: Tour | DriverPayment) {
+    if (type == "driver") {
+      setViewDriverMode(true);
+      setDriverPayment(obj as DriverPayment);
+    }
+  }
+
   // -------------------------
   // MAIN RENDER
   // -------------------------
@@ -733,12 +750,12 @@ export default function PaymentsPage() {
                 setPageSizeDriver(size);
                 setPageDriver(1);
               }}
-              renderActions={(tour: Tour) => (
+              renderActions={(driver: DriverPayment) => (
                 <div className="flex gap-2">
                   <Button
                     size="sm"
                     variant="ghost"
-                    // onClick={() => handleView(tour)}
+                    onClick={() => handleView("driver", driver)}
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
@@ -746,7 +763,7 @@ export default function PaymentsPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    // onClick={() => handleEdit(tour)}
+                    // onClick={() => handleEdit(driver)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -754,13 +771,92 @@ export default function PaymentsPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    // onClick={() => handleDelete(tour.id)}
+                    // onClick={() => handleDelete(driver.id)}
                   >
                     <Trash className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>
               )}
             />
+
+            <Dialog open={viewDriverMode} onOpenChange={setViewDriverMode}>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    {" "}
+                    <span>Payment Details</span>
+                  </DialogTitle>
+                </DialogHeader>
+                {driverPayment && (
+                  <div className="space-y-6">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <Label className="text-gray-500">Driver ID</Label>
+                        <p className="font-medium">{driverPayment.driver_id}</p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">Driver Name</Label>
+                        <p className="font-medium">
+                          {driverPayment.driver_name}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">Driver Number</Label>
+                        <p className="font-medium">
+                          {driverPayment.driver_number}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">Total Amount</Label>
+                        <p className="font-medium">
+                          {`${driverPayment.amount} ${driverPayment.currency}`}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">Paid Amount</Label>
+                        <p className="font-medium">
+                          {`${driverPayment.paid_amount} ${driverPayment.currency}`}
+                        </p>
+                      </div>
+                      {(Number(driverPayment?.amount) ?? 0) -
+                        (Number(driverPayment?.paid_amount) ?? 0) >
+                        0 && (
+                        <div>
+                          <Label className="text-gray-500">To be Paid</Label>
+                          <p className="font-medium">
+                            {`${
+                              Number(driverPayment.amount) -
+                              Number(driverPayment.paid_amount)
+                            } ${driverPayment.currency}`}
+                          </p>
+                        </div>
+                      )}
+
+                      <div>
+                        <Label className="text-gray-500">Status</Label>
+                        <p className="font-medium">{driverPayment.status}</p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">
+                          Created Date-Time
+                        </Label>
+                        <p className="font-medium">
+                          {driverPayment.created_at}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">
+                          Update Date-Time
+                        </Label>
+                        <p className="font-medium">
+                          {driverPayment.updated_at}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* ==================================

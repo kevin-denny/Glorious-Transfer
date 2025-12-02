@@ -57,11 +57,20 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Prepare update values, replacing undefined with existing values
     const updateAmount = amount !== undefined ? amount : existingPayment.amount;
     let updateStatus = status !== undefined ? status : existingPayment.status;
-    const updatePaidAmount = paid_amount !== undefined ? paid_amount : existingPayment.paid_amount;
     const updateCurrency = currency !== undefined ? currency : existingPayment.currency;
     const updateType = type !== undefined ? type : existingPayment.type;
 
-    // validate payment amount
+    // Calculate paid amount - add new payment to existing paid amount
+    let updatePaidAmount: number;
+    if (paid_amount !== undefined) {
+      // Add the new paid_amount to the existing paid_amount
+      updatePaidAmount = parseFloat(paid_amount) + parseFloat(existingPayment.paid_amount || 0);
+    } else {
+      // Keep existing paid_amount if not provided
+      updatePaidAmount = existingPayment.paid_amount;
+    }
+
+    // Auto-calculate status based on paid amount vs total amount
     if (updatePaidAmount >= updateAmount) {
       updateStatus = SYSCONFIG.COMPLETED;
     } else if (updatePaidAmount > 0 && updatePaidAmount < updateAmount) {

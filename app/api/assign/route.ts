@@ -207,6 +207,16 @@ export async function POST(request: NextRequest) {
         }
     }
 
+    // Get the tour details to check category and pickup_datetime
+    const tourDetails = await queryOne(
+      "SELECT id, status, category, pickup_datetime FROM tours WHERE id = ?",
+      [tour_id]
+    );
+
+    if (!tourDetails) {
+      return NextResponse.json({ message: "Tour not found" }, { status: 404 });
+    }
+
     // Check if tour is already assigned
     const existingAssignment = await queryOne(
       "SELECT id FROM assignments WHERE tour_id = ?",
@@ -220,33 +230,77 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if driver is already assigned to another tour at the same time
-    const conflictingAssignment = await queryOne(
-      `
-      SELECT a.id 
-      FROM assignments a
-      JOIN tours t ON a.tour_id = t.id
-      WHERE a.driver_id = ? 
-      AND t.id != ?
-      AND (
-        (t.departure_datetime <= (SELECT departure_datetime FROM tours WHERE id = ?) 
-         AND t.arrival_datetime >= (SELECT arrival_datetime FROM tours WHERE id = ?))
-        OR
-        (t.arrival_datetime <= (SELECT arrival_datetime FROM tours WHERE id = ?) 
-         AND t.departure_datetime >= (SELECT departure_datetime FROM tours WHERE id = ?))
-      )
-    `,
-      [driver_id, tour_id, tour_id, tour_id, tour_id, tour_id]
+    // Check if driver is already assigned to a Round Tour
+    const roundTourAssignment = await queryOne(
+      `SELECT a.id, t.id as tour_id, t.customer_name, t.category
+       FROM assignments a
+       JOIN tours t ON a.tour_id = t.id
+       WHERE a.driver_id = ? 
+       AND t.category = ?
+       AND t.status NOT IN (?, ?)`,
+      [driver_id, SYSCONFIG.TRIP_CAT_ROUND, SYSCONFIG.COMPLETED, SYSCONFIG.CANCELLED]
     );
 
-    if (conflictingAssignment) {
+    if (roundTourAssignment) {
       return NextResponse.json(
         {
-          message:
-            "Driver is already assigned to another tour during this time period",
+          message: `Driver is already assigned to a Round Tour (${roundTourAssignment.tour_id}). Cannot assign to another tour until the Round Tour is completed or cancelled.`
         },
         { status: 409 }
       );
+    }
+
+    // If trying to assign a Round Tour, check if driver has any active assignments
+    if (tourDetails.category === SYSCONFIG.TRIP_CAT_ROUND) {
+      const activeAssignment = await queryOne(
+        `SELECT a.id, t.id as tour_id, t.customer_name, t.category
+         FROM assignments a
+         JOIN tours t ON a.tour_id = t.id
+         WHERE a.driver_id = ? 
+         AND t.status NOT IN (?, ?)`,
+        [driver_id, SYSCONFIG.COMPLETED, SYSCONFIG.CANCELLED]
+      );
+
+      if (activeAssignment) {
+        return NextResponse.json(
+          {
+            message: `Driver is already assigned to a ${activeAssignment.category} trip (${activeAssignment.tour_id}). Cannot assign to a Round Tour until current assignment is completed or cancelled.`
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+    // If assigning Arrival or Departure, check for conflicts at the same pickup_datetime
+    if (tourDetails.category === SYSCONFIG.TRIP_CAT_ARRIVAL || tourDetails.category === SYSCONFIG.TRIP_CAT_DEPARTURE) {
+      const conflictingAssignment = await queryOne(
+        `SELECT a.id, t.id as tour_id, t.customer_name, t.category, t.pickup_datetime
+         FROM assignments a
+         JOIN tours t ON a.tour_id = t.id
+         WHERE a.driver_id = ? 
+         AND t.id != ?
+         AND (t.category = ? OR t.category = ?)
+         AND t.pickup_datetime = ?
+         AND t.status NOT IN (?, ?)`,
+        [
+          driver_id, 
+          tour_id, 
+          SYSCONFIG.TRIP_CAT_ARRIVAL, 
+          SYSCONFIG.TRIP_CAT_DEPARTURE,
+          tourDetails.pickup_datetime,
+          SYSCONFIG.COMPLETED,
+          SYSCONFIG.CANCELLED
+        ]
+      );
+
+      if (conflictingAssignment) {
+        return NextResponse.json(
+          {
+            message: `Driver is already assigned to a ${conflictingAssignment.category} trip (${conflictingAssignment.tour_id}) at the same pickup time (${formatToIST(conflictingAssignment.pickup_datetime)}). Cannot assign to another ${tourDetails.category} trip at the same time.`
+          },
+          { status: 409 }
+        );
+      }
     }
 
     // Generate assignment ID

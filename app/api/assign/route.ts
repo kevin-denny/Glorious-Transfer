@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, queryOne } from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
-import { generateUniqueAssignmentId } from "@/lib/id-generator";
+import { generateUniqueAssignmentId, generateUniquePaymentId } from "@/lib/id-generator";
 import { SYSCONFIG, formatToIST } from "@/lib/utils";
 import { AuditLogger } from "@/lib/activity-logger.server";
 
@@ -149,6 +149,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   let assignmentId: string | null = null;
   let tour_id_revert: string | null = null;
+  let paymentId: string | null = null;
   
   try {
     const authHeader = request.headers.get("authorization");
@@ -293,6 +294,24 @@ export async function POST(request: NextRequest) {
 
     // 🔥 LOG AUDIT ACTIVITY - ASSIGNMENT CREATION
     await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_ASSIGNMENT, assignmentId, newAssignment, SYSCONFIG.SUCCESS);
+
+    // add payment record if amount > 0
+    if(amount && amount > 0) {
+      paymentId = await generateUniquePaymentId();
+      let status = SYSCONFIG.PENDING;
+      if(paid_amount && paid_amount == amount) {
+        status = SYSCONFIG.COMPLETED;
+      } else if(paid_amount && paid_amount > 0 && paid_amount < amount) {
+        status = SYSCONFIG.PARTIAL;
+      }
+      await query(
+        `INSERT INTO payments 
+          (id, driver_id, tour_id, amount, currency, paid_amount, updated_by, status, assignment_id, type) 
+         VALUES 
+          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [paymentId, driver_id, tour_id, amount, currency || null, paid_amount || 0, user.id, status, assignmentId, SYSCONFIG.PAYMENT_TYPE_DRIVER]
+      );
+    }
 
     return NextResponse.json(
       {

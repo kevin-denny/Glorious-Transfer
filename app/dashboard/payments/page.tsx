@@ -513,8 +513,20 @@ export default function PaymentsPage() {
       label: "Driver",
     },
     {
+      key: "tour_id",
+      label: "Trip ID",
+    },
+    {
       key: "amount",
-      label: "Amount",
+      label: "Total Amount",
+    },
+    {
+      key: "paid_amount",
+      label: "Paid Amount",
+    },
+    {
+      key: "currency",
+      label: "Currency",
     },
 
     {

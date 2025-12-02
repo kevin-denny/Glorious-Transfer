@@ -383,8 +383,8 @@ export async function DELETE(
 
     // Check if tour has an active assignment
     const assignment = await queryOne(
-      'SELECT id FROM assignments WHERE tour_id = ?',
-      [tourId]
+      'SELECT id FROM assignments WHERE tour_id = ? AND status = ?',
+      [tourId, SYSCONFIG.ASSIGNMENT_ONGOING]
     );
 
     if (assignment) {

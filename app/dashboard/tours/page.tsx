@@ -591,6 +591,7 @@ export default function ToursPage() {
             open={dialogOpen}
             onOpenChange={(open) => {
               setDialogOpen(open);
+              if (selectedTour) setSelectedTour(null);
               if (!open) resetForm();
             }}
           >

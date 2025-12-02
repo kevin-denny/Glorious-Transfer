@@ -71,7 +71,7 @@ interface Tour {
 }
 interface Assign {
   selectedDriver: string;
-  paid_amount: string;
+  amount: string;
   currency: string;
 }
 
@@ -133,7 +133,7 @@ export default function ToursPage() {
 
   const [assignData, setAssignData] = useState({
     selectedDriver: "",
-    paid_amount: "",
+    amount: "",
     currency: "LKR",
   });
 
@@ -357,7 +357,7 @@ export default function ToursPage() {
         body: JSON.stringify({
           tour_id: selectedTour.id,
           driver_id: assignData?.selectedDriver,
-          paid_amount: assignData?.paid_amount,
+          amount: assignData?.amount,
           currency: assignData?.currency,
         }),
       });
@@ -414,7 +414,7 @@ export default function ToursPage() {
     setSelectedTour(null);
     setAssignData({
       selectedDriver: "",
-      paid_amount: "",
+      amount: "",
       currency: "LKR",
     });
   }
@@ -443,7 +443,7 @@ export default function ToursPage() {
     setDialogOpen(true);
     setAssignData({
       selectedDriver: "",
-      paid_amount: "",
+      amount: "",
       currency: "LKR",
     });
   }
@@ -1004,11 +1004,11 @@ export default function ToursPage() {
                 <Label htmlFor="amount">Paid Amount</Label>
                 <Input
                   id="amount"
-                  value={assignData.paid_amount}
+                  value={assignData.amount}
                   onChange={(e) =>
                     setAssignData({
                       ...assignData,
-                      paid_amount: e.target.value,
+                      amount: e.target.value,
                     })
                   }
                 />

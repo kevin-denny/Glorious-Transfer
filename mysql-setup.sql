@@ -79,3 +79,11 @@ CHANGE COLUMN `departure_datetime` `departure_datetime` TIMESTAMP NULL ;
 
 ALTER TABLE tours
 ADD COLUMN pickup_datetime TIMESTAMP;
+
+ALTER TABLE assignments
+ADD COLUMN amount DECIMAL(10, 2) NOT NULL DEFAULT 0;
+
+-- 02-12-2025
+
+ALTER TABLE assignments
+ADD COLUMN currency CHAR(10);

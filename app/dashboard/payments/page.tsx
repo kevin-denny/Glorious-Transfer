@@ -330,13 +330,16 @@ export default function PaymentsPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify({
+          month: "2025-12",
+        }),
       });
 
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
 
       const res = await response.json();
-      // setDrivers(res.data || []);
+      setSummary(res.summary || {});
     } catch (error: any) {
       toast({
         title: "Error",
@@ -705,30 +708,18 @@ export default function PaymentsPage() {
 
           <CardContent>
             {/* Currency totals */}
-
-
-                <div  className="text-lg font-semibold">
-                  {/* {"රු"} {"100".toFixed(2)}{" "} */}
-                  {"රු"} {"100"}{" "}
-                  <span className="text-xs text-gray-500 ml-1">({"LKR"})</span>
-                </div>
-                <div  className="text-lg font-semibold">
-                  {/* {"$"} {"100".toFixed(2)}{" "} */}
-                  {"$"} {"100"}{" "}
-                  <span className="text-xs text-gray-500 ml-1">({"USD"})</span>
-                </div>
-                <div  className="text-lg font-semibold">
-                  {/* {"€"} {"100".toFixed(2)}{" "} */}
-                  {"€"} {"100"}{" "}
-                  <span className="text-xs text-gray-500 ml-1">({"EURO"})</span>
-                </div>
-          
-     
-
-            {/* Count pending */}
-            {/* <p className="text-xs text-gray-500 mt-2">
-      {driverPayments.filter((p) => p.status === "Pending").length} pending
-    </p> */}
+            <div className="text-lg font-semibold">
+              {"රු"} {summary.tour_payments?.LKR.toFixed(2)}{" "}
+              <span className="text-xs text-gray-500 ml-1">({"LKR"})</span>
+            </div>
+            <div className="text-lg font-semibold">
+              {"$"} {summary.tour_payments?.USD.toFixed(2)}{" "}
+              <span className="text-xs text-gray-500 ml-1">({"USD"})</span>
+            </div>
+            <div className="text-lg font-semibold">
+              {"€"} {summary.tour_payments?.EUR.toFixed(2)}{" "}
+              <span className="text-xs text-gray-500 ml-1">({"EURO"})</span>
+            </div>
           </CardContent>
         </Card>
 
@@ -740,11 +731,13 @@ export default function PaymentsPage() {
             <Check className="h-5 w-5 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">රු{driverPaid.toFixed(2)}</div>
-            <p className="text-xs text-gray-500 mt-1">
+            <div className="text-2xl font-bold">
+              රු{summary.driver_payments?.LKR.toFixed(2)}
+            </div>
+            {/* <p className="text-xs text-gray-500 mt-1">
               {driverPayments.filter((p) => p.status === "paid").length}{" "}
               completed
-            </p>
+            </p> */}
           </CardContent>
         </Card>
 
@@ -757,7 +750,21 @@ export default function PaymentsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              රු{(toLKR(100,"USD")).toFixed(2)}
+              {/**
+               * Balance = Total Tour Payments (all currencies converted to LKR)
+               *           - Total Driver Payments (all currencies converted to LKR)
+               */}
+              රු
+              {// Sum of tour payments in LKR
+              (
+                toLKR(summary.tour_payments?.LKR || 0, "LKR") +
+                toLKR(summary.tour_payments?.USD || 0, "USD") +
+                toLKR(summary.tour_payments?.EUR || 0, "EUR") -
+                // Minus sum of driver payments in LKR
+                (toLKR(summary.driver_payments?.LKR || 0, "LKR") +
+                  toLKR(summary.driver_payments?.USD || 0, "USD") +
+                  toLKR(summary.driver_payments?.EUR || 0, "EUR"))
+              ).toFixed(2)}
             </div>
           </CardContent>
         </Card>

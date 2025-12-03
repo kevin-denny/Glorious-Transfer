@@ -96,3 +96,6 @@ ADD COLUMN assignment_id CHAR(36) DEFAULT NULL;
 
 ALTER TABLE assignments
 ADD COLUMN status CHAR(20);
+
+ALTER TABLE payments
+ADD COLUMN agent_ref CHAR(50);

@@ -77,7 +77,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       // Set paid_at timestamp
       const now = new Date();
       paid_at = now.toISOString().slice(0, 19).replace('T', ' ');
-    } else {
+    } else if(updateType === SYSCONFIG.PAYMENT_TYPE_DRIVER) {
       // Auto-calculate status based on paid amount vs total amount
       if (updatePaidAmount >= updateAmount) {
         updateStatus = SYSCONFIG.COMPLETED;

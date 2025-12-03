@@ -68,9 +68,14 @@ interface DriverPayment {
 interface TourPayment {
   id: string;
   tour_id: string;
+  customer_name: string;
   amount: number | string;
   currency: string;
+  agent: string;
+  agent_ref: string;
   status: string;
+  created_at: string;
+  updated_at: string;
   // payment_date: string | null;
   // created_at: string;
   // tours: {
@@ -158,6 +163,9 @@ export default function PaymentsPage() {
     amount: 0,
     currency: "",
     status: "",
+    customer_name: "",
+    agent: "",
+    agent_ref: "",
   });
 
   const [pageDriver, setPageDriver] = useState(1);
@@ -378,19 +386,14 @@ export default function PaymentsPage() {
         fetchDriverPayments(); // <-- only for driver tab
       } else {
         // TOUR PAYMENT
-        response = await fetch(createpayments, {
-          method: "POST",
+        response = await fetch(`${createpayments}/${formTourData?.id}`, {
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            // driver_id: "--",
-            // tour_id: formData.tour_id,
-            // amount: formData.amount,
-            // currency: formData.currency,
-            // type: "tour_payment",
-            // status: formData.status,
+            status: "Confirmed",
           }),
         });
 
@@ -402,7 +405,7 @@ export default function PaymentsPage() {
         }
 
         // await logActivity("create", "tour_payment", null, formData);
-        fetchTourPayments(); // <-- only for tour tab
+        fetchTourPayments();
       }
 
       toast({
@@ -471,6 +474,16 @@ export default function PaymentsPage() {
       currency: "",
       paid_amount: 0,
       status: "",
+    });
+    setFormTourData({
+      id: "",
+      tour_id: "",
+      amount: 0,
+      currency: "",
+      status: "",
+      customer_name: "",
+      agent: "",
+      agent_ref: "",
     });
   }
 
@@ -606,8 +619,10 @@ export default function PaymentsPage() {
         amount: Number(trip.amount),
         currency: trip.currency,
         status: trip.status,
+        customer_name: trip.customer_name,
+        agent: trip.agent,
+        agent_ref: trip.agent_ref,
       });
-
       setDialogOpen(true);
     }
   }
@@ -787,22 +802,23 @@ export default function PaymentsPage() {
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
+                  {driver?.status != "Completed" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleEdit("driver", driver)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
 
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleEdit("driver", driver)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-
-                  <Button
+                  {/* <Button
                     size="sm"
                     variant="ghost"
                     // onClick={() => handleDelete(driver.id)}
                   >
                     <Trash className="h-4 w-4 text-red-500" />
-                  </Button>
+                  </Button> */}
                 </div>
               )}
             />
@@ -897,50 +913,38 @@ export default function PaymentsPage() {
                   <DialogHeader>
                     <DialogTitle>Update Trip Payment</DialogTitle>
                   </DialogHeader>
-                  {/* <form onSubmit={handleSubmit} className="space-y-4">
+                  <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                      <Label className="text-gray-500">Driver</Label>
-                      <p className="font-medium">{`${formTourData.driver_id} - ${formTourData.driver_name}`}</p>
+                      <Label className="text-gray-500">Trip ID</Label>
+                      <p className="font-medium">{formTourData.tour_id}</p>
                     </div>
                     <div>
-                      <Label className="text-gray-500">Trip</Label>
-                      <p className="font-medium">{`${formTourData.tour_id} - ${formTourData.customer_name}`}</p>
+                      <Label className="text-gray-500">Customer Name</Label>
+                      <p className="font-medium">
+                        {formTourData.customer_name}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-gray-500">Agent</Label>
+                      <p className="font-medium">{formTourData.agent}</p>
+                    </div>
+                    <div>
+                      <Label className="text-gray-500">Agent Reference</Label>
+                      <p className="font-medium">{formTourData.agent_ref}</p>
                     </div>
                     <div>
                       <Label className="text-gray-500">Amount</Label>
-                      <p className="font-medium">{`${formTourData.amount} ${formTourData.currency}`}</p>
+                      <p className="font-medium">
+                        {`${formTourData.amount} ${formTourData.currency}`}
+                      </p>
                     </div>
-                    {(Number(formTourData?.amount) ?? 0) -
-                      (Number(formTourData?.paid_amount) ?? 0) >
-                      0 && (
-                      <>
-                        <div>
-                          <Label className="text-gray-500">To be Paid</Label>
-                          <p className="font-medium">
-                            {`${
-                              Number(formTourData.amount) -
-                              Number(formTourData.paid_amount)
-                            } ${formTourData.currency}`}
-                          </p>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="tobe_paid">Payment Amount</Label>
-                          <Input
-                            id="tobe_paid"
-                            value={formTourData.tobe_paid || ""}
-                            onChange={(e) =>
-                              setFormDriverData({
-                                ...formTourData,
-                                tobe_paid:
-                                  e.target.value === ""
-                                    ? 0
-                                    : Number(e.target.value),
-                              })
-                            }
-                          />
-                        </div>
-                      </>
-                    )}
+
+                    <div>
+                      <Label className="text-gray-500">
+                        Confirmation Status
+                      </Label>
+                      <p className="font-medium">{formTourData.status}</p>
+                    </div>
 
                     <div className="flex justify-end gap-2">
                       <Button
@@ -952,7 +956,7 @@ export default function PaymentsPage() {
                       </Button>
                       <Button type="submit">Update</Button>
                     </div>
-                  </form> */}
+                  </form>
                 </DialogContent>
               </Dialog>
             </div>
@@ -1035,22 +1039,23 @@ export default function PaymentsPage() {
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
+                  {tour?.status != "Completed" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleEdit("tour", tour)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
 
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleEdit("tour", tour)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-
-                  <Button
+                  {/* <Button
                     size="sm"
                     variant="ghost"
                     // onClick={() => handleDelete(tour.id)}
                   >
                     <Trash className="h-4 w-4 text-red-500" />
-                  </Button>
+                  </Button> */}
                 </div>
               )}
             />
@@ -1063,70 +1068,51 @@ export default function PaymentsPage() {
                     <span>Payment Details</span>
                   </DialogTitle>
                 </DialogHeader>
-                {driverPayment && (
+                {tourPayment && (
                   <div className="space-y-6">
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
-                        <Label className="text-gray-500">Driver ID</Label>
-                        <p className="font-medium">{driverPayment.driver_id}</p>
+                        <Label className="text-gray-500">Trip ID</Label>
+                        <p className="font-medium">{tourPayment.tour_id}</p>
                       </div>
                       <div>
-                        <Label className="text-gray-500">Driver Name</Label>
+                        <Label className="text-gray-500">Customer Name</Label>
                         <p className="font-medium">
-                          {driverPayment.driver_name}
+                          {tourPayment.customer_name}
                         </p>
                       </div>
                       <div>
-                        <Label className="text-gray-500">Driver Number</Label>
-                        <p className="font-medium">
-                          {driverPayment.driver_number}
-                        </p>
+                        <Label className="text-gray-500">Agent</Label>
+                        <p className="font-medium">{tourPayment.agent}</p>
                       </div>
                       <div>
-                        <Label className="text-gray-500">Total Amount</Label>
-                        <p className="font-medium">
-                          {`${driverPayment.amount} ${driverPayment.currency}`}
-                        </p>
+                        <Label className="text-gray-500">Agent Reference</Label>
+                        <p className="font-medium">{tourPayment.agent_ref}</p>
                       </div>
                       <div>
-                        <Label className="text-gray-500">Paid Amount</Label>
+                        <Label className="text-gray-500">Amount</Label>
                         <p className="font-medium">
-                          {`${driverPayment.paid_amount} ${driverPayment.currency}`}
+                          {`${tourPayment.amount} ${tourPayment.currency}`}
                         </p>
                       </div>
-                      {(Number(driverPayment?.amount) ?? 0) -
-                        (Number(driverPayment?.paid_amount) ?? 0) >
-                        0 && (
-                        <div>
-                          <Label className="text-gray-500">To be Paid</Label>
-                          <p className="font-medium">
-                            {`${
-                              Number(driverPayment.amount) -
-                              Number(driverPayment.paid_amount)
-                            } ${driverPayment.currency}`}
-                          </p>
-                        </div>
-                      )}
 
                       <div>
-                        <Label className="text-gray-500">Status</Label>
-                        <p className="font-medium">{driverPayment.status}</p>
+                        <Label className="text-gray-500">
+                          Confirmation Status
+                        </Label>
+                        <p className="font-medium">{tourPayment.status}</p>
                       </div>
                       <div>
                         <Label className="text-gray-500">
                           Created Date-Time
                         </Label>
-                        <p className="font-medium">
-                          {driverPayment.created_at}
-                        </p>
+                        <p className="font-medium">{tourPayment.created_at}</p>
                       </div>
                       <div>
                         <Label className="text-gray-500">
                           Update Date-Time
                         </Label>
-                        <p className="font-medium">
-                          {driverPayment.updated_at}
-                        </p>
+                        <p className="font-medium">{tourPayment.updated_at}</p>
                       </div>
                     </div>
                   </div>

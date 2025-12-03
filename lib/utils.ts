@@ -31,6 +31,7 @@ export const SYSCONFIG = {
   COMPLETED: 'Completed',
   CANCELLED: 'Cancelled',
   PARTIAL: 'Partial',
+  CONFIRMED: 'Confirmed',
 
   SUCCESS: 'Success',
   FAILED: 'Failed',

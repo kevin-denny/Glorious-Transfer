@@ -79,6 +79,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       updateStatus = SYSCONFIG.PENDING;
     }
 
+    // if tour_payment, if status is Confirmed, change to Confirmed
+    if (updateType === SYSCONFIG.PAYMENT_TYPE_TOUR && updateStatus === SYSCONFIG.CONFIRMED) {
+      updateStatus = SYSCONFIG.CONFIRMED;
+      updatePaidAmount = existingPayment.amount; // set paid amount to total amount
+      // Set paid_at timestamp
+      const now = new Date();
+      paid_at = now.toISOString().slice(0, 19).replace('T', ' ');
+    }
+
     // Update payment
     await query(
       `UPDATE payments SET 

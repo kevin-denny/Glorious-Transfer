@@ -193,6 +193,14 @@ export default function PaymentsPage() {
   });
 
   const [rates, setRates] = useState<{ [key: string]: number }>({});
+
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    const month = (now.getMonth() + 1).toString().padStart(2, "0"); // 01-12
+    const year = now.getFullYear();
+    return `${year}-${month}`;
+  });
+
   const [summary, setSummary] = useState({} as any);
 
   useEffect(() => {
@@ -222,6 +230,10 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchDriverPayments();
   }, [searchDriver]);
+
+  useEffect(() => {
+    fetchSummary();
+  }, [selectedMonth]);
 
   // -------------------------
   // FETCH FUNCTIONS
@@ -331,7 +343,7 @@ export default function PaymentsPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          month: "2025-12",
+          month: selectedMonth,
         }),
       });
 
@@ -478,39 +490,6 @@ export default function PaymentsPage() {
   }
 
   // -------------------------
-  // MARK AS PAID
-  // -------------------------
-
-  async function handleMarkAsPaid(item: any) {
-    setLoading(true);
-    try {
-      await logActivity(
-        "update",
-        activeTab === "driver" ? "driver_payments" : "tour_payments",
-        item.id,
-        {
-          action: "marked_as_paid",
-        }
-      );
-
-      toast({
-        title: "Success",
-        description: "Payment marked as paid",
-      });
-
-      activeTab === "driver" ? fetchDriverPayments() : fetchTourPayments();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // -------------------------
   // RESET FORM
   // -------------------------
   function resetForm() {
@@ -541,22 +520,6 @@ export default function PaymentsPage() {
   // -------------------------
   // TOTALS
   // -------------------------
-
-  const driverPending = driverPayments
-    .filter((p) => p.status === "pending")
-    .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
-
-  const driverPaid = driverPayments
-    .filter((p) => p.status === "paid")
-    .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
-
-  const tourPending = tourPayments
-    .filter((p) => p.status === "pending")
-    .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
-
-  const tourPaid = tourPayments
-    .filter((p) => p.status === "paid")
-    .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -690,6 +653,10 @@ export default function PaymentsPage() {
     }
   }
 
+  function handleMonthChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setSelectedMonth(e.target.value); // e.g., "2025-12"
+  }
+
   // -------------------------
   // MAIN RENDER
   // -------------------------
@@ -697,6 +664,17 @@ export default function PaymentsPage() {
   return (
     <DashboardLayout>
       {/* Stats */}
+      <div className="mb-4">
+        <label className="text-sm font-medium text-gray-700 mr-2">
+          Select Month:
+        </label>
+        <input
+          type="month"
+          value={selectedMonth}
+          onChange={handleMonthChange}
+          className="border px-2 py-1 rounded"
+        />
+      </div>
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -755,16 +733,18 @@ export default function PaymentsPage() {
                *           - Total Driver Payments (all currencies converted to LKR)
                */}
               රු
-              {// Sum of tour payments in LKR
-              (
-                toLKR(summary.tour_payments?.LKR || 0, "LKR") +
-                toLKR(summary.tour_payments?.USD || 0, "USD") +
-                toLKR(summary.tour_payments?.EUR || 0, "EUR") -
-                // Minus sum of driver payments in LKR
-                (toLKR(summary.driver_payments?.LKR || 0, "LKR") +
-                  toLKR(summary.driver_payments?.USD || 0, "USD") +
-                  toLKR(summary.driver_payments?.EUR || 0, "EUR"))
-              ).toFixed(2)}
+              {
+                // Sum of tour payments in LKR
+                (
+                  toLKR(summary.tour_payments?.LKR || 0, "LKR") +
+                  toLKR(summary.tour_payments?.USD || 0, "USD") +
+                  toLKR(summary.tour_payments?.EUR || 0, "EUR") -
+                  // Minus sum of driver payments in LKR
+                  (toLKR(summary.driver_payments?.LKR || 0, "LKR") +
+                    toLKR(summary.driver_payments?.USD || 0, "USD") +
+                    toLKR(summary.driver_payments?.EUR || 0, "EUR"))
+                ).toFixed(2)
+              }
             </div>
           </CardContent>
         </Card>

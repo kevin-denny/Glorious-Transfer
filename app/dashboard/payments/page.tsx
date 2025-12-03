@@ -192,6 +192,9 @@ export default function PaymentsPage() {
     hasPreviousPage: false,
   });
 
+  const [rates, setRates] = useState<{ [key: string]: number }>({});
+  const [summary, setSummary] = useState({} as any);
+
   useEffect(() => {
     resetForm();
   }, [activeTab]);
@@ -203,10 +206,13 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchDriverPayments();
   }, [pageDriver, pageSizeDriver]);
+
   // Fetch initial data
   useEffect(() => {
     fetchDrivers();
     fetchTours();
+    fetchSummary();
+    fetchRates();
   }, []);
 
   useEffect(() => {
@@ -220,6 +226,23 @@ export default function PaymentsPage() {
   // -------------------------
   // FETCH FUNCTIONS
   // -------------------------
+
+  async function fetchRates() {
+    try {
+      const res = await fetch("https://api.exchangerate-api.com/v4/latest/LKR");
+      const data = await res.json();
+      setRates(data.rates); // data.rates is an object with currency codes
+    } catch (err) {
+      console.error("Failed to fetch rates:", err);
+    }
+  }
+
+  // Convert any amount to LKR
+  function toLKR(amount: number, currency: string) {
+    if (currency === "LKR") return amount;
+    if (!rates[currency]) return 0;
+    return amount / rates[currency]; // because base is LKR
+  }
 
   async function fetchDriverPayments() {
     setLoading(true);
@@ -297,6 +320,31 @@ export default function PaymentsPage() {
     }
   }
 
+  async function fetchSummary() {
+    try {
+      if (!token) throw new Error("No auth token found");
+
+      const response = await fetch(`${createpayments}/summary`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+
+      const res = await response.json();
+      // setDrivers(res.data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  }
   async function fetchDrivers() {
     try {
       if (!token) throw new Error("No auth token found");
@@ -515,6 +563,8 @@ export default function PaymentsPage() {
         return "bg-blue-100 text-blue-800";
       case "Completed":
         return "bg-green-100 text-green-800";
+      case "Confirmed":
+        return "bg-green-100 text-green-800";
       case "Cancelled":
         return "bg-red-100 text-red-800";
       default:
@@ -655,20 +705,25 @@ export default function PaymentsPage() {
 
           <CardContent>
             {/* Currency totals */}
-            {["LKR", "USD", "EUR"].map((cur) => {
-              const total = driverPayments
-                .filter((p) => p.status === "Pending" && p.currency === cur)
-                .reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
-              const symbol = cur === "USD" ? "$" : cur === "EUR" ? "€" : "රු";
 
-              return (
-                <div key={cur} className="text-lg font-semibold">
-                  {symbol} {total.toFixed(2)}{" "}
-                  <span className="text-xs text-gray-500 ml-1">({cur})</span>
+                <div  className="text-lg font-semibold">
+                  {/* {"රු"} {"100".toFixed(2)}{" "} */}
+                  {"රු"} {"100"}{" "}
+                  <span className="text-xs text-gray-500 ml-1">({"LKR"})</span>
                 </div>
-              );
-            })}
+                <div  className="text-lg font-semibold">
+                  {/* {"$"} {"100".toFixed(2)}{" "} */}
+                  {"$"} {"100"}{" "}
+                  <span className="text-xs text-gray-500 ml-1">({"USD"})</span>
+                </div>
+                <div  className="text-lg font-semibold">
+                  {/* {"€"} {"100".toFixed(2)}{" "} */}
+                  {"€"} {"100"}{" "}
+                  <span className="text-xs text-gray-500 ml-1">({"EURO"})</span>
+                </div>
+          
+     
 
             {/* Count pending */}
             {/* <p className="text-xs text-gray-500 mt-2">
@@ -696,17 +751,14 @@ export default function PaymentsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">
-              Total Payments
+              Balance
             </CardTitle>
             <DollarSign className="h-5 w-5 text-blue-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              රු{(driverPending + driverPaid).toFixed(2)}
+              රු{(toLKR(100,"USD")).toFixed(2)}
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {driverPayments.length} total
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -921,39 +973,40 @@ export default function PaymentsPage() {
                   <DialogHeader>
                     <DialogTitle>Update Trip Payment</DialogTitle>
                   </DialogHeader>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <Label className="text-gray-500">Trip ID</Label>
-                      <p className="font-medium">{formTourData.tour_id}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Customer Name</Label>
-                      <p className="font-medium">
-                        {formTourData.customer_name}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Agent</Label>
-                      <p className="font-medium">{formTourData.agent}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Agent Reference</Label>
-                      <p className="font-medium">{formTourData.agent_ref}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Amount</Label>
-                      <p className="font-medium">
-                        {`${formTourData.amount} ${formTourData.currency}`}
-                      </p>
-                    </div>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <Label className="text-gray-500">Trip ID</Label>
+                        <p className="font-medium">{formTourData.tour_id}</p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">Customer Name</Label>
+                        <p className="font-medium">
+                          {formTourData.customer_name}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">Agent</Label>
+                        <p className="font-medium">{formTourData.agent}</p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">Agent Reference</Label>
+                        <p className="font-medium">{formTourData.agent_ref}</p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">Amount</Label>
+                        <p className="font-medium">
+                          {`${formTourData.amount} ${formTourData.currency}`}
+                        </p>
+                      </div>
 
-                    <div>
-                      <Label className="text-gray-500">
-                        Confirmation Status
-                      </Label>
-                      <p className="font-medium">{formTourData.status}</p>
+                      <div>
+                        <Label className="text-gray-500">
+                          Confirmation Status
+                        </Label>
+                        <p className="font-medium">{formTourData.status}</p>
+                      </div>
                     </div>
-
                     <div className="flex justify-end gap-2">
                       <Button
                         type="button"

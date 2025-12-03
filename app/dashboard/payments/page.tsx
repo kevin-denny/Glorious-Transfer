@@ -643,6 +643,73 @@ export default function PaymentsPage() {
 
   return (
     <DashboardLayout>
+      {/* Stats */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Received Amount
+            </CardTitle>
+            <DollarSign className="h-5 w-5 text-orange-600" />
+          </CardHeader>
+
+          <CardContent>
+            {/* Currency totals */}
+            {["LKR", "USD", "EUR"].map((cur) => {
+              const total = driverPayments
+                .filter((p) => p.status === "Pending" && p.currency === cur)
+                .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+              const symbol = cur === "USD" ? "$" : cur === "EUR" ? "€" : "රු";
+
+              return (
+                <div key={cur} className="text-lg font-semibold">
+                  {symbol} {total.toFixed(2)}{" "}
+                  <span className="text-xs text-gray-500 ml-1">({cur})</span>
+                </div>
+              );
+            })}
+
+            {/* Count pending */}
+            {/* <p className="text-xs text-gray-500 mt-2">
+      {driverPayments.filter((p) => p.status === "Pending").length} pending
+    </p> */}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Paid Total
+            </CardTitle>
+            <Check className="h-5 w-5 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">රු{driverPaid.toFixed(2)}</div>
+            <p className="text-xs text-gray-500 mt-1">
+              {driverPayments.filter((p) => p.status === "paid").length}{" "}
+              completed
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Total Payments
+            </CardTitle>
+            <DollarSign className="h-5 w-5 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              රු{(driverPending + driverPaid).toFixed(2)}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {driverPayments.length} total
+            </p>
+          </CardContent>
+        </Card>
+      </div>
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start">
@@ -718,65 +785,6 @@ export default function PaymentsPage() {
                   </form>
                 </DialogContent>
               </Dialog>
-            </div>
-
-            {/* Stats */}
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Pending Payments
-                  </CardTitle>
-                  <DollarSign className="h-5 w-5 text-orange-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${driverPending.toFixed(2)}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {
-                      driverPayments.filter((p) => p.status === "Pending")
-                        .length
-                    }{" "}
-                    pending
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Paid Total
-                  </CardTitle>
-                  <Check className="h-5 w-5 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${driverPaid.toFixed(2)}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {driverPayments.filter((p) => p.status === "paid").length}{" "}
-                    completed
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Total Payments
-                  </CardTitle>
-                  <DollarSign className="h-5 w-5 text-blue-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${(driverPending + driverPaid).toFixed(2)}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {driverPayments.length} total
-                  </p>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Table */}
@@ -959,62 +967,6 @@ export default function PaymentsPage() {
                   </form>
                 </DialogContent>
               </Dialog>
-            </div>
-
-            {/* Stats */}
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Pending Payments
-                  </CardTitle>
-                  <DollarSign className="h-5 w-5 text-orange-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${tourPending.toFixed(2)}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {tourPayments.filter((p) => p.status === "pending").length}{" "}
-                    pending
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Paid Total
-                  </CardTitle>
-                  <Check className="h-5 w-5 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${tourPaid.toFixed(2)}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {tourPayments.filter((p) => p.status === "paid").length}{" "}
-                    completed
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Total Payments
-                  </CardTitle>
-                  <DollarSign className="h-5 w-5 text-blue-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${(tourPending + tourPaid).toFixed(2)}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {tourPayments.length} total
-                  </p>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Table */}

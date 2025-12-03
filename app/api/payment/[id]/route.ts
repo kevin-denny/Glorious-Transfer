@@ -70,13 +70,22 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       updatePaidAmount = existingPayment.paid_amount;
     }
 
-    // Auto-calculate status based on paid amount vs total amount
-    if (updatePaidAmount >= updateAmount) {
-      updateStatus = SYSCONFIG.COMPLETED;
-    } else if (updatePaidAmount > 0 && updatePaidAmount < updateAmount) {
-      updateStatus = SYSCONFIG.PARTIAL;
-    } else if (updatePaidAmount === 0) {
-      updateStatus = SYSCONFIG.PENDING;
+    // if tour_payment, if status is Confirmed, change to Confirmed
+    if (updateType === SYSCONFIG.PAYMENT_TYPE_TOUR && updateStatus === SYSCONFIG.CONFIRMED) {
+      updateStatus = SYSCONFIG.CONFIRMED;
+      updatePaidAmount = existingPayment.amount; // set paid amount to total amount
+      // Set paid_at timestamp
+      const now = new Date();
+      paid_at = now.toISOString().slice(0, 19).replace('T', ' ');
+    } else {
+      // Auto-calculate status based on paid amount vs total amount
+      if (updatePaidAmount >= updateAmount) {
+        updateStatus = SYSCONFIG.COMPLETED;
+      } else if (updatePaidAmount > 0 && updatePaidAmount < updateAmount) {
+        updateStatus = SYSCONFIG.PARTIAL;
+      } else if (updatePaidAmount === 0) {
+        updateStatus = SYSCONFIG.PENDING;
+      }
     }
 
     // Update payment

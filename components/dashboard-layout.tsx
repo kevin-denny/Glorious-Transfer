@@ -12,6 +12,7 @@ import {
   FileText,
   LogOut,
   Menu,
+  ChartArea,
   Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       name: "Activity Logs",
       href: "/dashboard/logs",
       icon: Shield,
+      roles: ["administrator"],
+    },
+    {
+      name: "Reports",
+      href: "/dashboard/report",
+      icon: ChartArea,
       roles: ["administrator"],
     },
   ];

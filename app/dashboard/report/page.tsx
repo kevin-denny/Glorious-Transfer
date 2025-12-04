@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Badge } from "@/components/ui/badge";
-import {  Eye ,ChartCandlestick} from "lucide-react";
+import { Eye, ChartCandlestick } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
@@ -150,9 +150,7 @@ export default function ReportPage() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
-            <p className="text-gray-500">
-              Report Generation
-            </p>
+            <p className="text-gray-500">Report Generation</p>
           </div>
         </div>
         <DataTable

@@ -595,12 +595,15 @@ export default function ToursPage() {
               if (!open) resetForm();
             }}
           >
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Create Tour
-              </Button>
-            </DialogTrigger>
+            {profile?.role != "finance" && (
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create Tour
+                </Button>
+              </DialogTrigger>
+            )}
+
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
@@ -923,30 +926,33 @@ export default function ToursPage() {
               >
                 <Eye className="h-4 w-4" />
               </Button>
+              {profile?.role != "finance" && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleEdit(tour)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
 
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleEdit(tour)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleDelete(tour.id)}
-              >
-                <Trash className="h-4 w-4 text-red-500" />
-              </Button>
-              {tour.status === "Pending" && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => openAssignDialog(tour)}
-                >
-                  <UserPlus className="h-4 w-4" />
-                </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDelete(tour.id)}
+                  >
+                    <Trash className="h-4 w-4 text-red-500" />
+                  </Button>
+                  {tour.status === "Pending" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => openAssignDialog(tour)}
+                    >
+                      <UserPlus className="h-4 w-4" />
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           )}

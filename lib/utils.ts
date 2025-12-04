@@ -69,6 +69,7 @@ export const SYSCONFIG = {
   ASSIGNMENT_CANCELLED: 'Cancelled'
 };
 
+// Currency List
 export const currencyList = [
   { code: "AED", name: "UAE Dirham", symbol: "د.إ" },
   { code: "AFN", name: "Afghan Afghani", symbol: "؋" },
@@ -232,3 +233,19 @@ export const currencyList = [
   { code: "ZMW", name: "Zambian Kwacha", symbol: "ZK" },
   { code: "ZWL", name: "Zimbabwean Dollar", symbol: "Z$" }
 ];
+
+// number format
+export function thousandSeparator(value: String | number) {
+  if (value === null || value === undefined) return "";
+
+  // convert to number safely
+  const num = Number(value);
+  if (isNaN(num)) return "";
+
+  // format with commas + fixed 2 decimals
+  return num.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+

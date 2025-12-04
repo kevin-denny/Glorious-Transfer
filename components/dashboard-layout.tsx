@@ -47,7 +47,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       name: "Trips",
       href: "/dashboard/tours",
       icon: Calendar,
-      roles: ["administrator", "operations"],
+      roles: ["administrator", "operations", "finance"],
     },
     {
       name: "Payments",

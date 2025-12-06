@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Get search term and pagination from body
     const body = await request.json();
-    const { searchTerm = '', page = 1, pageSize = 10, tour_id, limit = 15, startMonth = '', endMonth = '' } = body;
+    const { searchTerm = '', page = 1, pageSize = 10, tour_id, limit = 15, startMonth = '', endMonth = '', agent = '' } = body;
 
     // Validate pagination parameters
     if (page < 1 || pageSize < 1 || pageSize > 100) {
@@ -45,6 +45,12 @@ export async function POST(request: NextRequest) {
       queryParams.push(tour_id);
     }
 
+    // Add agent filter if provided
+    if (agent) {
+      whereClause += ' AND t.agent = ?';
+      queryParams.push(agent);
+    }
+
     // Get total count for pagination
     const totalResult = await queryOne(
       `SELECT COUNT(*) as total FROM payments p 
@@ -60,7 +66,7 @@ export async function POST(request: NextRequest) {
     if (searchTerm && searchTerm.trim().length > 0) {
       // Search mode
       const searchParams = [...queryParams];
-      searchParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
+      searchParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
       
       payments = await query(
         `SELECT 
@@ -73,7 +79,7 @@ export async function POST(request: NextRequest) {
         FROM payments p
         LEFT JOIN drivers d ON p.driver_id = d.id
         LEFT JOIN tours t ON p.tour_id = t.id
-        WHERE ${whereClause} AND (p.id LIKE ? OR t.id LIKE ? OR t.customer_name LIKE ?)
+        WHERE ${whereClause} AND (p.id LIKE ? OR t.id LIKE ? OR t.customer_name LIKE ? OR p.agent_ref LIKE ?)
         ORDER BY p.created_at DESC 
         LIMIT ${limit} OFFSET ${offset}`,
         searchParams

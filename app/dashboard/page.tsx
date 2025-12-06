@@ -110,15 +110,6 @@ export default function DashboardPage() {
       show: ['administrator', 'operations'].includes(profile.role),
     },
     {
-      title: 'Pending Payments',
-      value: stats.pendingPayments,
-      subtitle: 'Awaiting approval',
-      icon: DollarSign,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-      show: ['administrator', 'finance'].includes(profile.role),
-    },
-    {
       title: 'Open Complaints',
       value: stats.totalComplaints,
       subtitle: 'Requires attention',

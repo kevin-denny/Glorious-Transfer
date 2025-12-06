@@ -39,7 +39,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/lib/activity-logger";
-import { currencyList } from "@/lib/utils";
+import { currencyList, thousandSeparator } from "@/lib/utils";
 import DataTable from "@/components/ui/DataTable";
 
 // Interfaces
@@ -192,6 +192,17 @@ export default function PaymentsPage() {
     hasPreviousPage: false,
   });
 
+  const [rates, setRates] = useState<{ [key: string]: number }>({});
+
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    const month = (now.getMonth() + 1).toString().padStart(2, "0"); // 01-12
+    const year = now.getFullYear();
+    return `${year}-${month}`;
+  });
+
+  const [summary, setSummary] = useState({} as any);
+
   useEffect(() => {
     resetForm();
   }, [activeTab]);
@@ -203,10 +214,13 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchDriverPayments();
   }, [pageDriver, pageSizeDriver]);
+
   // Fetch initial data
   useEffect(() => {
     fetchDrivers();
     fetchTours();
+    fetchSummary();
+    fetchRates();
   }, []);
 
   useEffect(() => {
@@ -217,9 +231,30 @@ export default function PaymentsPage() {
     fetchDriverPayments();
   }, [searchDriver]);
 
+  useEffect(() => {
+    fetchSummary();
+  }, [selectedMonth]);
+
   // -------------------------
   // FETCH FUNCTIONS
   // -------------------------
+
+  async function fetchRates() {
+    try {
+      const res = await fetch("https://api.exchangerate-api.com/v4/latest/LKR");
+      const data = await res.json();
+      setRates(data.rates); // data.rates is an object with currency codes
+    } catch (err) {
+      console.error("Failed to fetch rates:", err);
+    }
+  }
+
+  // Convert any amount to LKR
+  function toLKR(amount: number, currency: string) {
+    if (currency === "LKR") return amount;
+    if (!rates[currency]) return 0;
+    return amount / rates[currency]; // because base is LKR
+  }
 
   async function fetchDriverPayments() {
     setLoading(true);
@@ -297,6 +332,34 @@ export default function PaymentsPage() {
     }
   }
 
+  async function fetchSummary() {
+    try {
+      if (!token) throw new Error("No auth token found");
+
+      const response = await fetch(`${createpayments}/summary`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          month: selectedMonth,
+        }),
+      });
+
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+
+      const res = await response.json();
+      setSummary(res.summary || {});
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  }
   async function fetchDrivers() {
     try {
       if (!token) throw new Error("No auth token found");
@@ -427,39 +490,6 @@ export default function PaymentsPage() {
   }
 
   // -------------------------
-  // MARK AS PAID
-  // -------------------------
-
-  async function handleMarkAsPaid(item: any) {
-    setLoading(true);
-    try {
-      await logActivity(
-        "update",
-        activeTab === "driver" ? "driver_payments" : "tour_payments",
-        item.id,
-        {
-          action: "marked_as_paid",
-        }
-      );
-
-      toast({
-        title: "Success",
-        description: "Payment marked as paid",
-      });
-
-      activeTab === "driver" ? fetchDriverPayments() : fetchTourPayments();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // -------------------------
   // RESET FORM
   // -------------------------
   function resetForm() {
@@ -491,22 +521,6 @@ export default function PaymentsPage() {
   // TOTALS
   // -------------------------
 
-  const driverPending = driverPayments
-    .filter((p) => p.status === "pending")
-    .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
-
-  const driverPaid = driverPayments
-    .filter((p) => p.status === "paid")
-    .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
-
-  const tourPending = tourPayments
-    .filter((p) => p.status === "pending")
-    .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
-
-  const tourPaid = tourPayments
-    .filter((p) => p.status === "paid")
-    .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Pending":
@@ -514,6 +528,8 @@ export default function PaymentsPage() {
       case "Assigned":
         return "bg-blue-100 text-blue-800";
       case "Completed":
+        return "bg-green-100 text-green-800";
+      case "Confirmed":
         return "bg-green-100 text-green-800";
       case "Cancelled":
         return "bg-red-100 text-red-800";
@@ -542,7 +558,7 @@ export default function PaymentsPage() {
     {
       key: "amount",
       label: "Amount",
-      render: (row: Tour) => `${row.amount} ${row.currency}`,
+      render: (row: Tour) => `${thousandSeparator(row.amount)} ${row.currency}`,
     },
     {
       key: "created_at",
@@ -569,12 +585,13 @@ export default function PaymentsPage() {
     {
       key: "amount",
       label: "Total Amount",
-      render: (row: Tour) => `${row.amount} ${row.currency}`,
+      render: (row: Tour) => `${thousandSeparator(row.amount)} ${row.currency}`,
     },
     {
       key: "paid_amount",
       label: "Paid Amount",
-      render: (row: Tour) => `${row.paid_amount} ${row.currency}`,
+      render: (row: Tour) =>
+        `${thousandSeparator(row.paid_amount)} ${row.currency}`,
     },
     {
       key: "created_at",
@@ -637,12 +654,102 @@ export default function PaymentsPage() {
     }
   }
 
+  function handleMonthChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setSelectedMonth(e.target.value); // e.g., "2025-12"
+  }
+
   // -------------------------
   // MAIN RENDER
   // -------------------------
 
   return (
     <DashboardLayout>
+      {/* Stats */}
+      <div className="mb-4">
+        <label className="text-sm font-medium text-gray-700 mr-2">
+          Select Month:
+        </label>
+        <input
+          type="month"
+          value={selectedMonth}
+          onChange={handleMonthChange}
+          className="border px-2 py-1 rounded"
+        />
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Received Amount
+            </CardTitle>
+            <DollarSign className="h-5 w-5 text-orange-600" />
+          </CardHeader>
+
+          <CardContent>
+            {/* Currency totals */}
+            <div className="text-lg font-semibold">
+              {"රු"} {thousandSeparator(summary.tour_payments?.LKR)}{" "}
+              <span className="text-xs text-gray-500 ml-1">({"LKR"})</span>
+            </div>
+            <div className="text-lg font-semibold">
+              {"$"} {thousandSeparator(summary.tour_payments?.USD)}{" "}
+              <span className="text-xs text-gray-500 ml-1">({"USD"})</span>
+            </div>
+            <div className="text-lg font-semibold">
+              {"€"} {thousandSeparator(summary.tour_payments?.EUR)}{" "}
+              <span className="text-xs text-gray-500 ml-1">({"EURO"})</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Paid Total
+            </CardTitle>
+            <Check className="h-5 w-5 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              රු{thousandSeparator(summary.driver_payments?.LKR)}
+            </div>
+            {/* <p className="text-xs text-gray-500 mt-1">
+              {driverPayments.filter((p) => p.status === "paid").length}{" "}
+              completed
+            </p> */}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Balance
+            </CardTitle>
+            <DollarSign className="h-5 w-5 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {/**
+               * Balance = Total Tour Payments (all currencies converted to LKR)
+               *           - Total Driver Payments (all currencies converted to LKR)
+               */}
+              රු
+              {
+                // Sum of tour payments in LKR
+                thousandSeparator(
+                  toLKR(summary.tour_payments?.LKR || 0, "LKR") +
+                    toLKR(summary.tour_payments?.USD || 0, "USD") +
+                    toLKR(summary.tour_payments?.EUR || 0, "EUR") -
+                    // Minus sum of driver payments in LKR
+                    (toLKR(summary.driver_payments?.LKR || 0, "LKR") +
+                      toLKR(summary.driver_payments?.USD || 0, "USD") +
+                      toLKR(summary.driver_payments?.EUR || 0, "EUR"))
+                )
+              }
+            </div>
+          </CardContent>
+        </Card>
+      </div>
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start">
@@ -671,7 +778,9 @@ export default function PaymentsPage() {
                     </div>
                     <div>
                       <Label className="text-gray-500">Amount</Label>
-                      <p className="font-medium">{`${formDriverData.amount} ${formDriverData.currency}`}</p>
+                      <p className="font-medium">{`${thousandSeparator(
+                        formDriverData.amount
+                      )} ${formDriverData.currency}`}</p>
                     </div>
                     {(Number(formDriverData?.amount) ?? 0) -
                       (Number(formDriverData?.paid_amount) ?? 0) >
@@ -680,10 +789,10 @@ export default function PaymentsPage() {
                         <div>
                           <Label className="text-gray-500">To be Paid</Label>
                           <p className="font-medium">
-                            {`${
+                            {`${thousandSeparator(
                               Number(formDriverData.amount) -
-                              Number(formDriverData.paid_amount)
-                            } ${formDriverData.currency}`}
+                                Number(formDriverData.paid_amount)
+                            )} ${formDriverData.currency}`}
                           </p>
                         </div>
                         <div className="space-y-2">
@@ -718,65 +827,6 @@ export default function PaymentsPage() {
                   </form>
                 </DialogContent>
               </Dialog>
-            </div>
-
-            {/* Stats */}
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Pending Payments
-                  </CardTitle>
-                  <DollarSign className="h-5 w-5 text-orange-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${driverPending.toFixed(2)}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {
-                      driverPayments.filter((p) => p.status === "Pending")
-                        .length
-                    }{" "}
-                    pending
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Paid Total
-                  </CardTitle>
-                  <Check className="h-5 w-5 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${driverPaid.toFixed(2)}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {driverPayments.filter((p) => p.status === "paid").length}{" "}
-                    completed
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Total Payments
-                  </CardTitle>
-                  <DollarSign className="h-5 w-5 text-blue-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${(driverPending + driverPaid).toFixed(2)}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {driverPayments.length} total
-                  </p>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Table */}
@@ -853,13 +903,17 @@ export default function PaymentsPage() {
                       <div>
                         <Label className="text-gray-500">Total Amount</Label>
                         <p className="font-medium">
-                          {`${driverPayment.amount} ${driverPayment.currency}`}
+                          {`${thousandSeparator(driverPayment.amount)} ${
+                            driverPayment.currency
+                          }`}
                         </p>
                       </div>
                       <div>
                         <Label className="text-gray-500">Paid Amount</Label>
                         <p className="font-medium">
-                          {`${driverPayment.paid_amount} ${driverPayment.currency}`}
+                          {`${thousandSeparator(driverPayment.paid_amount)} ${
+                            driverPayment.currency
+                          }`}
                         </p>
                       </div>
                       {(Number(driverPayment?.amount) ?? 0) -
@@ -868,10 +922,10 @@ export default function PaymentsPage() {
                         <div>
                           <Label className="text-gray-500">To be Paid</Label>
                           <p className="font-medium">
-                            {`${
+                            {`${thousandSeparator(
                               Number(driverPayment.amount) -
-                              Number(driverPayment.paid_amount)
-                            } ${driverPayment.currency}`}
+                                Number(driverPayment.paid_amount)
+                            )} ${driverPayment.currency}`}
                           </p>
                         </div>
                       )}
@@ -913,39 +967,42 @@ export default function PaymentsPage() {
                   <DialogHeader>
                     <DialogTitle>Update Trip Payment</DialogTitle>
                   </DialogHeader>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <Label className="text-gray-500">Trip ID</Label>
-                      <p className="font-medium">{formTourData.tour_id}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Customer Name</Label>
-                      <p className="font-medium">
-                        {formTourData.customer_name}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Agent</Label>
-                      <p className="font-medium">{formTourData.agent}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Agent Reference</Label>
-                      <p className="font-medium">{formTourData.agent_ref}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Amount</Label>
-                      <p className="font-medium">
-                        {`${formTourData.amount} ${formTourData.currency}`}
-                      </p>
-                    </div>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <Label className="text-gray-500">Trip ID</Label>
+                        <p className="font-medium">{formTourData.tour_id}</p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">Customer Name</Label>
+                        <p className="font-medium">
+                          {formTourData.customer_name}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">Agent</Label>
+                        <p className="font-medium">{formTourData.agent}</p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">Agent Reference</Label>
+                        <p className="font-medium">{formTourData.agent_ref}</p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">Amount</Label>
+                        <p className="font-medium">
+                          {`${thousandSeparator(formTourData.amount)} ${
+                            formTourData.currency
+                          }`}
+                        </p>
+                      </div>
 
-                    <div>
-                      <Label className="text-gray-500">
-                        Confirmation Status
-                      </Label>
-                      <p className="font-medium">{formTourData.status}</p>
+                      <div>
+                        <Label className="text-gray-500">
+                          Confirmation Status
+                        </Label>
+                        <p className="font-medium">{formTourData.status}</p>
+                      </div>
                     </div>
-
                     <div className="flex justify-end gap-2">
                       <Button
                         type="button"
@@ -959,62 +1016,6 @@ export default function PaymentsPage() {
                   </form>
                 </DialogContent>
               </Dialog>
-            </div>
-
-            {/* Stats */}
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Pending Payments
-                  </CardTitle>
-                  <DollarSign className="h-5 w-5 text-orange-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${tourPending.toFixed(2)}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {tourPayments.filter((p) => p.status === "pending").length}{" "}
-                    pending
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Paid Total
-                  </CardTitle>
-                  <Check className="h-5 w-5 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${tourPaid.toFixed(2)}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {tourPayments.filter((p) => p.status === "paid").length}{" "}
-                    completed
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Total Payments
-                  </CardTitle>
-                  <DollarSign className="h-5 w-5 text-blue-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${(tourPending + tourPaid).toFixed(2)}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {tourPayments.length} total
-                  </p>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Table */}
@@ -1092,7 +1093,9 @@ export default function PaymentsPage() {
                       <div>
                         <Label className="text-gray-500">Amount</Label>
                         <p className="font-medium">
-                          {`${tourPayment.amount} ${tourPayment.currency}`}
+                          {`${thousandSeparator(tourPayment.amount)} ${
+                            tourPayment.currency
+                          }`}
                         </p>
                       </div>
 

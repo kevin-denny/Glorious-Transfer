@@ -23,23 +23,44 @@ export async function POST(request: NextRequest) {
 
     // Get month from request body
     const body = await request.json();
-    const { month } = body;
+    const { month, startMonth = '', endMonth = '' } = body;
 
-    if (!month) {
-      return NextResponse.json(
-        { message: 'Month parameter is required (format: YYYY-MM)' },
-        { status: 400 }
-      );
+    // if (!month) {
+    //   return NextResponse.json(
+    //     { message: 'Month parameter is required (format: YYYY-MM)' },
+    //     { status: 400 }
+    //   );
+    // }
+
+    // // Validate month format
+    // const monthPattern = /^\d{4}-\d{2}$/;
+    // if (!monthPattern.test(month)) {
+    //   return NextResponse.json(
+    //     { message: 'Invalid month format. Use YYYY-MM (e.g., 2025-12)' },
+    //     { status: 400 }
+    //   );
+    // }
+
+    if (startMonth && endMonth && (startMonth.trim().length > 0 && endMonth.trim().length > 0)) {
+      const monthPattern = /^\d{4}-\d{2}$/;
+      if (!monthPattern.test(startMonth) || !monthPattern.test(endMonth)) {
+        return NextResponse.json(
+          { message: 'Invalid month format. Use YYYY-MM (e.g., 2025-12)' },
+          { status: 400 }
+        );
+      } else if (startMonth > endMonth) {
+        return NextResponse.json(
+          { message: 'Invalid month range. startMonth should be less than or equal to endMonth.' },
+          { status: 400 }
+        );
+      }
     }
 
-    // Validate month format
-    const monthPattern = /^\d{4}-\d{2}$/;
-    if (!monthPattern.test(month)) {
-      return NextResponse.json(
-        { message: 'Invalid month format. Use YYYY-MM (e.g., 2025-12)' },
-        { status: 400 }
-      );
-    }
+    const [endYear, endMonthNum] = endMonth.split('-').map(Number);
+    const lastDayOfMonth = new Date(endYear, endMonthNum, 0).getDate();
+    const dateRangeParams = [];
+    dateRangeParams.push(`${startMonth}-01 00:00:00`, `${endMonth}-${lastDayOfMonth} 23:59:59`);
+
 
     // Query for tour payments grouped by currency
     const tourPaymentsQuery = `
@@ -48,7 +69,7 @@ export async function POST(request: NextRequest) {
         COALESCE(SUM(p.amount), 0) as total_amount
       FROM payments p
       WHERE p.type = 'tour_payment'
-        AND p.created_at LIKE ?
+        AND (p.created_at BETWEEN ? AND ?)
       GROUP BY p.currency
     `;
 
@@ -59,15 +80,13 @@ export async function POST(request: NextRequest) {
         COALESCE(SUM(p.amount), 0) as total_amount
       FROM payments p
       WHERE p.type = 'driver_payment'
-        AND p.created_at LIKE ?
+        AND (p.created_at BETWEEN ? AND ?)
       GROUP BY p.currency
     `;
 
-    const monthPattern_like = `${month}%`;
-
     const [tourPaymentsResult, driverPaymentsResult] = await Promise.all([
-      query(tourPaymentsQuery, [monthPattern_like]),
-      query(driverPaymentsQuery, [monthPattern_like])
+      query(tourPaymentsQuery, [...dateRangeParams]),
+      query(driverPaymentsQuery, [...dateRangeParams])  
     ]);
 
     // Format tour payments by currency

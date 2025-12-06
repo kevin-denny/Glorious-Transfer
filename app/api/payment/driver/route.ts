@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Get search term and pagination from body
     const body = await request.json();
-    const { searchTerm = '', page = 1, pageSize = 10, driver_id, limit = 15 } = body;
+    const { searchTerm = '', page = 1, pageSize = 10, driver_id, limit = 15, startMonth = '', endMonth = '' } = body;
 
     // Validate pagination parameters
     if (page < 1 || pageSize < 1 || pageSize > 100) {
@@ -76,6 +76,38 @@ export async function POST(request: NextRequest) {
         ORDER BY p.created_at DESC 
         LIMIT ${limit} OFFSET ${offset}`,
         searchParams
+      ) as any[];
+      
+      total = payments.length;
+    } else if(startMonth && endMonth && startMonth.trim().length > 0 && endMonth.trim().length > 0) {
+      if(!/^\d{4}-\d{2}$/.test(startMonth) || !/^\d{4}-\d{2}$/.test(endMonth)) {
+        return NextResponse.json(
+          { message: 'Invalid month format. Use YYYY-MM (e.g., 2025-12)' },
+          { status: 400 }
+        );
+      }
+      // Filter by date range mode
+      // Calculate the last day of the endMonth properly
+      const [endYear, endMonthNum] = endMonth.split('-').map(Number);
+      const lastDayOfMonth = new Date(endYear, endMonthNum, 0).getDate();
+      
+      const dateRangeParams = [...queryParams];
+      dateRangeParams.push(`${startMonth}-01 00:00:00`, `${endMonth}-${lastDayOfMonth} 23:59:59`);
+      
+      payments = await query(
+        `SELECT 
+          p.*,
+          d.name as driver_name,
+          d.driver_number,
+          t.customer_name,
+          t.id as tour_booking_ref
+        FROM payments p
+        LEFT JOIN drivers d ON p.driver_id = d.id
+        LEFT JOIN tours t ON p.tour_id = t.id
+        WHERE ${whereClause} AND (p.created_at BETWEEN ? AND ?)
+        ORDER BY p.created_at DESC 
+        LIMIT ${limit} OFFSET ${offset}`,
+        dateRangeParams
       ) as any[];
       
       total = payments.length;

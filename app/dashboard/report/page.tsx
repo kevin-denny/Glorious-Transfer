@@ -124,7 +124,7 @@ export default function PaymentsPage() {
   const createpayments = `http://${baseUrl}/api/payment`;
 
   // Tabs
-  const [activeTab, setActiveTab] = useState("driver");
+  const [activeTab, setActiveTab] = useState("tour");
 
   // Driver data
   const [driverPayments, setDriverPayments] = useState<DriverPayment[]>([]);
@@ -204,11 +204,13 @@ export default function PaymentsPage() {
 
   const [selectedRange, setSelectedRange] = useState(() => {
     const now = new Date();
-    const month = (now.getMonth() + 1).toString().padStart(2, "0");
     const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, "0");
+    const day = now.getDate().toString().padStart(2, "0");
+
     return {
-      startMonth: `${year}-${month}`,
-      endMonth: `${year}-${month}`,
+      startDate: `${year}-${month}-${day}`,
+      endDate: `${year}-${month}-${day}`,
     };
   });
 
@@ -230,7 +232,7 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchDrivers();
     fetchTours();
-    fetchSummary();
+    // fetchSummary();
     fetchRates();
   }, []);
 
@@ -242,9 +244,9 @@ export default function PaymentsPage() {
     fetchDriverPayments();
   }, [searchDriver]);
 
-  useEffect(() => {
-    fetchSummary();
-  }, [selectedRange]);
+  // useEffect(() => {
+  //   fetchSummary();
+  // }, [selectedRange]);
 
   // -------------------------
   // FETCH FUNCTIONS
@@ -341,36 +343,6 @@ export default function PaymentsPage() {
       });
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function fetchSummary() {
-    try {
-      if (!token) throw new Error("No auth token found");
-
-      const response = await fetch(`${createpayments}/summary`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          startMonth: selectedRange.startMonth,
-          endMonth: selectedRange.endMonth,
-        }),
-      });
-
-      if (!response.ok)
-        throw new Error(`HTTP error! status: ${response.status}`);
-
-      const res = await response.json();
-      setSummary(res.summary || {});
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
     }
   }
 
@@ -574,36 +546,37 @@ export default function PaymentsPage() {
   }
   const tourcolumns = [
     {
-      key: "tour_id",
-      label: "Trip ID",
-    },
-    {
-      key: "customer_name",
-      label: "Customer Name",
-    },
-    {
       key: "agent",
       label: "Agent",
+    },
+    {
+      key: "tour_id",
+      label: "Transfer Date",
     },
     {
       key: "agent_ref",
       label: "Agent Ref",
     },
     {
+      key: "tour_id",
+      label: "Trip Date",
+    },
+    {
+      key: "customer_name",
+      label: "Customer Name",
+    },
+    {
+      key: "customer_name",
+      label: "Pick up",
+    },
+    {
+      key: "customer_name",
+      label: "Drop off",
+    },
+    {
       key: "amount",
       label: "Amount",
       render: (row: Tour) => `${thousandSeparator(row.amount)} ${row.currency}`,
-    },
-    {
-      key: "created_at",
-      label: "Payment Date",
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (row: Tour) => (
-        <Badge className={getStatusColor(row.status)}>{row.status}</Badge>
-      ),
     },
   ];
 
@@ -693,11 +666,11 @@ export default function PaymentsPage() {
 
     setSelectedRange((prev) => {
       // if end < start → adjust end = start
-      const adjustedEnd = prev.endMonth < newStart ? newStart : prev.endMonth;
+      const adjustedEnd = prev.endDate < newStart ? newStart : prev.endDate;
 
       return {
-        startMonth: newStart,
-        endMonth: adjustedEnd,
+        startDate: newStart,
+        endDate: adjustedEnd,
       };
     });
   }
@@ -707,13 +680,13 @@ export default function PaymentsPage() {
 
     setSelectedRange((prev) => {
       // enforce: end >= start
-      if (newEnd < prev.startMonth) {
+      if (newEnd < prev.startDate) {
         return {
           ...prev,
-          endMonth: prev.startMonth, // auto-fix
+          endDate: prev.startDate, // auto-fix
         };
       }
-      return { ...prev, endMonth: newEnd };
+      return { ...prev, endDate: newEnd };
     });
   }
 
@@ -723,107 +696,6 @@ export default function PaymentsPage() {
 
   return (
     <DashboardLayout>
-      {/* Stats */}
-      <div className="mb-4 flex gap-4">
-        <div>
-          <label className="text-sm font-medium text-gray-700 mr-2">
-            Start Month:
-          </label>
-          <input
-            type="month"
-            value={selectedRange.startMonth}
-            onChange={handleStartMonthChange}
-            className="border px-2 py-1 rounded"
-          />
-        </div>
-
-        <div>
-          <label className="text-sm font-medium text-gray-700 mr-2">
-            End Month:
-          </label>
-          <input
-            type="month"
-            value={selectedRange.endMonth}
-            onChange={handleEndMonthChange}
-            className="border px-2 py-1 rounded"
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Received Amount
-            </CardTitle>
-            <DollarSign className="h-5 w-5 text-orange-600" />
-          </CardHeader>
-
-          <CardContent>
-            {/* Currency totals */}
-            <div className="text-lg font-semibold">
-              {"රු"} {thousandSeparator(summary.tour_payments?.LKR)}{" "}
-              <span className="text-xs text-gray-500 ml-1">({"LKR"})</span>
-            </div>
-            <div className="text-lg font-semibold">
-              {"$"} {thousandSeparator(summary.tour_payments?.USD)}{" "}
-              <span className="text-xs text-gray-500 ml-1">({"USD"})</span>
-            </div>
-            <div className="text-lg font-semibold">
-              {"€"} {thousandSeparator(summary.tour_payments?.EUR)}{" "}
-              <span className="text-xs text-gray-500 ml-1">({"EURO"})</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Paid Total
-            </CardTitle>
-            <Check className="h-5 w-5 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              රු{thousandSeparator(summary.driver_payments?.LKR)}
-            </div>
-            {/* <p className="text-xs text-gray-500 mt-1">
-              {driverPayments.filter((p) => p.status === "paid").length}{" "}
-              completed
-            </p> */}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Balance
-            </CardTitle>
-            <DollarSign className="h-5 w-5 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {/**
-               * Balance = Total Tour Payments (all currencies converted to LKR)
-               *           - Total Driver Payments (all currencies converted to LKR)
-               */}
-              රු
-              {
-                // Sum of tour payments in LKR
-                thousandSeparator(
-                  toLKR(summary.tour_payments?.LKR || 0, "LKR") +
-                    toLKR(summary.tour_payments?.USD || 0, "USD") +
-                    toLKR(summary.tour_payments?.EUR || 0, "EUR") -
-                    // Minus sum of driver payments in LKR
-                    (toLKR(summary.driver_payments?.LKR || 0, "LKR") +
-                      toLKR(summary.driver_payments?.USD || 0, "USD") +
-                      toLKR(summary.driver_payments?.EUR || 0, "EUR"))
-                )
-              }
-            </div>
-          </CardContent>
-        </Card>
-      </div>
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start">
@@ -1093,41 +965,96 @@ export default function PaymentsPage() {
             </div>
 
             {/* Table */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-100 justify-between">
-                  Filter by Agents
-                </Button>
-              </DropdownMenuTrigger>
+            <div className="mb-4 flex gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mr-2">
+                  Start Date:
+                </label>
+                <input
+                  type="date"
+                  value={selectedRange.startDate}
+                  onChange={handleStartMonthChange}
+                  className="border px-2 py-1 rounded"
+                />
+              </div>
 
-              <DropdownMenuContent className="w-56 p-2 max-h-64 overflow-y-auto space-y-1">
-                {/* Clear All Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full mb-2"
-                  disabled={selectedAgents.length === 0}
-                  onClick={() => setSelectedAgents([])}
-                >
-                  Clear All
-                </Button>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mr-2">
+                  End Date:
+                </label>
+                <input
+                  type="date"
+                  value={selectedRange.endDate}
+                  onChange={handleEndMonthChange}
+                  className="border px-2 py-1 rounded"
+                />
+              </div>
 
-                {/* Agents List */}
-                {agentsList.map((agent) => (
-                  <div
-                    key={agent}
-                    className="flex items-center space-x-2 p-1 cursor-pointer"
-                    onClick={() => toggleAgent(agent)}
-                  >
-                    <Checkbox
-                      checked={selectedAgents.includes(agent)}
-                      onCheckedChange={() => toggleAgent(agent)}
-                    />
-                    <span>{agent}</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-100 justify-between">
+                    Filter by Agents
+                  </Button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent className="w-56 p-2 max-h-64 overflow-y-auto space-y-1">
+                  {/* Buttons side by side */}
+                  <div className="flex gap-2 mb-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1"
+                      disabled={selectedAgents.length === 0}
+                      onClick={() => setSelectedAgents([])}
+                    >
+                      Clear All
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1"
+                      disabled={selectedAgents.length === agentsList.length}
+                      onClick={() => setSelectedAgents([...agentsList])}
+                    >
+                      Select All
+                    </Button>
                   </div>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+                  {/* Agents List */}
+                  {agentsList.map((agent) => (
+                    <div
+                      key={agent}
+                      className="flex items-center space-x-2 p-1 cursor-pointer"
+                      onClick={() => toggleAgent(agent)}
+                    >
+                      <Checkbox
+                        checked={selectedAgents.includes(agent)}
+                        onCheckedChange={() => toggleAgent(agent)}
+                      />
+                      <span>{agent}</span>
+                    </div>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  // onClick={handleDownload}
+                  disabled={selectedAgents.length === 0}
+                >
+                  Download
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  // onClick={handleDownloadAll}
+                >
+                  Download All
+                </Button>
+              </div>
+            </div>
 
             <DataTable
               columns={tourcolumns}

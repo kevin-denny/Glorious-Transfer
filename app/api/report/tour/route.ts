@@ -8,6 +8,8 @@ interface TourReportRequest {
   startDate: string;
   endDate: string;
   agent: string[];
+  download?: boolean;
+  downloadAll?: boolean;
 }
 
 interface TourReportData {
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
     });
 
     const body: TourReportRequest = await request.json();
-    const { startDate, endDate, agent } = body;
+    const { startDate, endDate, agent, download=false, downloadAll=false } = body;
 
     // Validate mandatory parameters
     if (!startDate || !endDate || !agent) {

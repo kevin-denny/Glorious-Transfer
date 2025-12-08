@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     if (searchTerm && searchTerm.trim().length > 0) {
       // Search mode
       const searchParams = [...queryParams];
-      searchParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
+      searchParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
       
       payments = await query(
         `SELECT 
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
         FROM payments p
         LEFT JOIN drivers d ON p.driver_id = d.id
         LEFT JOIN tours t ON p.tour_id = t.id
-        WHERE ${whereClause} AND (p.id LIKE ? OR d.id LIKE ? OR t.customer_name LIKE ?)
+        WHERE ${whereClause} AND (p.id LIKE ? OR d.id LIKE ? OR t.customer_name LIKE ? OR p.status LIKE ?)
         ORDER BY p.created_at DESC 
         LIMIT ${limit} OFFSET ${offset}`,
         searchParams

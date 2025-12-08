@@ -3,6 +3,7 @@ import { query, queryOne } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
 import { formatToIST, SYSCONFIG } from '@/lib/utils';
 import { AuditLogger } from '@/lib/activity-logger.server';
+import * as XLSX from 'xlsx';
 
 interface TourReportRequest {
   startDate: string;
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
     ];
 
     // Get tour report data
-    const tourReports = await query(
+    let tourReports = await query(
       `SELECT 
         t.agent,
         t.pickup_datetime as pickup_datetime,
@@ -127,6 +128,30 @@ export async function POST(request: NextRequest) {
       ORDER BY t.pickup_datetime ASC, t.created_at ASC`,
       queryParams
     ) as any[];
+
+    
+    if(downloadAll) {
+        // Get tour report data
+        tourReports = await query(
+            `SELECT 
+            t.agent,
+            t.pickup_datetime as pickup_datetime,
+            t.arrival_datetime as arrival_datetime,
+            t.agent_ref,
+            t.id as trip_id,
+            t.customer_name as passenger_name,
+            t.pickup as pick_up,
+            t.destination as drop_off,
+            COALESCE(t.amount, 0) as income_amount,
+            t.currency,
+            t.status,
+            t.pax,
+            t.created_at,
+            t.category
+            FROM tours t
+            ORDER BY t.pickup_datetime ASC, t.created_at ASC`
+        ) as any[];
+    }
 
     // Format the data
     const formattedReports: TourReportData[] = tourReports.map(tour => ({
@@ -160,6 +185,131 @@ export async function POST(request: NextRequest) {
       },
       agents_included: uniqueAgents
     };
+
+    // If download is requested, generate Excel file
+    if (download || downloadAll) {
+      try {
+        // Prepare data for Excel
+        const excelData = formattedReports.map((report, index) => ({
+          'S/N': index + 1,
+          'Agent': report.agent,
+          'Transfer Date': report.pickup_datetime,
+          'Agent Ref': report.agent_ref,
+          'Trip ID': report.trip_id,
+          'Passenger Name': report.passenger_name,
+          'Pick Up': report.pick_up,
+          'Drop Off': report.drop_off,
+          'Category': report.category,
+          'Currency': report.currency,
+          'Income Amount': report.income_amount
+        }));
+
+        // Add summary row at the end
+        excelData.push({
+          'S/N': '' as any,
+          'Agent': '',
+          'Transfer Date': '',
+          'Agent Ref': '',
+          'Trip ID': '',
+          'Passenger Name': '',
+          'Pick Up': '',
+          'Drop Off': '',
+          'Category': 'TOTAL:',
+          'Currency': '',
+          'Income Amount': totalIncome
+        });
+
+        // Create workbook and worksheet
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+        // Set column widths
+        const columnWidths = [
+          { wch: 5 },   // S/N
+          { wch: 20 },  // Agent
+          { wch: 18 },  // Transfer Date
+          { wch: 15 },  // Agent Ref
+          { wch: 12 },  // Trip ID
+          { wch: 25 },  // Passenger Name
+          { wch: 20 },  // Pick Up
+          { wch: 20 },  // Drop Off
+          { wch: 15 },  // Category
+          { wch: 10 },  // Currency
+          { wch: 15 }   // Income Amount
+        ];
+        worksheet['!cols'] = columnWidths;
+
+        // Style the header row
+        const headerStyle = {
+          font: { bold: true },
+          fill: { fgColor: { rgb: "E0E0E0" } }
+        };
+
+        // Apply header styling (row 1)
+        const headerCells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1'];
+        headerCells.forEach(cell => {
+          if (worksheet[cell]) {
+            worksheet[cell].s = headerStyle;
+          }
+        });
+
+        // Style the total row
+        const totalRowNum = excelData.length;
+        const totalRowStyle = {
+          font: { bold: true },
+          fill: { fgColor: { rgb: "FFE0B2" } }
+        };
+
+        // Apply total row styling
+        const totalCells = [`A${totalRowNum}`, `B${totalRowNum}`, `C${totalRowNum}`, `D${totalRowNum}`, 
+                           `E${totalRowNum}`, `F${totalRowNum}`, `G${totalRowNum}`, `H${totalRowNum}`, 
+                           `I${totalRowNum}`, `J${totalRowNum}`, `K${totalRowNum}`];
+        totalCells.forEach(cell => {
+          if (worksheet[cell]) {
+            worksheet[cell].s = totalRowStyle;
+          }
+        });
+
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Tour Report');
+
+        // Generate Excel buffer
+        const excelBuffer = XLSX.write(workbook, { 
+          type: 'buffer', 
+          bookType: 'xlsx',
+          compression: true
+        });
+
+        // Create filename with timestamp
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const filename = `Tour_Report_${startDate}_to_${endDate}_${timestamp}.xlsx`;
+
+        // 🔥 LOG AUDIT ACTIVITY - EXCEL DOWNLOAD
+        await auditLogger.logRead('tour_report_excel', 'download_excel', SYSCONFIG.SUCCESS, {
+          filters: { startDate, endDate, agents: agent },
+          result_count: totalRecords,
+          total_income: totalIncome,
+          filename
+        });
+
+        // Return Excel file as response
+        return new NextResponse(excelBuffer, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition': `attachment; filename="${filename}"`,
+            'Content-Length': excelBuffer.length.toString(),
+          },
+        });
+
+      } catch (excelError: any) {
+        console.error('Excel generation error:', excelError);
+        return NextResponse.json(
+          { message: 'Failed to generate Excel file', error: excelError.message },
+          { status: 500 }
+        );
+      }
+    }
 
     // 🔥 LOG AUDIT ACTIVITY - TOUR REPORT GENERATION
     await auditLogger.logRead('tour_report', 'generate_report', SYSCONFIG.SUCCESS, {

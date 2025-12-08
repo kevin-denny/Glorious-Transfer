@@ -320,7 +320,7 @@ export default function PaymentsPage() {
           searchTerm: searchTour,
           page: pageTour,
           pageSize: pageSizeTour,
-          // agent: selectedAgents.length > 0 ? selectedAgents : [],
+          agent: selectedAgents.length > 0 ? selectedAgents : [],
         }),
       });
 

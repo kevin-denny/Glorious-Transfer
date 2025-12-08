@@ -41,6 +41,12 @@ import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/lib/activity-logger";
 import { currencyList, thousandSeparator } from "@/lib/utils";
 import DataTable from "@/components/ui/DataTable";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Interfaces
 interface DriverPayment {
@@ -168,6 +174,8 @@ export default function PaymentsPage() {
     agent_ref: "",
   });
 
+  const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+
   const [pageDriver, setPageDriver] = useState(1);
   const [pageSizeDriver, setPageSizeDriver] = useState(5);
 
@@ -194,15 +202,15 @@ export default function PaymentsPage() {
 
   const [rates, setRates] = useState<{ [key: string]: number }>({});
 
-const [selectedRange, setSelectedRange] = useState(() => {
-  const now = new Date();
-  const month = (now.getMonth() + 1).toString().padStart(2, "0");
-  const year = now.getFullYear();
-  return {
-    startMonth: `${year}-${month}`,
-    endMonth: `${year}-${month}`,
-  };
-});
+  const [selectedRange, setSelectedRange] = useState(() => {
+    const now = new Date();
+    const month = (now.getMonth() + 1).toString().padStart(2, "0");
+    const year = now.getFullYear();
+    return {
+      startMonth: `${year}-${month}`,
+      endMonth: `${year}-${month}`,
+    };
+  });
 
   const [summary, setSummary] = useState({} as any);
 
@@ -212,7 +220,7 @@ const [selectedRange, setSelectedRange] = useState(() => {
 
   useEffect(() => {
     fetchTourPayments();
-  }, [pageTour, pageSizeTour]);
+  }, [selectedAgents, pageTour, pageSizeTour]);
 
   useEffect(() => {
     fetchDriverPayments();
@@ -234,10 +242,9 @@ const [selectedRange, setSelectedRange] = useState(() => {
     fetchDriverPayments();
   }, [searchDriver]);
 
-useEffect(() => {
-  fetchSummary();
-}, [selectedRange]);
-
+  useEffect(() => {
+    fetchSummary();
+  }, [selectedRange]);
 
   // -------------------------
   // FETCH FUNCTIONS
@@ -313,6 +320,7 @@ useEffect(() => {
           searchTerm: searchTour,
           page: pageTour,
           pageSize: pageSizeTour,
+          // agent: selectedAgents.length > 0 ? selectedAgents : [],
         }),
       });
 
@@ -336,35 +344,35 @@ useEffect(() => {
     }
   }
 
-async function fetchSummary() {
-  try {
-    if (!token) throw new Error("No auth token found");
+  async function fetchSummary() {
+    try {
+      if (!token) throw new Error("No auth token found");
 
-    const response = await fetch(`${createpayments}/summary`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        startMonth: selectedRange.startMonth,
-        endMonth: selectedRange.endMonth,
-      }),
-    });
+      const response = await fetch(`${createpayments}/summary`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          startMonth: selectedRange.startMonth,
+          endMonth: selectedRange.endMonth,
+        }),
+      });
 
-    if (!response.ok)
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
 
-    const res = await response.json();
-    setSummary(res.summary || {});
-  } catch (error: any) {
-    toast({
-      title: "Error",
-      description: error.message,
-      variant: "destructive",
-    });
+      const res = await response.json();
+      setSummary(res.summary || {});
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   }
-}
 
   async function fetchDrivers() {
     try {
@@ -544,6 +552,26 @@ async function fetchSummary() {
     }
   };
 
+  const agentsList = [
+    "EL",
+    "IW",
+    "TF",
+    "IT",
+    "OW",
+    "BF",
+    "CT",
+    "BW",
+    "MT",
+    "MZ",
+    "TX",
+    "DR",
+  ];
+
+  function toggleAgent(agent: string) {
+    setSelectedAgents((prev) =>
+      prev.includes(agent) ? prev.filter((a) => a !== agent) : [...prev, agent]
+    );
+  }
   const tourcolumns = [
     {
       key: "tour_id",
@@ -660,37 +688,34 @@ async function fetchSummary() {
     }
   }
 
-function handleStartMonthChange(e: React.ChangeEvent<HTMLInputElement>) {
-  const newStart = e.target.value;
+  function handleStartMonthChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const newStart = e.target.value;
 
-  setSelectedRange(prev => {
-    // if end < start → adjust end = start
-    const adjustedEnd =
-      prev.endMonth < newStart ? newStart : prev.endMonth;
+    setSelectedRange((prev) => {
+      // if end < start → adjust end = start
+      const adjustedEnd = prev.endMonth < newStart ? newStart : prev.endMonth;
 
-    return {
-      startMonth: newStart,
-      endMonth: adjustedEnd,
-    };
-  });
-}
-
-function handleEndMonthChange(e: React.ChangeEvent<HTMLInputElement>) {
-  const newEnd = e.target.value;
-
-  setSelectedRange(prev => {
-    // enforce: end >= start
-    if (newEnd < prev.startMonth) {
       return {
-        ...prev,
-        endMonth: prev.startMonth, // auto-fix
+        startMonth: newStart,
+        endMonth: adjustedEnd,
       };
-    }
-    return { ...prev, endMonth: newEnd };
-  });
-}
+    });
+  }
 
+  function handleEndMonthChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const newEnd = e.target.value;
 
+    setSelectedRange((prev) => {
+      // enforce: end >= start
+      if (newEnd < prev.startMonth) {
+        return {
+          ...prev,
+          endMonth: prev.startMonth, // auto-fix
+        };
+      }
+      return { ...prev, endMonth: newEnd };
+    });
+  }
 
   // -------------------------
   // MAIN RENDER
@@ -699,31 +724,31 @@ function handleEndMonthChange(e: React.ChangeEvent<HTMLInputElement>) {
   return (
     <DashboardLayout>
       {/* Stats */}
-     <div className="mb-4 flex gap-4">
-  <div>
-    <label className="text-sm font-medium text-gray-700 mr-2">
-      Start Month:
-    </label>
-    <input
-      type="month"
-      value={selectedRange.startMonth}
-      onChange={handleStartMonthChange}
-      className="border px-2 py-1 rounded"
-    />
-  </div>
+      <div className="mb-4 flex gap-4">
+        <div>
+          <label className="text-sm font-medium text-gray-700 mr-2">
+            Start Month:
+          </label>
+          <input
+            type="month"
+            value={selectedRange.startMonth}
+            onChange={handleStartMonthChange}
+            className="border px-2 py-1 rounded"
+          />
+        </div>
 
-  <div>
-    <label className="text-sm font-medium text-gray-700 mr-2">
-      End Month:
-    </label>
-    <input
-      type="month"
-      value={selectedRange.endMonth}
-      onChange={handleEndMonthChange}
-      className="border px-2 py-1 rounded"
-    />
-  </div>
-</div>
+        <div>
+          <label className="text-sm font-medium text-gray-700 mr-2">
+            End Month:
+          </label>
+          <input
+            type="month"
+            value={selectedRange.endMonth}
+            onChange={handleEndMonthChange}
+            className="border px-2 py-1 rounded"
+          />
+        </div>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -803,7 +828,7 @@ function handleEndMonthChange(e: React.ChangeEvent<HTMLInputElement>) {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start">
             <TabsTrigger value="driver">Driver Payments</TabsTrigger>
-            <TabsTrigger value="tour">Tour Payments</TabsTrigger>
+            <TabsTrigger value="tour">Trip Payments</TabsTrigger>
           </TabsList>
 
           {/* ================================
@@ -1068,6 +1093,42 @@ function handleEndMonthChange(e: React.ChangeEvent<HTMLInputElement>) {
             </div>
 
             {/* Table */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-100 justify-between">
+                  Filter by Agents
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent className="w-56 p-2 max-h-64 overflow-y-auto space-y-1">
+                {/* Clear All Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full mb-2"
+                  disabled={selectedAgents.length === 0}
+                  onClick={() => setSelectedAgents([])}
+                >
+                  Clear All
+                </Button>
+
+                {/* Agents List */}
+                {agentsList.map((agent) => (
+                  <div
+                    key={agent}
+                    className="flex items-center space-x-2 p-1 cursor-pointer"
+                    onClick={() => toggleAgent(agent)}
+                  >
+                    <Checkbox
+                      checked={selectedAgents.includes(agent)}
+                      onCheckedChange={() => toggleAgent(agent)}
+                    />
+                    <span>{agent}</span>
+                  </div>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <DataTable
               columns={tourcolumns}
               data={filteredTours}

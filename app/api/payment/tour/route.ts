@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Get search term and pagination from body
     const body = await request.json();
-    const { searchTerm = '', page = 1, pageSize = 10, tour_id, limit = 15, startMonth = '', endMonth = '', agent = '' } = body;
+    const { searchTerm = '', page = 1, pageSize = 10, tour_id, limit = 15, startMonth = '', endMonth = '', agent = [] } = body;
 
     // Validate pagination parameters
     if (page < 1 || pageSize < 1 || pageSize > 100) {
@@ -46,9 +46,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Add agent filter if provided
-    if (agent) {
-      whereClause += ' AND t.agent = ?';
-      queryParams.push(agent);
+    if (agent && agent.length > 0) {
+      const placeholders = agent.map(() => '?').join(',');
+      whereClause += ` AND t.agent IN (${placeholders})`;
+      queryParams.push(...agent);
     }
 
     // Get total count for pagination

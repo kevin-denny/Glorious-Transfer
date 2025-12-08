@@ -350,12 +350,12 @@ export async function POST(request: NextRequest) {
     await auditLogger.logCreate(SYSCONFIG.ENTITY_TYPE_ASSIGNMENT, assignmentId, newAssignment, SYSCONFIG.SUCCESS);
 
     // add payment record if amount > 0
-    if(amount && amount > 0) {
+    if(amount && parseFloat(amount) > 0) {
       paymentId = await generateUniquePaymentId();
       let status = SYSCONFIG.PENDING;
-      if(paid_amount && paid_amount == amount) {
+      if(paid_amount && parseFloat(paid_amount) == parseFloat(amount)) {
         status = SYSCONFIG.COMPLETED;
-      } else if(paid_amount && paid_amount > 0 && paid_amount < amount) {
+      } else if(paid_amount && parseFloat(paid_amount) > 0 && parseFloat(paid_amount) < parseFloat(amount)) {
         status = SYSCONFIG.PARTIAL;
       }
       await query(
@@ -363,7 +363,7 @@ export async function POST(request: NextRequest) {
           (id, driver_id, tour_id, amount, currency, paid_amount, updated_by, status, assignment_id, type) 
          VALUES 
           (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [paymentId, driver_id, tour_id, amount, currency || null, paid_amount || 0, user.id, status, assignmentId, SYSCONFIG.PAYMENT_TYPE_DRIVER]
+        [paymentId, driver_id, tour_id, parseFloat(amount), currency || null, parseFloat(paid_amount) || 0, user.id, status, assignmentId, SYSCONFIG.PAYMENT_TYPE_DRIVER]
       );
     }
 

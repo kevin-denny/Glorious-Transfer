@@ -47,6 +47,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
+import Swal from "sweetalert2";
 
 // Interfaces
 interface DriverPayment {
@@ -339,91 +340,90 @@ export default function PaymentsPage() {
     }
   }
 
- async function fetchTours() {
-  setLoading(true);
-  try {
-    if (!token) throw new Error("No auth token found");
+  async function fetchTours() {
+    setLoading(true);
+    try {
+      if (!token) throw new Error("No auth token found");
 
-    const response = await fetch(`${getreports}/tour`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        startDate: selectedRange.startDate,
-        endDate: selectedRange.endDate,
-        agent: selectedAgents,
-        download: download,
-        downloadAll: downloadAll,
-        page: pageTour,
-        pageSize: pageSizeTour,
-      }),
-    });
+      const response = await fetch(`${getreports}/tour`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          startDate: selectedRange.startDate,
+          endDate: selectedRange.endDate,
+          agent: selectedAgents,
+          download: download,
+          downloadAll: downloadAll,
+          page: pageTour,
+          pageSize: pageSizeTour,
+        }),
+      });
 
-    if (!response.ok)
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
 
-    const contentType = response.headers.get("content-type") || "";
+      const contentType = response.headers.get("content-type") || "";
 
-    // ============================================================
-    //  🔥 1. Handle Excel download ONLY if download flags are true
-    // ============================================================
-    if (
-      (download || downloadAll) &&
-      contentType.includes(
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      )
-    ) {
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      // ============================================================
+      //  🔥 1. Handle Excel download ONLY if download flags are true
+      // ============================================================
+      if (
+        (download || downloadAll) &&
+        contentType.includes(
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+      ) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
 
-      // Extract filename
-      const contentDisposition = response.headers.get("Content-Disposition");
-      let filename = "tour_report.xlsx";
+        // Extract filename
+        const contentDisposition = response.headers.get("Content-Disposition");
+        let filename = "tour_report.xlsx";
 
-      if (contentDisposition) {
-        const match = contentDisposition.match(/filename="(.+)"/);
-        if (match?.[1]) filename = match[1];
+        if (contentDisposition) {
+          const match = contentDisposition.match(/filename="(.+)"/);
+          if (match?.[1]) filename = match[1];
+        }
+
+        // Force download
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        window.URL.revokeObjectURL(url);
+
+        return; // STOP — no JSON expected
       }
 
-      // Force download
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      // ==========================================
+      //  🔥 2. Handle JSON result (normal response)
+      // ==========================================
+      const json = await response.json();
 
-      window.URL.revokeObjectURL(url);
+      setTours(json.data || []);
+      setFilteredTours(json.data || []);
 
-      return; // STOP — no JSON expected
+      // Save pagination
+      setPaginationTour(json.pagination);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+      // Reset flags after request
+      setDownload(false);
+      setDownloadAll(false);
     }
-
-    // ==========================================
-    //  🔥 2. Handle JSON result (normal response)
-    // ==========================================
-    const json = await response.json();
-
-    setTours(json.data || []);
-    setFilteredTours(json.data || []);
-
-    // Save pagination
-    setPaginationTour(json.pagination);
-
-  } catch (error: any) {
-    toast({
-      title: "Error",
-      description: error.message,
-      variant: "destructive",
-    });
-  } finally {
-    setLoading(false);
-    // Reset flags after request
-    setDownload(false);
-    setDownloadAll(false);
   }
-}
 
   // async function fetchTours() {
   //   try {
@@ -689,8 +689,8 @@ export default function PaymentsPage() {
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start">
-            <TabsTrigger value="driver">Driver Payments</TabsTrigger>
-            <TabsTrigger value="tour">Trip Payments</TabsTrigger>
+            <TabsTrigger value="driver">Driver Report</TabsTrigger>
+            <TabsTrigger value="tour">Trip Report</TabsTrigger>
           </TabsList>
 
           {/* ================================
@@ -916,7 +916,28 @@ export default function PaymentsPage() {
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={() => {
+                  onClick={async () => {
+                    const result = await Swal.fire({
+                      title: "Are you sure?",
+                      text: "Do you really want to download all?",
+                      icon: "warning",
+                      showCancelButton: true,
+                      confirmButtonText: "Yes, Download!",
+                      cancelButtonText: "Cancel",
+                      customClass: {
+                        confirmButton: "swal-confirm-btn",
+                        cancelButton: "swal-cancel-btn",
+                        popup:
+                          "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
+                      },
+                      buttonsStyling: false,
+                      background: "hsl(var(--background))",
+                      color: "hsl(var(--foreground))",
+                    });
+
+                    if (!result.isConfirmed) return;
+
+                    // 👍 Now safe to run this
                     setDownloadAll(true);
                   }}
                 >

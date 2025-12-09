@@ -19,6 +19,7 @@ interface DriverReportData {
   driver: string;
   trip_id: string;
   agent_id: string;
+  amount: number;
   paid_amount: number;
   pick_up: string;
   drop_off: string;
@@ -103,29 +104,33 @@ export async function POST(request: NextRequest) {
 
     if (downloadAll) {
       // Get all driver payment data without any filters
+      console.log('Fetching all driver reports...');
       driverReports = await query(
         `SELECT 
           d.name as driver,
           d.id as driver_id,
           t.id as trip_id,
           t.agent as agent_id,
+          COALESCE(t.amount, 0) as amount,
           COALESCE(p.paid_amount, 0) as paid_amount,
           t.pickup as pick_up,
           t.destination as drop_off,
           t.customer_name as passenger_name,
           t.pickup_datetime as pickup_datetime,
           t.arrival_datetime as arrival_datetime,
+          t.status as tour_status,
           p.currency,
           p.status as payment_status
         FROM assignments a
         INNER JOIN drivers d ON a.driver_id = d.id
         INNER JOIN tours t ON a.tour_id = t.id
         LEFT JOIN payments p ON (p.driver_id = d.id AND p.tour_id = t.id AND p.type = 'driver_payment')
-        ORDER BY t.pickup_datetime ASC, t.created_at ASC`
+        ORDER BY COALESCE(t.pickup_datetime, t.arrival_datetime) DESC, t.created_at DESC`
       ) as any[];
       totalCount = driverReports.length;
+      console.log(`Found ${totalCount} driver report records`);
     } else {
-      // Build dynamic WHERE clause for status with fallback datetime logic
+      // Build dynamic WHERE clause for payment status with fallback datetime logic
       const statusPlaceholders = status.map(() => '?').join(',');
       const whereClause = `
         WHERE (
@@ -133,7 +138,7 @@ export async function POST(request: NextRequest) {
           OR 
           (t.pickup_datetime IS NULL AND DATE(t.arrival_datetime) >= ? AND DATE(t.arrival_datetime) <= ?)
         )
-        AND t.status IN (${statusPlaceholders})
+        AND p.status IN (${statusPlaceholders})
       `;
 
       // Query parameters - need to include startDate and endDate twice for both conditions
@@ -145,6 +150,9 @@ export async function POST(request: NextRequest) {
         ...status
       ];
 
+      console.log('Query params:', queryParams);
+      console.log('Where clause:', whereClause);
+
       if (download) {
         // For download, get all filtered data without pagination
         driverReports = await query(
@@ -153,20 +161,22 @@ export async function POST(request: NextRequest) {
             d.id as driver_id,
             t.id as trip_id,
             t.agent as agent_id,
+            COALESCE(t.amount, 0) as amount,
             COALESCE(p.paid_amount, 0) as paid_amount,
             t.pickup as pick_up,
             t.destination as drop_off,
             t.customer_name as passenger_name,
             t.pickup_datetime as pickup_datetime,
             t.arrival_datetime as arrival_datetime,
+            t.status as tour_status,
             p.currency,
             p.status as payment_status
           FROM assignments a
           INNER JOIN drivers d ON a.driver_id = d.id
           INNER JOIN tours t ON a.tour_id = t.id
-          LEFT JOIN payments p ON (p.driver_id = d.id AND p.tour_id = t.id AND p.type = 'driver_payment')
+          INNER JOIN payments p ON (p.driver_id = d.id AND p.tour_id = t.id AND p.type = 'driver_payment')
           ${whereClause}
-          ORDER BY t.pickup_datetime ASC, t.created_at ASC`,
+          ORDER BY COALESCE(t.pickup_datetime, t.arrival_datetime) DESC, t.created_at DESC`,
           queryParams
         ) as any[];
         totalCount = driverReports.length;
@@ -176,10 +186,58 @@ export async function POST(request: NextRequest) {
           `SELECT COUNT(*) as total FROM assignments a
            INNER JOIN drivers d ON a.driver_id = d.id
            INNER JOIN tours t ON a.tour_id = t.id
+           INNER JOIN payments p ON (p.driver_id = d.id AND p.tour_id = t.id AND p.type = 'driver_payment')
            ${whereClause}`,
           queryParams
         ) as any[];
         totalCount = totalResult[0]?.total || 0;
+        
+        console.log(`Total count: ${totalCount}`);
+
+        // If no records found, return early with debug info
+        if (totalCount === 0) {
+          // Debug query to see what data exists
+        //   const debugData = await query(
+        //     `SELECT 
+        //       COUNT(*) as total_assignments,
+        //       COUNT(DISTINCT p.status) as unique_payment_statuses,
+        //       GROUP_CONCAT(DISTINCT p.status) as all_payment_statuses,
+        //       COUNT(DISTINCT t.status) as unique_tour_statuses,
+        //       GROUP_CONCAT(DISTINCT t.status) as all_tour_statuses,
+        //       MIN(DATE(COALESCE(t.pickup_datetime, t.arrival_datetime))) as earliest_date,
+        //       MAX(DATE(COALESCE(t.pickup_datetime, t.arrival_datetime))) as latest_date
+        //     FROM assignments a
+        //     INNER JOIN drivers d ON a.driver_id = d.id
+        //     INNER JOIN tours t ON a.tour_id = t.id
+        //     LEFT JOIN payments p ON (p.driver_id = d.id AND p.tour_id = t.id AND p.type = 'driver_payment')`
+        //   ) as any[];
+
+        //   console.log('Debug data:', debugData[0]);
+
+          return NextResponse.json({
+            message: 'No driver reports found for the specified criteria',
+            // debug: debugData[0],
+            filters: { startDate, endDate, status },
+            summary: {
+              total_records: 0,
+            //   total_amount: 0,
+            //   total_paid_amount: 0,
+              unique_drivers: 0,
+              date_range: { start_date: startDate, end_date: endDate },
+              drivers_included: [],
+              status_filter: status
+            },
+            data: [],
+            pagination: {
+              page: 1,
+              pageSize: 10,
+              total: 0,
+              totalPages: 0,
+              hasNextPage: false,
+              hasPreviousPage: false
+            }
+          });
+        }
 
         // Calculate offset for pagination
         const offset = (page - 1) * pageSize;
@@ -191,43 +249,77 @@ export async function POST(request: NextRequest) {
             d.id as driver_id,
             t.id as trip_id,
             t.agent as agent_id,
+            COALESCE(t.amount, 0) as amount,
             COALESCE(p.paid_amount, 0) as paid_amount,
             t.pickup as pick_up,
             t.destination as drop_off,
             t.customer_name as passenger_name,
             t.pickup_datetime as pickup_datetime,
             t.arrival_datetime as arrival_datetime,
+            t.status as tour_status,
             p.currency,
             p.status as payment_status
           FROM assignments a
           INNER JOIN drivers d ON a.driver_id = d.id
           INNER JOIN tours t ON a.tour_id = t.id
-          LEFT JOIN payments p ON (p.driver_id = d.id AND p.tour_id = t.id AND p.type = 'driver_payment')
+          INNER JOIN payments p ON (p.driver_id = d.id AND p.tour_id = t.id AND p.type = 'driver_payment')
           ${whereClause}
-          ORDER BY t.pickup_datetime ASC, t.created_at ASC
+          ORDER BY COALESCE(t.pickup_datetime, t.arrival_datetime) DESC, t.created_at DESC
           LIMIT ${pageSize} OFFSET ${offset}`,
           queryParams
         ) as any[];
+
+        console.log(`Found ${driverReports.length} records after pagination`);
       }
     }
 
-    // Format the data
-    const formattedReports: DriverReportData[] = driverReports.map(report => ({
-      driver: report.driver,
-      trip_id: report.trip_id,
-      agent_id: report.agent_id || '-',
-      paid_amount: parseFloat(report.paid_amount || 0),
-      pick_up: report.pick_up || '-',
-      drop_off: report.drop_off || '-',
-      passenger_name: report.passenger_name,
-      pickup_datetime: report.pickup_datetime ? formatToIST(report.pickup_datetime) : formatToIST(report.arrival_datetime),
-      currency: report.currency || '-',
-      payment_status: report.payment_status || 'Not Paid'
-    }));
+    // Debug: Log first few records
+    if (driverReports.length > 0) {
+      console.log('First record:', driverReports[0]);
+    }
+
+    // Format the data with better error handling
+    const formattedReports: DriverReportData[] = driverReports.map((report, index) => {
+      try {
+        return {
+          driver: report.driver || 'Unknown Driver',
+          trip_id: report.trip_id || '-',
+          agent_id: report.agent_id || '-',
+          amount: parseFloat(report.amount || 0),
+          paid_amount: parseFloat(report.paid_amount || 0),
+          pick_up: report.pick_up || '-',
+          drop_off: report.drop_off || '-',
+          passenger_name: report.passenger_name || '-',
+          pickup_datetime: report.pickup_datetime 
+            ? formatToIST(report.pickup_datetime) 
+            : (report.arrival_datetime ? formatToIST(report.arrival_datetime) : '-'),
+          currency: report.currency || 'USD',
+          payment_status: report.payment_status || 'Not Paid'
+        };
+      } catch (formatError) {
+        console.error(`Error formatting record ${index}:`, formatError, report);
+        return {
+          driver: 'Error',
+          trip_id: '-',
+          agent_id: '-',
+          amount: 0,
+          paid_amount: 0,
+          pick_up: '-',
+          drop_off: '-',
+          passenger_name: '-',
+          pickup_datetime: '-',
+          currency: 'USD',
+          payment_status: 'Error'
+        };
+      }
+    });
+
+    console.log(`Formatted ${formattedReports.length} records`);
 
     // Calculate summary statistics
     const totalRecords = formattedReports.length;
-    const totalPaidAmount = formattedReports.reduce((sum, report) => sum + report.paid_amount, 0);
+    // const totalAmount = formattedReports.reduce((sum, report) => sum + report.amount, 0);
+    // const totalPaidAmount = formattedReports.reduce((sum, report) => sum + report.paid_amount, 0);
     const driverNames = formattedReports
       .map(report => report.driver)
       .filter(driver => driver && driver.trim() !== '');
@@ -253,7 +345,8 @@ export async function POST(request: NextRequest) {
     if (downloadAll) {
       summary = {
         total_records: totalCount,
-        total_paid_amount: parseFloat(totalPaidAmount.toFixed(2)),
+        // total_amount: parseFloat(totalAmount.toFixed(2)),
+        // total_paid_amount: parseFloat(totalPaidAmount.toFixed(2)),
         unique_drivers: uniqueDrivers.length,
         date_range: 'All Records',
         drivers_included: uniqueDrivers,
@@ -262,7 +355,8 @@ export async function POST(request: NextRequest) {
     } else {
       summary = {
         total_records: download ? totalCount : totalRecords,
-        total_paid_amount: parseFloat(totalPaidAmount.toFixed(2)),
+        // total_amount: parseFloat(totalAmount.toFixed(2)),
+        // total_paid_amount: parseFloat(totalPaidAmount.toFixed(2)),
         unique_drivers: uniqueDrivers.length,
         date_range: {
           start_date: startDate,
@@ -282,6 +376,7 @@ export async function POST(request: NextRequest) {
           'Driver': report.driver,
           'Trip ID': report.trip_id,
           'Agent ID': report.agent_id,
+          'Amount': report.amount,
           'Paid Amount': report.paid_amount,
           'Pick Up': report.pick_up,
           'Drop Off': report.drop_off,
@@ -292,19 +387,20 @@ export async function POST(request: NextRequest) {
         }));
 
         // Add summary row at the end
-        excelData.push({
-          'S/N': '' as any,
-          'Driver': '',
-          'Trip ID': '',
-          'Agent ID': '',
-          'Paid Amount': totalPaidAmount,
-          'Pick Up': '',
-          'Drop Off': '',
-          'Passenger Name': 'TOTAL:',
-          'Transfer Date': '',
-          'Currency': '',
-          'Payment Status': ''
-        });
+        // excelData.push({
+        //   'S/N': '' as any,
+        //   'Driver': '',
+        //   'Trip ID': '',
+        //   'Agent ID': '',
+        //   'Amount': totalAmount,
+        //   'Paid Amount': totalPaidAmount,
+        //   'Pick Up': '',
+        //   'Drop Off': '',
+        //   'Passenger Name': 'TOTAL:',
+        //   'Transfer Date': '',
+        //   'Currency': '',
+        //   'Payment Status': ''
+        // });
 
         // Create workbook and worksheet
         const workbook = XLSX.utils.book_new();
@@ -316,6 +412,7 @@ export async function POST(request: NextRequest) {
           { wch: 20 },  // Driver
           { wch: 12 },  // Trip ID
           { wch: 15 },  // Agent ID
+          { wch: 15 },  // Amount
           { wch: 15 },  // Paid Amount
           { wch: 20 },  // Pick Up
           { wch: 20 },  // Drop Off
@@ -333,7 +430,7 @@ export async function POST(request: NextRequest) {
         };
 
         // Apply header styling (row 1)
-        const headerCells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1'];
+        const headerCells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1', 'L1'];
         headerCells.forEach(cell => {
           if (worksheet[cell]) {
             worksheet[cell].s = headerStyle;
@@ -350,7 +447,7 @@ export async function POST(request: NextRequest) {
         // Apply total row styling
         const totalCells = [`A${totalRowNum}`, `B${totalRowNum}`, `C${totalRowNum}`, `D${totalRowNum}`, 
                            `E${totalRowNum}`, `F${totalRowNum}`, `G${totalRowNum}`, `H${totalRowNum}`, 
-                           `I${totalRowNum}`, `J${totalRowNum}`, `K${totalRowNum}`];
+                           `I${totalRowNum}`, `J${totalRowNum}`, `K${totalRowNum}`, `L${totalRowNum}`];
         totalCells.forEach(cell => {
           if (worksheet[cell]) {
             worksheet[cell].s = totalRowStyle;
@@ -377,7 +474,8 @@ export async function POST(request: NextRequest) {
         await auditLogger.logRead('driver_report_excel', 'download_excel', SYSCONFIG.SUCCESS, {
           filters: downloadAll ? { downloadAll: true } : { startDate, endDate, status: status },
           result_count: totalRecords,
-          total_paid_amount: totalPaidAmount,
+        //   total_amount: totalAmount,
+        //   total_paid_amount: totalPaidAmount,
           filename
         });
 
@@ -404,7 +502,8 @@ export async function POST(request: NextRequest) {
     await auditLogger.logRead('driver_report', 'generate_report', SYSCONFIG.SUCCESS, {
       filters: downloadAll ? { downloadAll: true } : { startDate, endDate, status: status },
       result_count: totalRecords,
-      total_paid_amount: totalPaidAmount
+    //   total_amount: totalAmount,
+    //   total_paid_amount: totalPaidAmount
     });
 
     // Build response
@@ -430,7 +529,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET method to retrieve available statuses for filter dropdown
+// GET method to retrieve available payment statuses for filter dropdown
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -441,10 +540,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    // Return available tour statuses
+    // Return available payment statuses
     const statusList = [
       { value: SYSCONFIG.PENDING, label: SYSCONFIG.PENDING },
-      { value: SYSCONFIG.ASSIIGNED, label: SYSCONFIG.ASSIIGNED },
       { value: SYSCONFIG.COMPLETED, label: SYSCONFIG.COMPLETED },
       { value: SYSCONFIG.CANCELLED, label: SYSCONFIG.CANCELLED }
     ];

@@ -906,7 +906,27 @@ export default function PaymentsPage() {
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={() => {
+                  onClick={async () => {
+                    const result = await Swal.fire({
+                      title: "Are you sure?",
+                      text: "Do you really want to download all?",
+                      icon: "warning",
+                      showCancelButton: true,
+                      confirmButtonText: "Yes, Download!",
+                      cancelButtonText: "Cancel",
+                      customClass: {
+                        confirmButton: "swal-confirm-btn",
+                        cancelButton: "swal-cancel-btn",
+                        popup:
+                          "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
+                      },
+                      buttonsStyling: false,
+                      background: "hsl(var(--background))",
+                      color: "hsl(var(--foreground))",
+                    });
+
+                    if (!result.isConfirmed) return;
+
                     setDownload(true);
                   }}
                   disabled={selectedAgents.length === 0}
@@ -937,7 +957,6 @@ export default function PaymentsPage() {
 
                     if (!result.isConfirmed) return;
 
-                    // 👍 Now safe to run this
                     setDownloadAll(true);
                   }}
                 >
@@ -949,8 +968,6 @@ export default function PaymentsPage() {
             <DataTable
               columns={tourcolumns}
               data={filteredTours}
-              searchValue={searchTour}
-              onSearchChange={setSearchTour}
               pagination={paginationTour}
               pageSize={pageSizeTour}
               onPageChange={setPageTour}

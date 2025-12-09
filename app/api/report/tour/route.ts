@@ -11,6 +11,8 @@ interface TourReportRequest {
   agent: string[];
   download?: boolean;
   downloadAll?: boolean;
+  page?: number;
+  pageSize?: number;
 }
 
 interface TourReportData {
@@ -44,96 +46,112 @@ export async function POST(request: NextRequest) {
     });
 
     const body: TourReportRequest = await request.json();
-    const { startDate, endDate, agent, download=false, downloadAll=false } = body;
+    const { startDate, endDate, agent, download=false, downloadAll=false, page = 1, pageSize = 10 } = body;
 
-    // Validate mandatory parameters
-    if (!startDate || !endDate || !agent) {
-      return NextResponse.json(
-        { message: 'Missing required parameters: startDate, endDate, agent are mandatory' },
-        { status: 400 }
-      );
+    // Skip validation if downloadAll is true
+    if (!downloadAll) {
+      // Validate mandatory parameters only for filtered reports
+      if (!startDate || !endDate || !agent) {
+        return NextResponse.json(
+          { message: 'Missing required parameters: startDate, endDate, agent are mandatory' },
+          { status: 400 }
+        );
+      }
+
+      // Validate agent array
+      if (!Array.isArray(agent) || agent.length === 0) {
+        return NextResponse.json(
+          { message: 'Agent must be a non-empty array' },
+          { status: 400 }
+        );
+      }
+
+      // Simple date format validation (YYYY-MM-DD)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+        return NextResponse.json(
+          { message: 'Invalid date format. Use YYYY-MM-DD format' },
+          { status: 400 }
+        );
+      }
+
+      // Validate date format
+      const startDateObj = formatToIST(new Date(startDate));
+      const endDateObj = formatToIST(new Date(endDate));
+
+      // Validate date range
+      if (startDateObj > endDateObj) {
+        return NextResponse.json(
+          { message: 'Start date must be before or equal to end date' },
+          { status: 400 }
+        );
+      }
     }
 
-    // Validate agent array
-    if (!Array.isArray(agent) || agent.length === 0) {
-      return NextResponse.json(
-        { message: 'Agent must be a non-empty array' },
-        { status: 400 }
-      );
+    // Validate pagination parameters (for non-download requests)
+    if (!download && !downloadAll) {
+      if (page < 1 || pageSize < 1 || pageSize > 100) {
+        return NextResponse.json(
+          { message: 'Invalid pagination parameters. Page must be >= 1 and pageSize between 1-100' },
+          { status: 400 }
+        );
+      }
     }
 
-    // Simple date format validation (YYYY-MM-DD)
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
-      return NextResponse.json(
-        { message: 'Invalid date format. Use YYYY-MM-DD format' },
-        { status: 400 }
-      );
-    }
+    let tourReports: any[] = [];
+    let summary: any = {};
+    let totalCount = 0;
 
-    // Validate date format
-    const startDateObj = formatToIST(new Date(startDate));
-    const endDateObj = formatToIST(new Date(endDate));
+    if (downloadAll) {
+      // Get all tour data without any filters
+      tourReports = await query(
+        `SELECT 
+          t.agent,
+          t.pickup_datetime as pickup_datetime,
+          t.arrival_datetime as arrival_datetime,
+          t.agent_ref,
+          t.id as trip_id,
+          t.customer_name as passenger_name,
+          t.pickup as pick_up,
+          t.destination as drop_off,
+          COALESCE(t.amount, 0) as income_amount,
+          t.currency,
+          t.status,
+          t.pax,
+          t.created_at,
+          t.category
+        FROM tours t
+        ORDER BY t.pickup_datetime ASC, t.created_at ASC`
+      ) as any[];
+      totalCount = tourReports.length;
+    } else {
+      // Build dynamic WHERE clause for agents with fallback datetime logic
+      const agentPlaceholders = agent.map(() => '?').join(',');
+      const whereClause = `
+        WHERE (
+          (t.pickup_datetime IS NOT NULL AND DATE(t.pickup_datetime) >= ? AND DATE(t.pickup_datetime) <= ?)
+          OR 
+          (t.pickup_datetime IS NULL AND DATE(t.arrival_datetime) >= ? AND DATE(t.arrival_datetime) <= ?)
+        )
+        AND t.agent IN (${agentPlaceholders})
+        AND t.status IN (?, ?, ?)
+      `;
 
-    // Validate date range
-    if (startDateObj > endDateObj) {
-      return NextResponse.json(
-        { message: 'Start date must be before or equal to end date' },
-        { status: 400 }
-      );
-    }
+      // Query parameters - need to include startDate and endDate twice for both conditions
+      const queryParams = [
+        startDate,  // for pickup_datetime >= ?
+        endDate,    // for pickup_datetime <= ?
+        startDate,  // for arrival_datetime >= ?
+        endDate,    // for arrival_datetime <= ?
+        ...agent,
+        SYSCONFIG.PENDING,
+        SYSCONFIG.ASSIIGNED,
+        SYSCONFIG.COMPLETED
+      ];
 
-    // Build dynamic WHERE clause for agents with fallback datetime logic
-    const agentPlaceholders = agent.map(() => '?').join(',');
-    const whereClause = `
-      WHERE (
-        (t.pickup_datetime IS NOT NULL AND DATE(t.pickup_datetime) >= ? AND DATE(t.pickup_datetime) <= ?)
-        OR 
-        (t.pickup_datetime IS NULL AND DATE(t.arrival_datetime) >= ? AND DATE(t.arrival_datetime) <= ?)
-      )
-      AND t.agent IN (${agentPlaceholders})
-      AND t.status IN (?, ?, ?)
-    `;
-
-    // Query parameters - need to include startDate and endDate twice for both conditions
-    const queryParams = [
-      startDate,  // for pickup_datetime >= ?
-      endDate,    // for pickup_datetime <= ?
-      startDate,  // for arrival_datetime >= ?
-      endDate,    // for arrival_datetime <= ?
-      ...agent,
-      SYSCONFIG.PENDING,
-      SYSCONFIG.ASSIIGNED,
-      SYSCONFIG.COMPLETED
-    ];
-
-    // Get tour report data
-    let tourReports = await query(
-      `SELECT 
-        t.agent,
-        t.pickup_datetime as pickup_datetime,
-        t.arrival_datetime as arrival_datetime,
-        t.agent_ref,
-        t.id as trip_id,
-        t.customer_name as passenger_name,
-        t.pickup as pick_up,
-        t.destination as drop_off,
-        COALESCE(t.amount, 0) as income_amount,
-        t.currency,
-        t.status,
-        t.pax,
-        t.created_at,
-        t.category
-      FROM tours t
-      ${whereClause}
-      ORDER BY t.pickup_datetime ASC, t.created_at ASC`,
-      queryParams
-    ) as any[];
-
-    
-    if(downloadAll) {
-        // Get tour report data
+      if (download) {
+        // For download, get all filtered data without pagination
         tourReports = await query(
-            `SELECT 
+          `SELECT 
             t.agent,
             t.pickup_datetime as pickup_datetime,
             t.arrival_datetime as arrival_datetime,
@@ -148,15 +166,53 @@ export async function POST(request: NextRequest) {
             t.pax,
             t.created_at,
             t.category
-            FROM tours t
-            ORDER BY t.pickup_datetime ASC, t.created_at ASC`
+          FROM tours t
+          ${whereClause}
+          ORDER BY t.pickup_datetime ASC, t.created_at ASC`,
+          queryParams
         ) as any[];
+        totalCount = tourReports.length;
+      } else {
+        // Get total count for pagination
+        const totalResult = await query(
+          `SELECT COUNT(*) as total FROM tours t ${whereClause}`,
+          queryParams
+        ) as any[];
+        totalCount = totalResult[0]?.total || 0;
+
+        // Calculate offset for pagination
+        const offset = (page - 1) * pageSize;
+
+        // Get paginated filtered tour report data
+        tourReports = await query(
+          `SELECT 
+            t.agent,
+            t.pickup_datetime as pickup_datetime,
+            t.arrival_datetime as arrival_datetime,
+            t.agent_ref,
+            t.id as trip_id,
+            t.customer_name as passenger_name,
+            t.pickup as pick_up,
+            t.destination as drop_off,
+            COALESCE(t.amount, 0) as income_amount,
+            t.currency,
+            t.status,
+            t.pax,
+            t.created_at,
+            t.category
+          FROM tours t
+          ${whereClause}
+          ORDER BY t.pickup_datetime ASC, t.created_at ASC
+          LIMIT ${pageSize} OFFSET ${offset}`,
+          queryParams
+        ) as any[];
+      }
     }
 
     // Format the data
     const formattedReports: TourReportData[] = tourReports.map(tour => ({
       agent: tour.agent,
-      pickup_datetime: tour.pickup_datetime? formatToIST(tour.pickup_datetime) : formatToIST(tour.arrival_datetime), // Already in YYYY-MM-DD format from MySQL DATE column
+      pickup_datetime: tour.pickup_datetime? formatToIST(tour.pickup_datetime) : formatToIST(tour.arrival_datetime),
       agent_ref: tour.agent_ref || '-',
       trip_id: tour.trip_id,
       passenger_name: tour.passenger_name,
@@ -175,16 +231,43 @@ export async function POST(request: NextRequest) {
       .filter(agent => agent && agent.trim() !== '');
     const uniqueAgents = Array.from(new Set(agentNames));
 
-    const summary = {
-      total_records: totalRecords,
-      total_income: parseFloat(totalIncome.toFixed(2)),
-      unique_agents: uniqueAgents.length,
-      date_range: {
-        start_date: startDate,
-        end_date: endDate
-      },
-      agents_included: uniqueAgents
-    };
+    // Calculate pagination metadata (only for non-download requests)
+    let paginationMeta = null;
+    if (!download && !downloadAll) {
+      const totalPages = Math.ceil(totalCount / pageSize);
+      const hasNextPage = page < totalPages;
+      const hasPreviousPage = page > 1;
+
+      paginationMeta = {
+        page,
+        pageSize,
+        total: totalCount,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage
+      };
+    }
+
+    if (downloadAll) {
+      summary = {
+        total_records: totalCount,
+        total_income: parseFloat(totalIncome.toFixed(2)),
+        unique_agents: uniqueAgents.length,
+        date_range: 'All Records',
+        agents_included: uniqueAgents
+      };
+    } else {
+      summary = {
+        total_records: download ? totalCount : totalRecords,
+        total_income: parseFloat(totalIncome.toFixed(2)),
+        unique_agents: uniqueAgents.length,
+        date_range: {
+          start_date: startDate,
+          end_date: endDate
+        },
+        agents_included: uniqueAgents
+      };
+    }
 
     // If download is requested, generate Excel file
     if (download || downloadAll) {
@@ -282,11 +365,13 @@ export async function POST(request: NextRequest) {
 
         // Create filename with timestamp
         const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-        const filename = `Tour_Report_${startDate}_to_${endDate}_${timestamp}.xlsx`;
+        const filename = downloadAll 
+          ? `All_Tours_Report_${timestamp}.xlsx`
+          : `Tour_Report_${startDate}_to_${endDate}_${timestamp}.xlsx`;
 
         // 🔥 LOG AUDIT ACTIVITY - EXCEL DOWNLOAD
         await auditLogger.logRead('tour_report_excel', 'download_excel', SYSCONFIG.SUCCESS, {
-          filters: { startDate, endDate, agents: agent },
+          filters: downloadAll ? { downloadAll: true } : { startDate, endDate, agents: agent },
           result_count: totalRecords,
           total_income: totalIncome,
           filename
@@ -313,20 +398,24 @@ export async function POST(request: NextRequest) {
 
     // 🔥 LOG AUDIT ACTIVITY - TOUR REPORT GENERATION
     await auditLogger.logRead('tour_report', 'generate_report', SYSCONFIG.SUCCESS, {
-      filters: {
-        startDate,
-        endDate,
-        agents: agent
-      },
+      filters: downloadAll ? { downloadAll: true } : { startDate, endDate, agents: agent },
       result_count: totalRecords,
       total_income: totalIncome
     });
 
-    return NextResponse.json({
-      message: 'Tour report generated successfully',
+    // Build response
+    const response: any = {
+      message: downloadAll ? 'All tours report generated successfully' : 'Tour report generated successfully',
       summary,
       data: formattedReports
-    });
+    };
+
+    // Add pagination only for non-download requests
+    if (paginationMeta) {
+      response.pagination = paginationMeta;
+    }
+
+    return NextResponse.json(response);
 
   } catch (error: any) {
     console.error('Tour report error:', error);

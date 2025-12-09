@@ -117,7 +117,7 @@ export default function PaymentsPage() {
   const baseUrl = process.env.NEXT_PUBLIC_API;
 
   // gettourdropdown
-  const gettours = `http://${baseUrl}/api/payment/tour`;
+  const getreports = `http://${baseUrl}/api/report`;
   // get active tour
   const activedrivers = `http://${baseUrl}/api/assign/drivers`;
   // create payments
@@ -175,6 +175,8 @@ export default function PaymentsPage() {
   });
 
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+  const [download, setDownload] = useState(false);
+  const [downloadAll, setDownloadAll] = useState(false);
 
   const [pageDriver, setPageDriver] = useState(1);
   const [pageSizeDriver, setPageSizeDriver] = useState(5);
@@ -220,33 +222,37 @@ export default function PaymentsPage() {
     resetForm();
   }, [activeTab]);
 
-  useEffect(() => {
-    fetchTourPayments();
-  }, [selectedAgents, pageTour, pageSizeTour]);
+  // useEffect(() => {
+  //   fetchTourPayments();
+  // }, [selectedAgents, pageTour, pageSizeTour]);
 
-  useEffect(() => {
-    fetchDriverPayments();
-  }, [pageDriver, pageSizeDriver]);
+  // useEffect(() => {
+  //   fetchDriverPayments();
+  // }, [pageDriver, pageSizeDriver]);
 
   // Fetch initial data
   useEffect(() => {
     fetchDrivers();
-    fetchTours();
+    // fetchTours();
     // fetchSummary();
     fetchRates();
   }, []);
 
   useEffect(() => {
-    fetchTourPayments();
-  }, [searchTour]);
-
-  useEffect(() => {
     fetchDriverPayments();
   }, [searchDriver]);
 
-  // useEffect(() => {
-  //   fetchSummary();
-  // }, [selectedRange]);
+  useEffect(() => {
+    if (selectedAgents?.length > 0) {
+      fetchTours();
+    }
+  }, [selectedRange, selectedAgents]);
+
+  useEffect(() => {
+    if (download == true || downloadAll == true) {
+      fetchTours();
+    }
+  }, [download, downloadAll]);
 
   // -------------------------
   // FETCH FUNCTIONS
@@ -307,45 +313,6 @@ export default function PaymentsPage() {
     }
   }
 
-  async function fetchTourPayments() {
-    setLoading(true);
-    try {
-      if (!token) throw new Error("No auth token found");
-
-      const response = await fetch(`${createpayments}/tour`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          searchTerm: searchTour,
-          page: pageTour,
-          pageSize: pageSizeTour,
-          agent: selectedAgents.length > 0 ? selectedAgents : [],
-        }),
-      });
-
-      if (!response.ok)
-        throw new Error(`HTTP error! status: ${response.status}`);
-
-      const res = await response.json();
-      setTourPayments(res.data || []);
-      setFilteredTours(res.data || []);
-
-      // Save pagination info
-      setPaginationTour(res.pagination);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function fetchDrivers() {
     try {
       if (!token) throw new Error("No auth token found");
@@ -376,104 +343,104 @@ export default function PaymentsPage() {
     try {
       if (!token) throw new Error("No auth token found");
 
-      const response = await fetch(`${gettours}`, {
-        method: "GET",
+      const response = await fetch(`${getreports}/tour`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify({
+          startDate: selectedRange.startDate,
+          endDate: selectedRange.endDate,
+          agent: selectedAgents,
+          download: download,
+          downloadAll: downloadAll,
+        }),
       });
 
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
 
-      const res = await response.json();
-      setTours(res.tours || []);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  }
+      // 🔥 Detect if response is Excel (file download)
+      const contentType = response.headers.get("content-type") || "";
 
-  // -------------------------
-  // CREATE PAYMENT
-  // -------------------------
+      if (
+        contentType.includes(
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+      ) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+        // Extract filename from header
+        const contentDisposition = response.headers.get("Content-Disposition");
+        let filename = "tour_report.xlsx";
 
-    try {
-      if (!token) throw new Error("No auth token found");
-
-      let response: Response;
-
-      if (activeTab === "driver") {
-        // DRIVER PAYMENT
-        response = await fetch(`${createpayments}/${formDriverData?.id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            paid_amount: Number(formDriverData.tobe_paid),
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(
-            errorData.message || `HTTP error! status: ${response.status}`
-          );
+        if (contentDisposition) {
+          const match = contentDisposition.match(/filename="(.+)"/);
+          if (match?.[1]) filename = match[1];
         }
 
-        // await logActivity("create", "driver_payment", null, formData);
-        fetchDriverPayments(); // <-- only for driver tab
-      } else {
-        // TOUR PAYMENT
-        response = await fetch(`${createpayments}/${formTourData?.id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            status: "Confirmed",
-          }),
-        });
+        // Trigger browser download
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(
-            errorData.message || `HTTP error! status: ${response.status}`
-          );
-        }
+        window.URL.revokeObjectURL(url);
 
-        // await logActivity("create", "tour_payment", null, formData);
-        fetchTourPayments();
+        return; // Stop here — no JSON expected
       }
 
-      toast({
-        title: "Success",
-        description: "Payment created successfully",
-      });
-
-      setDialogOpen(false);
-      resetForm();
+      // 🔥 Otherwise handle JSON (when not downloading)
+      const json = await response.json();
+      setTours(json.data || []);
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
+    setDownload(false);
+    setDownloadAll(false);
   }
+
+  // async function fetchTours() {
+  //   try {
+  //     if (!token) throw new Error("No auth token found");
+
+  //     const response = await fetch(`${getreports}/tour`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: JSON.stringify({
+  //         startDate: selectedRange.startDate,
+  //         endDate: selectedRange.endDate,
+  //         agent: selectedAgents,
+  //         download: true,
+  //         downloadAll: false,
+  //       }),
+  //     });
+
+  //     if (!response.ok)
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+
+  //     const res = await response.json();
+  //     console.log("Pool",res.data)
+  //     setTours(res.data || []);
+  //   } catch (error: any) {
+  //     toast({
+  //       title: "Error",
+  //       description: error.message,
+  //       variant: "destructive",
+  //     });
+  //   }
+  // }
 
   // -------------------------
   // RESET FORM
@@ -707,74 +674,6 @@ export default function PaymentsPage() {
               DRIVER PAYMENTS
           ================================= */}
           <TabsContent value="driver">
-            <div className="flex justify-end">
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="max-w-3xl">
-                  <DialogHeader>
-                    <DialogTitle>Update Driver Payment</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <Label className="text-gray-500">Driver</Label>
-                      <p className="font-medium">{`${formDriverData.driver_id} - ${formDriverData.driver_name}`}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Trip</Label>
-                      <p className="font-medium">{`${formDriverData.tour_id} - ${formDriverData.customer_name}`}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Amount</Label>
-                      <p className="font-medium">{`${thousandSeparator(
-                        formDriverData.amount
-                      )} ${formDriverData.currency}`}</p>
-                    </div>
-                    {(Number(formDriverData?.amount) ?? 0) -
-                      (Number(formDriverData?.paid_amount) ?? 0) >
-                      0 && (
-                      <>
-                        <div>
-                          <Label className="text-gray-500">To be Paid</Label>
-                          <p className="font-medium">
-                            {`${thousandSeparator(
-                              Number(formDriverData.amount) -
-                                Number(formDriverData.paid_amount)
-                            )} ${formDriverData.currency}`}
-                          </p>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="tobe_paid">Payment Amount</Label>
-                          <Input
-                            id="tobe_paid"
-                            value={formDriverData.tobe_paid || ""}
-                            onChange={(e) =>
-                              setFormDriverData({
-                                ...formDriverData,
-                                tobe_paid:
-                                  e.target.value === ""
-                                    ? 0
-                                    : Number(e.target.value),
-                              })
-                            }
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setDialogOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button type="submit">Update</Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
-
             {/* Table */}
 
             <DataTable
@@ -907,63 +806,6 @@ export default function PaymentsPage() {
               TOUR PAYMENTS
           ================================== */}
           <TabsContent value="tour">
-            <div className="flex justify-end">
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="max-w-3xl">
-                  <DialogHeader>
-                    <DialogTitle>Update Trip Payment</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <Label className="text-gray-500">Trip ID</Label>
-                        <p className="font-medium">{formTourData.tour_id}</p>
-                      </div>
-                      <div>
-                        <Label className="text-gray-500">Customer Name</Label>
-                        <p className="font-medium">
-                          {formTourData.customer_name}
-                        </p>
-                      </div>
-                      <div>
-                        <Label className="text-gray-500">Agent</Label>
-                        <p className="font-medium">{formTourData.agent}</p>
-                      </div>
-                      <div>
-                        <Label className="text-gray-500">Agent Reference</Label>
-                        <p className="font-medium">{formTourData.agent_ref}</p>
-                      </div>
-                      <div>
-                        <Label className="text-gray-500">Amount</Label>
-                        <p className="font-medium">
-                          {`${thousandSeparator(formTourData.amount)} ${
-                            formTourData.currency
-                          }`}
-                        </p>
-                      </div>
-
-                      <div>
-                        <Label className="text-gray-500">
-                          Confirmation Status
-                        </Label>
-                        <p className="font-medium">{formTourData.status}</p>
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setDialogOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button type="submit">Update</Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
-
             {/* Table */}
             <div className="mb-4 flex gap-4">
               <div>
@@ -1041,7 +883,9 @@ export default function PaymentsPage() {
                 <Button
                   variant="outline"
                   className="flex-1"
-                  // onClick={handleDownload}
+                  onClick={() => {
+                    setDownload(true);
+                  }}
                   disabled={selectedAgents.length === 0}
                 >
                   Download
@@ -1049,7 +893,9 @@ export default function PaymentsPage() {
                 <Button
                   variant="outline"
                   className="flex-1"
-                  // onClick={handleDownloadAll}
+                  onClick={() => {
+                    setDownloadAll(true);
+                  }}
                 >
                   Download All
                 </Button>

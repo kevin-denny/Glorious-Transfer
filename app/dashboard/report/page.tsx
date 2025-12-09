@@ -689,8 +689,8 @@ export default function PaymentsPage() {
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start">
-            <TabsTrigger value="driver">Driver Payments</TabsTrigger>
-            <TabsTrigger value="tour">Trip Payments</TabsTrigger>
+            <TabsTrigger value="driver">Driver Report</TabsTrigger>
+            <TabsTrigger value="tour">Trip Report</TabsTrigger>
           </TabsList>
 
           {/* ================================

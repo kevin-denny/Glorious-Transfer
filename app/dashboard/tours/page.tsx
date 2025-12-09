@@ -239,6 +239,26 @@ export default function ToursPage() {
       if (!token) throw new Error("No auth token found");
       let response: Response;
       if (selectedTour) {
+        const result = await Swal.fire({
+          title: "Are you sure?",
+          text: "Do you really want to update this tour?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Yes, update it!",
+          cancelButtonText: "Cancel",
+          customClass: {
+            confirmButton: "swal-confirm-btn",
+            cancelButton: "swal-cancel-btn",
+            popup:
+              "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
+          },
+          buttonsStyling: false, 
+          background: "hsl(var(--background))",
+          color: "hsl(var(--foreground))",
+        });
+
+        if (!result.isConfirmed) return;
+
         response = await fetch(`${gettours}/${selectedTour.id}`, {
           method: "PUT",
           headers: {

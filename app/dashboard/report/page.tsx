@@ -101,7 +101,7 @@ interface Tour {
   id: string;
   booking_ref: string;
   client_name: string;
-  amount: string;
+  income_amount: string;
   paid_amount: string;
   currency: string;
   value: string;
@@ -246,7 +246,7 @@ export default function PaymentsPage() {
     if (selectedAgents?.length > 0) {
       fetchTours();
     }
-  }, [selectedRange, selectedAgents]);
+  }, [selectedRange, selectedAgents, pageTour, pageSizeTour]);
 
   useEffect(() => {
     if (download == true || downloadAll == true) {
@@ -340,6 +340,7 @@ export default function PaymentsPage() {
   }
 
   async function fetchTours() {
+    setLoading(true);
     try {
       if (!token) throw new Error("No auth token found");
 
@@ -355,6 +356,8 @@ export default function PaymentsPage() {
           agent: selectedAgents,
           download: download,
           downloadAll: downloadAll,
+          page: pageTour,
+          pageSize: pageSizeTour,
         }),
       });
 
@@ -397,12 +400,18 @@ export default function PaymentsPage() {
       // 🔥 Otherwise handle JSON (when not downloading)
       const json = await response.json();
       setTours(json.data || []);
+      setFilteredTours(json.data || []);
+
+      // Save pagination info
+      setPaginationTour(json.pagination);
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
     setDownload(false);
     setDownloadAll(false);
@@ -517,7 +526,7 @@ export default function PaymentsPage() {
       label: "Agent",
     },
     {
-      key: "tour_id",
+      key: "pickup_datetime",
       label: "Transfer Date",
     },
     {
@@ -525,25 +534,30 @@ export default function PaymentsPage() {
       label: "Agent Ref",
     },
     {
-      key: "tour_id",
-      label: "Trip Date",
+      key: "trip_id",
+      label: "Trip ID",
     },
     {
-      key: "customer_name",
+      key: "category",
+      label: "Category",
+    },
+    {
+      key: "passenger_name",
       label: "Customer Name",
     },
     {
-      key: "customer_name",
+      key: "income_amount",
+      label: "Amount",
+      render: (row: Tour) =>
+        `${thousandSeparator(row.income_amount)} ${row.currency}`,
+    },
+    {
+      key: "pick_up",
       label: "Pick up",
     },
     {
-      key: "customer_name",
+      key: "drop_off",
       label: "Drop off",
-    },
-    {
-      key: "amount",
-      label: "Amount",
-      render: (row: Tour) => `${thousandSeparator(row.amount)} ${row.currency}`,
     },
   ];
 
@@ -559,7 +573,8 @@ export default function PaymentsPage() {
     {
       key: "amount",
       label: "Total Amount",
-      render: (row: Tour) => `${thousandSeparator(row.amount)} ${row.currency}`,
+      render: (row: Tour) =>
+        `${thousandSeparator(row.income_amount)} ${row.currency}`,
     },
     {
       key: "paid_amount",
@@ -914,34 +929,34 @@ export default function PaymentsPage() {
                 setPageSizeTour(size);
                 setPageTour(1);
               }}
-              renderActions={(tour: TourPayment) => (
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleView("tour", tour)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  {tour?.status != "Completed" && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleEdit("tour", tour)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  )}
+              // renderActions={(tour: TourPayment) => (
+              //   <div className="flex gap-2">
+              //     <Button
+              //       size="sm"
+              //       variant="ghost"
+              //       onClick={() => handleView("tour", tour)}
+              //     >
+              //       <Eye className="h-4 w-4" />
+              //     </Button>
+              //     {tour?.status != "Completed" && (
+              //       <Button
+              //         size="sm"
+              //         variant="ghost"
+              //         onClick={() => handleEdit("tour", tour)}
+              //       >
+              //         <Edit className="h-4 w-4" />
+              //       </Button>
+              //     )}
 
-                  {/* <Button
-                    size="sm"
-                    variant="ghost"
-                    // onClick={() => handleDelete(tour.id)}
-                  >
-                    <Trash className="h-4 w-4 text-red-500" />
-                  </Button> */}
-                </div>
-              )}
+              //     {/* <Button
+              //       size="sm"
+              //       variant="ghost"
+              //       // onClick={() => handleDelete(tour.id)}
+              //     >
+              //       <Trash className="h-4 w-4 text-red-500" />
+              //     </Button> */}
+              //   </div>
+              // )}
             />
 
             <Dialog open={viewTourMode} onOpenChange={setViewTourMode}>

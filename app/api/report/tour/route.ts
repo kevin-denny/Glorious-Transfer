@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate summary statistics
     const totalRecords = formattedReports.length;
-    const totalIncome = formattedReports.reduce((sum, report) => sum + report.income_amount, 0);
+    // const totalIncome = formattedReports.reduce((sum, report) => sum + report.income_amount, 0);
     const agentNames = formattedReports
       .map(report => report.agent)
       .filter(agent => agent && agent.trim() !== '');
@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
     if (downloadAll) {
       summary = {
         total_records: totalCount,
-        total_income: parseFloat(totalIncome.toFixed(2)),
+        // total_income: parseFloat(totalIncome.toFixed(2)),
         unique_agents: uniqueAgents.length,
         date_range: 'All Records',
         agents_included: uniqueAgents
@@ -259,7 +259,7 @@ export async function POST(request: NextRequest) {
     } else {
       summary = {
         total_records: download ? totalCount : totalRecords,
-        total_income: parseFloat(totalIncome.toFixed(2)),
+        // total_income: parseFloat(totalIncome.toFixed(2)),
         unique_agents: uniqueAgents.length,
         date_range: {
           start_date: startDate,
@@ -288,19 +288,19 @@ export async function POST(request: NextRequest) {
         }));
 
         // Add summary row at the end
-        excelData.push({
-          'S/N': '' as any,
-          'Agent': '',
-          'Transfer Date': '',
-          'Agent Ref': '',
-          'Trip ID': '',
-          'Passenger Name': '',
-          'Pick Up': '',
-          'Drop Off': '',
-          'Category': 'TOTAL:',
-          'Currency': '',
-          'Income Amount': totalIncome
-        });
+        // excelData.push({
+        //   'S/N': '' as any,
+        //   'Agent': '',
+        //   'Transfer Date': '',
+        //   'Agent Ref': '',
+        //   'Trip ID': '',
+        //   'Passenger Name': '',
+        //   'Pick Up': '',
+        //   'Drop Off': '',
+        //   'Category': 'TOTAL:',
+        //   'Currency': '',
+        //   'Income Amount': totalIncome
+        // });
 
         // Create workbook and worksheet
         const workbook = XLSX.utils.book_new();
@@ -373,7 +373,7 @@ export async function POST(request: NextRequest) {
         await auditLogger.logRead('tour_report_excel', 'download_excel', SYSCONFIG.SUCCESS, {
           filters: downloadAll ? { downloadAll: true } : { startDate, endDate, agents: agent },
           result_count: totalRecords,
-          total_income: totalIncome,
+        //   total_income: totalIncome,
           filename
         });
 
@@ -400,7 +400,7 @@ export async function POST(request: NextRequest) {
     await auditLogger.logRead('tour_report', 'generate_report', SYSCONFIG.SUCCESS, {
       filters: downloadAll ? { downloadAll: true } : { startDate, endDate, agents: agent },
       result_count: totalRecords,
-      total_income: totalIncome
+    //   total_income: totalIncome
     });
 
     // Build response

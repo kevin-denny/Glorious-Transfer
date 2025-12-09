@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     if (downloadAll) {
       // Get all driver payment data without any filters
-      console.log('Fetching all driver reports...');
+      console.log('Fetching all driver report...');
       driverReports = await query(
         `SELECT 
           d.name as driver,
@@ -154,6 +154,7 @@ export async function POST(request: NextRequest) {
     //   console.log('Where clause:', whereClause);
 
       if (download) {
+        console.log('Fetching driver report...');
         // For download, get all filtered data without pagination
         driverReports = await query(
           `SELECT 
@@ -180,6 +181,7 @@ export async function POST(request: NextRequest) {
           queryParams
         ) as any[];
         totalCount = driverReports.length;
+        console.log(`Found ${totalCount} records for download`);
       } else {
         // Get total count for pagination
         const totalResult = await query(

@@ -150,8 +150,8 @@ export async function POST(request: NextRequest) {
         ...status
       ];
 
-      console.log('Query params:', queryParams);
-      console.log('Where clause:', whereClause);
+    //   console.log('Query params:', queryParams);
+    //   console.log('Where clause:', whereClause);
 
       if (download) {
         // For download, get all filtered data without pagination
@@ -274,9 +274,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Debug: Log first few records
-    if (driverReports.length > 0) {
-      console.log('First record:', driverReports[0]);
-    }
+    // if (driverReports.length > 0) {
+    //   console.log('First record:', driverReports[0]);
+    // }
 
     // Format the data with better error handling
     const formattedReports: DriverReportData[] = driverReports.map((report, index) => {
@@ -293,8 +293,8 @@ export async function POST(request: NextRequest) {
           pickup_datetime: report.pickup_datetime 
             ? formatToIST(report.pickup_datetime) 
             : (report.arrival_datetime ? formatToIST(report.arrival_datetime) : '-'),
-          currency: report.currency || 'USD',
-          payment_status: report.payment_status || 'Not Paid'
+          currency: report.currency || '-',
+          payment_status: report.payment_status || '-'
         };
       } catch (formatError) {
         console.error(`Error formatting record ${index}:`, formatError, report);

@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
       amount: tour.amount,
       currency: tour.currency,
       agent_ref: tour.agent_ref,
+      complaints: tour.complaints,
       assignment: tour.assignment_id
         ? {
             id: tour.assignment_id,

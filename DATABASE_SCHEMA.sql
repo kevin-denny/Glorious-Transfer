@@ -80,6 +80,7 @@ CREATE TABLE tours (
   currency CHAR(10),
   agent_ref CHAR(50),
   amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
+  complaints TEXT,
   FOREIGN KEY (created_by) REFERENCES auth_users(id) ON DELETE SET NULL,
   INDEX idx_booking_date (booking_date),
   INDEX idx_status (status),

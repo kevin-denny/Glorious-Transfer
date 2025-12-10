@@ -63,6 +63,7 @@ interface Tour {
   destination: string | null;
   flight_no: string | null;
   remarks: string | null;
+  complaints: string | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -128,6 +129,7 @@ export default function ToursPage() {
     destination: "",
     flight_no: "",
     remarks: "",
+    complaints: "",
     status: "Pending",
   });
 
@@ -252,7 +254,7 @@ export default function ToursPage() {
             popup:
               "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
           },
-          buttonsStyling: false, 
+          buttonsStyling: false,
           background: "hsl(var(--background))",
           color: "hsl(var(--foreground))",
         });
@@ -282,6 +284,7 @@ export default function ToursPage() {
             departure_datetime: formData.departure_datetime,
             flight_no: formData.flight_no,
             remarks: formData.remarks,
+            complaints: formData.complaints,
             status: formData.status,
             created_by: profile?.id,
           }),
@@ -431,6 +434,7 @@ export default function ToursPage() {
       departure_datetime: "",
       flight_no: "",
       remarks: "",
+      complaints: "",
       status: "Pending",
     });
     setSelectedTour(null);
@@ -461,6 +465,7 @@ export default function ToursPage() {
       destination: tour.destination || "",
       flight_no: tour.flight_no || "",
       remarks: tour.remarks || "",
+      complaints: tour.complaints || "",
       status: tour.status,
     });
     setDialogOpen(true);
@@ -906,6 +911,21 @@ export default function ToursPage() {
                     rows={3}
                   />
                 </div>
+                {formData?.status != "Pending" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="complaints">Complaints</Label>
+                    <Textarea
+                      id="complaints"
+                      value={formData.complaints}
+                      maxLength={60}
+                      onChange={(e) =>
+                        setFormData({ ...formData, complaints: e.target.value })
+                      }
+                      rows={3}
+                    />
+                  </div>
+                )}
+
                 <div className="flex justify-end gap-2">
                   <Button
                     type="button"
@@ -1272,6 +1292,11 @@ Destination: ${selectedTour.destination ?? ""}
                   <Label className="text-gray-500">Remarks</Label>
                   <p className="font-medium">{selectedTour.remarks}</p>
                 </div>
+                <div>
+                  <Label className="text-gray-500">Complaints</Label>
+                  <p className="font-medium">{selectedTour.complaints}</p>
+                </div>
+
                 <div>
                   <Label className="text-gray-500">Created Time</Label>
                   <p className="font-medium">{selectedTour.created_at}</p>

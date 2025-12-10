@@ -19,20 +19,46 @@ export async function POST(request: NextRequest) {
       pendingTours,
       assignedTours,
       completedTours,
+      cancelledTours,
       totalDrivers,
       activeDrivers,
       totalPayments,
       totalRevenue,
+      totalComplaints,
+      
+      // Driver payment statistics
+      driverPaymentsPending,
+      driverPaymentsPartial,
+      driverPaymentsCompleted,
+      
+      // Tour payment statistics  
+      tourPaymentsPending,
+      tourPaymentsPartial,
+      tourPaymentsConfirmed,
+      
       recentToursResult
     ] = await Promise.all([
       queryOne('SELECT COUNT(*) as count FROM tours'),
       queryOne(`SELECT COUNT(*) as count FROM tours WHERE status = '${SYSCONFIG.PENDING}'`),
       queryOne(`SELECT COUNT(*) as count FROM tours WHERE status = '${SYSCONFIG.ASSIIGNED}'`),
       queryOne(`SELECT COUNT(*) as count FROM tours WHERE status = '${SYSCONFIG.COMPLETED}'`),
+      queryOne(`SELECT COUNT(*) as count FROM tours WHERE status = '${SYSCONFIG.CANCELLED}'`),
       queryOne('SELECT COUNT(*) as count FROM drivers'),
       queryOne(`SELECT COUNT(*) as count FROM drivers WHERE status = '${SYSCONFIG.ACTIVE}'`),
       queryOne('SELECT COUNT(*) as count FROM payments'),
-      queryOne('SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE status = "Completed"'),
+      queryOne(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE status = '${SYSCONFIG.COMPLETED}'`),
+      queryOne(`SELECT COUNT(*) as count FROM tours WHERE complaints IS NOT NULL AND complaints != '' AND complaints != '[]'`),
+      
+      // Driver payment status breakdown
+      queryOne(`SELECT COUNT(*) as count FROM payments WHERE type = 'driver_payment' AND status = '${SYSCONFIG.PENDING}'`),
+      queryOne(`SELECT COUNT(*) as count FROM payments WHERE type = 'driver_payment' AND status = '${SYSCONFIG.PARTIAL}'`),
+      queryOne(`SELECT COUNT(*) as count FROM payments WHERE type = 'driver_payment' AND status = '${SYSCONFIG.COMPLETED}'`),
+      
+      // Tour payment status breakdown
+      queryOne(`SELECT COUNT(*) as count FROM payments WHERE type = 'tour_payment' AND status = '${SYSCONFIG.PENDING}'`),
+      queryOne(`SELECT COUNT(*) as count FROM payments WHERE type = 'tour_payment' AND status = '${SYSCONFIG.PARTIAL}'`),
+      queryOne(`SELECT COUNT(*) as count FROM payments WHERE type = 'tour_payment' AND status = '${SYSCONFIG.CONFIRMED}'`),
+      
       query('SELECT id, customer_name, agent, status, booking_date FROM tours ORDER BY created_at DESC LIMIT 5')
     ]);
 
@@ -49,7 +75,8 @@ export async function POST(request: NextRequest) {
           total: totalTours?.count || 0,
           pending: pendingTours?.count || 0,
           assigned: assignedTours?.count || 0,
-          completed: completedTours?.count || 0
+          completed: completedTours?.count || 0,
+          cancelled: cancelledTours?.count || 0
         },
         drivers: {
           total: totalDrivers?.count || 0,
@@ -57,10 +84,25 @@ export async function POST(request: NextRequest) {
         },
         payments: {
           total: totalPayments?.count || 0,
-          revenue: parseFloat(totalRevenue?.total || 0)
+        //   revenue: parseFloat(totalRevenue?.total || 0),
+          driver_payments: {
+            pending: driverPaymentsPending?.count || 0,
+            partial: driverPaymentsPartial?.count || 0,
+            completed: driverPaymentsCompleted?.count || 0,
+            total: (driverPaymentsPending?.count || 0) + (driverPaymentsPartial?.count || 0) + (driverPaymentsCompleted?.count || 0)
+          },
+          tour_payments: {
+            pending: tourPaymentsPending?.count || 0,
+            partial: tourPaymentsPartial?.count || 0,
+            confirmed: tourPaymentsConfirmed?.count || 0,
+            total: (tourPaymentsPending?.count || 0) + (tourPaymentsPartial?.count || 0) + (tourPaymentsConfirmed?.count || 0)
+          }
+        },
+        complaints: {
+          total: totalComplaints?.count || 0
         }
       },
-      recent_tours: formattedRecentTours
+    //   recent_tours: formattedRecentTours
     };
 
     return NextResponse.json({

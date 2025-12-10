@@ -17,36 +17,106 @@ export const generateUniqueUserId = async (): Promise<string> => {
   return userId;
 };
 
-// Generate unique driver ID with format D123456
-export const generateUniqueDriverId = async (): Promise<string> => {
-  let driverId: string;
-  let exists: any;
+// // Generate unique driver ID with format D123456
+// export const generateUniqueDriverId = async (): Promise<string> => {
+//   let driverId: string;
+//   let exists: any;
 
-  do {
-    const randomNumber = Math.floor(100000 + Math.random() * 900000); // Generate 6-digit number
-    driverId = `D${randomNumber}`;
+//   do {
+//     const randomNumber = Math.floor(100000 + Math.random() * 900000); // Generate 6-digit number
+//     driverId = `D${randomNumber}`;
     
-    // Check if ID exists in database
-    exists = await queryOne('SELECT id FROM drivers WHERE id = ?', [driverId]);
-  } while (exists);
+//     // Check if ID exists in database
+//     exists = await queryOne('SELECT id FROM drivers WHERE id = ?', [driverId]);
+//   } while (exists);
 
-  return driverId;
+//   return driverId;
+// };
+
+// Generate unique driver ID with sequential format D1, D2, D3, etc.
+export const generateUniqueDriverId = async (): Promise<string> => {
+  try {
+    // Get the highest existing driver ID number
+    const result = await queryOne(`
+      SELECT MAX(CAST(SUBSTRING(id, 2) AS UNSIGNED)) as max_number 
+      FROM drivers 
+      WHERE id REGEXP '^D[0-9]+$'
+    `);
+    
+    // Calculate next sequential number
+    const maxNumber = result?.max_number || 0;
+    const nextNumber = maxNumber + 1;
+    
+    // Generate new driver ID
+    const driverId = `D${nextNumber}`;
+    
+    // Double-check that this ID doesn't exist (safety check)
+    const exists = await queryOne('SELECT id FROM drivers WHERE id = ?', [driverId]);
+    
+    if (exists) {
+      // If somehow it exists, try the next number
+      return `D${nextNumber + 1}`;
+    }
+    
+    return driverId;
+  } catch (error) {
+    console.error('Error generating sequential driver ID:', error);
+    
+    // Fallback to timestamp-based ID if there's an error
+    const timestamp = Date.now().toString().slice(-6);
+    return `D${timestamp}`;
+  }
 };
 
-// Generate unique tour ID with format T123456
-export const generateUniqueTourId = async (): Promise<string> => {
-  let tourId: string;
-  let exists: any;
+// // Generate unique tour ID with format T123456
+// export const generateUniqueTourId = async (): Promise<string> => {
+//   let tourId: string;
+//   let exists: any;
 
-  do {
-    const randomNumber = Math.floor(100000 + Math.random() * 900000); // Generate 6-digit number
-    tourId = `T${randomNumber}`;
+//   do {
+//     const randomNumber = Math.floor(100000 + Math.random() * 900000); // Generate 6-digit number
+//     tourId = `T${randomNumber}`;
     
-    // Check if ID exists in database
-    exists = await queryOne('SELECT id FROM tours WHERE id = ?', [tourId]);
-  } while (exists);
+//     // Check if ID exists in database
+//     exists = await queryOne('SELECT id FROM tours WHERE id = ?', [tourId]);
+//   } while (exists);
 
-  return tourId;
+//   return tourId;
+// };
+
+// Generate unique tour ID with sequential format T1, T2, T3, etc.
+export const generateUniqueTourId = async (): Promise<string> => {
+  try {
+    // Get the highest existing tour ID number
+    const result = await queryOne(`
+      SELECT MAX(CAST(SUBSTRING(id, 2) AS UNSIGNED)) as max_number 
+      FROM tours 
+      WHERE id REGEXP '^T[0-9]+$'
+    `);
+    
+    // Calculate next sequential number
+    const maxNumber = result?.max_number || 0;
+    const nextNumber = maxNumber + 1;
+    
+    // Generate new tour ID
+    const tourId = `T${nextNumber}`;
+    
+    // Double-check that this ID doesn't exist (safety check)
+    const exists = await queryOne('SELECT id FROM tours WHERE id = ?', [tourId]);
+    
+    if (exists) {
+      // If somehow it exists, try the next number
+      return `T${nextNumber + 1}`;
+    }
+    
+    return tourId;
+  } catch (error) {
+    console.error('Error generating sequential tour ID:', error);
+    
+    // Fallback to timestamp-based ID if there's an error
+    const timestamp = Date.now().toString().slice(-6);
+    return `T${timestamp}`;
+  }
 };
 
 // Generate unique payment ID with format P123456

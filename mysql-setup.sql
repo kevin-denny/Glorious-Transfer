@@ -99,3 +99,7 @@ ADD COLUMN status CHAR(20);
 
 ALTER TABLE payments
 ADD COLUMN agent_ref CHAR(50);
+
+-- 10-12-2025
+ALTER TABLE tours
+ADD COLUMN complaints TEXT;

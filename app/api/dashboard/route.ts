@@ -18,8 +18,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body: DashboardRequest = await request.json();
-    // const { current_month_only = true } = body;
-    const current_month_only = true;
+    const { current_month_only = true } = body;
+    // const current_month_only = true;
 
     // Get current month prefix for LIKE query (e.g., "2025-01-")
     const now = new Date();

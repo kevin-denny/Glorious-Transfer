@@ -47,6 +47,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
+import Swal from "sweetalert2";
 
 // Interfaces
 interface DriverPayment {
@@ -463,6 +464,27 @@ export default function PaymentsPage() {
         fetchDriverPayments(); // <-- only for driver tab
       } else {
         // TOUR PAYMENT
+
+        const result = await Swal.fire({
+          title: "Are you sure?",
+          text: "Do you really want to confirm?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Yes, update it!",
+          cancelButtonText: "Cancel",
+          customClass: {
+            confirmButton: "swal-confirm-btn",
+            cancelButton: "swal-cancel-btn",
+            popup:
+              "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
+          },
+          buttonsStyling: false,
+          background: "hsl(var(--background))",
+          color: "hsl(var(--foreground))",
+        });
+
+        if (!result.isConfirmed) return;
+
         response = await fetch(`${createpayments}/${formTourData?.id}`, {
           method: "PUT",
           headers: {
@@ -1085,7 +1107,7 @@ export default function PaymentsPage() {
                       >
                         Cancel
                       </Button>
-                      <Button type="submit">Update</Button>
+                      <Button type="submit">Confirm</Button>
                     </div>
                   </form>
                 </DialogContent>
@@ -1150,7 +1172,7 @@ export default function PaymentsPage() {
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  {tour?.status != "Completed" && (
+                  {tour?.status != "Confirmed" && (
                     <Button
                       size="sm"
                       variant="ghost"

@@ -42,11 +42,8 @@ interface Driver {
 }
 
 interface Complaint {
-  id: string;
-  complaint_text: string;
-  status: string;
-  created_at: string;
-  tour_id: string | null;
+  tour_id: string;
+  complaint: string;
 }
 
 interface TourAssignment {
@@ -157,24 +154,25 @@ export default function DriversPage() {
 
   async function fetchDriverDetails(driverId: string) {
     try {
-      // const [complaintsRes, toursRes] = await Promise.all([
-      //   supabase
-      //     .from('complaints')
-      //     .select('*')
-      //     .eq('driver_id', driverId)
-      //     .order('created_at', { ascending: false }),
-      //   supabase
-      //     .from('tours')
-      //     .select('id, booking_ref, client_name, status, arrival_datetime')
-      //     .eq('assigned_driver_id', driverId)
-      //     .order('arrival_datetime', { ascending: false })
-      //     .limit(10),
-      // ]);
+      if (!token) throw new Error("No auth token found");
 
-      // setComplaints(complaintsRes.data || []);
-      // setTours(toursRes.data || []);
-      setComplaints([]);
-      setTours([]);
+      const response = await fetch(`${getdrivers}/complaints`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          driver_id: driverId,
+        }),
+      });
+
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+
+      const res = await response.json();
+
+      setComplaints(res.complaints || []);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -634,7 +632,7 @@ export default function DriversPage() {
                 </div>
               </div>
 
-              <div>
+              {/* <div>
                 <h3 className="mb-3 font-semibold text-lg">Assigned Tours</h3>
                 <div className="space-y-2">
                   {tours.length === 0 ? (
@@ -656,14 +654,19 @@ export default function DriversPage() {
                     ))
                   )}
                 </div>
-              </div>
+              </div> */}
 
               <div>
                 <h3 className="mb-3 font-semibold text-lg flex items-center gap-2">
                   <AlertCircle className="h-5 w-5" />
                   Complaints
                 </h3>
-                <div className="space-y-2">
+
+                <div
+                  className={`space-y-2 ${
+                    complaints.length > 3 ? "max-h-64 overflow-y-auto pr-2" : ""
+                  }`}
+                >
                   {complaints.length === 0 ? (
                     <p className="text-sm text-gray-500">
                       No complaints registered
@@ -671,18 +674,15 @@ export default function DriversPage() {
                   ) : (
                     complaints.map((complaint) => (
                       <div
-                        key={complaint.id}
+                        key={complaint.tour_id}
                         className="rounded-lg border p-3 space-y-1"
                       >
                         <div className="flex items-center justify-between">
-                          <Badge>{complaint.status}</Badge>
                           <p className="text-xs text-gray-500">
-                            {new Date(
-                              complaint.created_at
-                            ).toLocaleDateString()}
+                            {complaint.tour_id}
                           </p>
                         </div>
-                        <p className="text-sm">{complaint.complaint_text}</p>
+                        <p className="text-sm">{complaint.complaint}</p>
                       </div>
                     ))
                   )}

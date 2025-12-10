@@ -155,7 +155,7 @@ export default function PaymentsPage() {
         body: JSON.stringify({
           startDate: selectedRange.startDate,
           endDate: selectedRange.endDate,
-          status: ["Pending", "Partial", "Completed"],
+          status: selectedStatus,
           download: download,
           downloadAll: downloadAll,
           page: pageTour,

@@ -145,7 +145,8 @@ export async function PUT(
       amount,
       currency,
       agent_ref,
-      pickup_datetime
+      pickup_datetime,
+      complaints
     } = body;
 
     // Check if tour exists
@@ -229,6 +230,7 @@ export async function PUT(
           currency = ?,
           agent_ref = ?,
           pickup_datetime = ?,
+          complaints = ?,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `, [
@@ -249,6 +251,7 @@ export async function PUT(
         currency || null,
         agent_ref || null,
         pickup_datetime || null,
+        complaints || null,
         tourId
       ]);
 
@@ -267,6 +270,16 @@ export async function PUT(
           [status === SYSCONFIG.COMPLETED ? SYSCONFIG.ASSIGNMENT_COMPLETED : SYSCONFIG.ASSIGNMENT_CANCELLED, tourId]
         );
       }
+
+      // if(status === SYSCONFIG.ASSIIGNED) {
+      //   if(complaints && complaints.length > 0) {
+      //     // Update complaints into complaints TEXT column in tours table
+      //     await connection.execute(
+      //       'UPDATE tours SET complaints = ? WHERE id = ?',
+      //       [complaints, tourId]
+      //     );
+      //   }
+      // }
 
       // Get the updated tour with assignment details
       const [rows] = await connection.execute(`
@@ -312,6 +325,7 @@ export async function PUT(
       created_at: formatToIST(result.created_at),
       updated_at: formatToIST(result.updated_at),
       created_by: result.created_by,
+      complaints: result.complaints,
       assignment: result.assignment_id ? {
         id: result.assignment_id,
         assigned_at: formatToIST(result.assigned_at),

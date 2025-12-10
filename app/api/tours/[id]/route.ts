@@ -146,7 +146,8 @@ export async function PUT(
       currency,
       agent_ref,
       pickup_datetime,
-      complaints
+      complaints,
+      driver_id,
     } = body;
 
     // Check if tour exists
@@ -204,6 +205,14 @@ export async function PUT(
     if (!Number.isInteger(pax) || pax < 1) {
       return NextResponse.json(
         { message: 'pax must be a positive integer' },
+        { status: 400 }
+      );
+    }
+
+    // validate status completed with driver_id
+    if (status === SYSCONFIG.COMPLETED && !driver_id) {
+      return NextResponse.json(
+        { message: 'driver_id is required when marking tour as Completed' },
         { status: 400 }
       );
     }
@@ -280,6 +289,14 @@ export async function PUT(
       //     );
       //   }
       // }
+
+      // Increment driver's number_of_rides if status changed to Completed
+      if (status === SYSCONFIG.COMPLETED && existingTour.status !== SYSCONFIG.COMPLETED && driver_id) {
+        await connection.execute(
+          'UPDATE drivers SET number_of_rides = COALESCE(number_of_rides, 0) + 1 WHERE id = ?',
+          [driver_id]
+        );
+      }
 
       // Get the updated tour with assignment details
       const [rows] = await connection.execute(`

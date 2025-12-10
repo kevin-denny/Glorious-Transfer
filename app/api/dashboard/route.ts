@@ -3,6 +3,10 @@ import { query, queryOne } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
 import { formatToIST, SYSCONFIG } from '@/lib/utils';
 
+interface DashboardRequest {
+  current_month_only?: boolean; // Flag to switch between current month and all-time
+}
+
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -12,6 +16,26 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    const body: DashboardRequest = await request.json();
+    // const { current_month_only = true } = body;
+    const current_month_only = true;
+
+    // Get current month prefix for LIKE query (e.g., "2025-01-")
+    const now = new Date();
+    const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-`;
+
+    // Build date filters based on flag using LIKE queries
+    const tourDateFilter = current_month_only 
+      ? `AND (pickup_datetime LIKE '${currentMonthPrefix}%' OR (pickup_datetime IS NULL AND arrival_datetime LIKE '${currentMonthPrefix}%'))`
+      : '';
+    
+    const paymentDateFilter = current_month_only 
+    ? `AND (t.pickup_datetime LIKE '${currentMonthPrefix}%' OR (t.pickup_datetime IS NULL AND t.arrival_datetime LIKE '${currentMonthPrefix}%'))`
+    : '';
+
+    const joinedTourAndPayment = 
+    `INNER JOIN tours t ON p.tour_id = t.id`;
 
     // Get basic statistics
     const [
@@ -38,38 +62,57 @@ export async function POST(request: NextRequest) {
       
       recentToursResult
     ] = await Promise.all([
-      queryOne('SELECT COUNT(*) as count FROM tours'),
-      queryOne(`SELECT COUNT(*) as count FROM tours WHERE status = '${SYSCONFIG.PENDING}'`),
-      queryOne(`SELECT COUNT(*) as count FROM tours WHERE status = '${SYSCONFIG.ASSIIGNED}'`),
-      queryOne(`SELECT COUNT(*) as count FROM tours WHERE status = '${SYSCONFIG.COMPLETED}'`),
-      queryOne(`SELECT COUNT(*) as count FROM tours WHERE status = '${SYSCONFIG.CANCELLED}'`),
+      // Tours statistics with optional date filter
+      queryOne(`SELECT COUNT(*) as count FROM tours WHERE 1=1 ${tourDateFilter}`),
+      queryOne(`SELECT COUNT(*) as count FROM tours WHERE status = '${SYSCONFIG.PENDING}' ${tourDateFilter}`),
+      queryOne(`SELECT COUNT(*) as count FROM tours WHERE status = '${SYSCONFIG.ASSIIGNED}' ${tourDateFilter}`),
+      queryOne(`SELECT COUNT(*) as count FROM tours WHERE status = '${SYSCONFIG.COMPLETED}' ${tourDateFilter}`),
+      queryOne(`SELECT COUNT(*) as count FROM tours WHERE status = '${SYSCONFIG.CANCELLED}' ${tourDateFilter}`),
+      
+      // Driver statistics (always all-time)
       queryOne('SELECT COUNT(*) as count FROM drivers'),
       queryOne(`SELECT COUNT(*) as count FROM drivers WHERE status = '${SYSCONFIG.ACTIVE}'`),
-      queryOne('SELECT COUNT(*) as count FROM payments'),
-      queryOne(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE status = '${SYSCONFIG.COMPLETED}'`),
-      queryOne(`SELECT COUNT(*) as count FROM tours WHERE complaints IS NOT NULL AND complaints != '' AND complaints != '[]'`),
       
-      // Driver payment status breakdown
-      queryOne(`SELECT COUNT(*) as count FROM payments WHERE type = 'driver_payment' AND status = '${SYSCONFIG.PENDING}'`),
-      queryOne(`SELECT COUNT(*) as count FROM payments WHERE type = 'driver_payment' AND status = '${SYSCONFIG.PARTIAL}'`),
-      queryOne(`SELECT COUNT(*) as count FROM payments WHERE type = 'driver_payment' AND status = '${SYSCONFIG.COMPLETED}'`),
+      // Payment statistics with optional date filter
+      queryOne(`SELECT COUNT(*) as count FROM payments p ${joinedTourAndPayment} WHERE 1=1 ${paymentDateFilter}`),
+      queryOne(`SELECT COALESCE(SUM(p.amount), 0) as total FROM payments p ${joinedTourAndPayment} WHERE p.status = '${SYSCONFIG.COMPLETED}' ${paymentDateFilter}`),
       
-      // Tour payment status breakdown
-      queryOne(`SELECT COUNT(*) as count FROM payments WHERE type = 'tour_payment' AND status = '${SYSCONFIG.PENDING}'`),
-      queryOne(`SELECT COUNT(*) as count FROM payments WHERE type = 'tour_payment' AND status = '${SYSCONFIG.PARTIAL}'`),
-      queryOne(`SELECT COUNT(*) as count FROM payments WHERE type = 'tour_payment' AND status = '${SYSCONFIG.CONFIRMED}'`),
+      // Complaints with optional date filter  
+      queryOne(`SELECT COUNT(*) as count FROM tours WHERE complaints IS NOT NULL AND complaints != '' AND complaints != '[]' ${tourDateFilter}`),
       
-      query('SELECT id, customer_name, agent, status, booking_date FROM tours ORDER BY created_at DESC LIMIT 5')
+      // Driver payment status breakdown with optional date filter
+      queryOne(`SELECT COUNT(*) as count FROM payments p ${joinedTourAndPayment} WHERE p.type = 'driver_payment' AND p.status = '${SYSCONFIG.PENDING}' ${paymentDateFilter}`),
+      queryOne(`SELECT COUNT(*) as count FROM payments p ${joinedTourAndPayment} WHERE p.type = 'driver_payment' AND p.status = '${SYSCONFIG.PARTIAL}' ${paymentDateFilter}`),
+      queryOne(`SELECT COUNT(*) as count FROM payments p ${joinedTourAndPayment} WHERE p.type = 'driver_payment' AND p.status = '${SYSCONFIG.COMPLETED}' ${paymentDateFilter}`),
+      
+      // Tour payment status breakdown with optional date filter
+      queryOne(`SELECT COUNT(*) as count FROM payments p ${joinedTourAndPayment} WHERE p.type = 'tour_payment' AND p.status = '${SYSCONFIG.PENDING}' ${paymentDateFilter}`),
+      queryOne(`SELECT COUNT(*) as count FROM payments p ${joinedTourAndPayment} WHERE p.type = 'tour_payment' AND p.status = '${SYSCONFIG.PARTIAL}' ${paymentDateFilter}`),
+      queryOne(`SELECT COUNT(*) as count FROM payments p ${joinedTourAndPayment} WHERE p.type = 'tour_payment' AND p.status = '${SYSCONFIG.CONFIRMED}' ${paymentDateFilter}`),
+      
+      // Recent tours with optional date filter
+      query(`SELECT id, customer_name, agent, status, booking_date, pickup_datetime FROM tours WHERE 1=1 ${tourDateFilter} ORDER BY created_at DESC LIMIT 5`)
     ]);
 
     // Type cast and format recent tours
     const recentTours = (recentToursResult as any[]) || [];
     const formattedRecentTours = recentTours.map((tour: any) => ({
       ...tour,
-      booking_date: formatToIST(tour.booking_date)
+      booking_date: formatToIST(tour.booking_date),
+      pickup_datetime: tour.pickup_datetime ? formatToIST(tour.pickup_datetime) : null
     }));
 
     const dashboardData = {
+      filter_info: {
+        current_month_only,
+        period: current_month_only 
+          ? `${currentMonthPrefix}01 to ${currentMonthPrefix}31` 
+          : 'All time',
+        month_name: current_month_only 
+          ? now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+          : null,
+        month_prefix: current_month_only ? currentMonthPrefix : null
+      },
       stats: {
         tours: {
           total: totalTours?.count || 0,

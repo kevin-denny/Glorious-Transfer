@@ -100,6 +100,17 @@ export default function LoginPage() {
               {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
+          <div className="mt-6 text-center text-xs text-slate-500">
+            © {new Date().getFullYear()} Powered by{" "}
+            <a
+              href="https://www.instagram.com/onestop.projects?igsh=amxhd202Zzc3Z24x"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-slate-600 hover:text-slate-800 underline underline-offset-2"
+            >
+              One Stop
+            </a>
+          </div>
         </CardContent>
       </Card>
     </div>

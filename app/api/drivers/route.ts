@@ -47,10 +47,10 @@ export async function POST(request: NextRequest) {
       // Get search results
       drivers = await query(
         `SELECT * FROM drivers 
-        WHERE id LIKE ? OR name LIKE ? OR driver_number LIKE ?
+        WHERE id LIKE ? OR name LIKE ? OR driver_number LIKE ? OR vehicle_plate LIKE ? OR status LIKE ?
         ORDER BY created_at DESC
         LIMIT ${limit} OFFSET ${offset}`,
-        [`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`]
+        [`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`]
       ) as any[];
       total = drivers.length;
     } else {

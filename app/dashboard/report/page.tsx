@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import Swal from "sweetalert2";
+import { Search } from "lucide-react";
 
 // Interfaces
 interface Driver {
@@ -50,6 +51,7 @@ export default function PaymentsPage() {
   // gettourdropdown
   const getreports = `http://${baseUrl}/api/report`;
 
+  const [driverId, setDriverId] = useState("");
 
   // Tabs
   const [activeTab, setActiveTab] = useState("driver");
@@ -94,7 +96,6 @@ export default function PaymentsPage() {
     hasPreviousPage: false,
   });
 
-
   const [selectedRange, setSelectedRange] = useState(() => {
     const now = new Date();
     const year = now.getFullYear();
@@ -107,12 +108,9 @@ export default function PaymentsPage() {
     };
   });
 
-  
-
   useEffect(() => {
     resetForm();
   }, [activeTab]);
-
 
   // Fetch initial data
   useEffect(() => {
@@ -157,6 +155,7 @@ export default function PaymentsPage() {
           endDate: selectedRange.endDate,
           status: selectedStatus,
           download: download,
+          driverId:driverId,
           downloadAll: downloadAll,
           page: pageTour,
           pageSize: pageSizeTour,
@@ -196,7 +195,7 @@ export default function PaymentsPage() {
 
         window.URL.revokeObjectURL(url);
 
-        return; 
+        return;
       }
 
       const json = await response.json();
@@ -219,6 +218,22 @@ export default function PaymentsPage() {
       setDownloadAll(false);
     }
   }
+
+  const handleDriverSearch = () => {
+    if (!driverId.trim()) return;
+    if (!selectedStatus || selectedStatus.length === 0) return;
+
+    fetchDrivers();
+  };
+
+  const handleDriverKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      if (!driverId.trim()) return;
+      if (!selectedStatus || selectedStatus.length === 0) return;
+
+      fetchDrivers();
+    }
+  };
 
   async function fetchTours() {
     setLoading(true);
@@ -344,7 +359,6 @@ export default function PaymentsPage() {
     }
   };
 
-
   function toggleAgent(agent: string) {
     setSelectedAgents((prev) =>
       prev.includes(agent) ? prev.filter((a) => a !== agent) : [...prev, agent]
@@ -417,8 +431,7 @@ export default function PaymentsPage() {
     {
       key: "amount",
       label: "Total Amount",
-      render: (row: Tour) =>
-        `${thousandSeparator(row.amount)} ${row.currency}`,
+      render: (row: Tour) => `${thousandSeparator(row.amount)} ${row.currency}`,
     },
     {
       key: "paid_amount",
@@ -442,11 +455,12 @@ export default function PaymentsPage() {
       key: "payment_status",
       label: "Status",
       render: (row: Tour) => (
-        <Badge className={getStatusColor(row.payment_status)}>{row.payment_status}</Badge>
+        <Badge className={getStatusColor(row.payment_status)}>
+          {row.payment_status}
+        </Badge>
       ),
     },
   ];
-
 
   function handleStartMonthChange(e: React.ChangeEvent<HTMLInputElement>) {
     const newStart = e.target.value;
@@ -566,6 +580,26 @@ export default function PaymentsPage() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <div>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={driverId}
+                    onChange={(e) => setDriverId(e.target.value)}
+                    onKeyDown={handleDriverKeyDown}
+                    placeholder="Enter Driver ID"
+                    className="border px-2 py-2 rounded"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleDriverSearch}
+                    className="absolute right-2 text-gray-500 hover:text-gray-700"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
 
               <div className="flex gap-2">
                 <Button
@@ -849,7 +883,6 @@ export default function PaymentsPage() {
               //   </div>
               // )}
             />
-
           </TabsContent>
         </Tabs>
       </div>

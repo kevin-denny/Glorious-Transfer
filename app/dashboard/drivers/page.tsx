@@ -546,6 +546,7 @@ export default function DriversPage() {
           data={filteredDrivers}
           searchValue={search}
           onSearchChange={setSearch}
+          placeholder="Search by Driver ID, Name, Plate Number, Status"
           pagination={pagination}
           pageSize={pageSize}
           onPageChange={setPage}

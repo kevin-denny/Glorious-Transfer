@@ -850,7 +850,7 @@ export default function PaymentsPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start">
             <TabsTrigger value="driver">Driver Payments</TabsTrigger>
-            <TabsTrigger value="tour">Trip Payments</TabsTrigger>
+            <TabsTrigger value="tour">Agent Payments</TabsTrigger>
           </TabsList>
 
           {/* ================================
@@ -932,6 +932,7 @@ export default function PaymentsPage() {
               data={filteredDrivers}
               searchValue={searchDriver}
               onSearchChange={setSearchDriver}
+              placeholder="Search by Driver, Trip ID, Status"
               pagination={paginationDriver}
               pageSize={pageSizeDriver}
               onPageChange={setPageDriver}
@@ -1156,6 +1157,7 @@ export default function PaymentsPage() {
               data={filteredTours}
               searchValue={searchTour}
               onSearchChange={setSearchTour}
+              placeholder="Search by Trip ID, Customer Name, Agent, Agent Ref, Status"
               pagination={paginationTour}
               pageSize={pageSizeTour}
               onPageChange={setPageTour}

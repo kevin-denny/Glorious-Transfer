@@ -31,6 +31,7 @@ interface DataTableProps {
   data: any[];
   searchValue?: string;
   onSearchChange?: (value: string) => void;
+  placeholder?: string;
 
   // Pagination props
   pagination: Pagination;
@@ -47,6 +48,7 @@ export default function DataTable({
   data,
   searchValue,
   onSearchChange,
+  placeholder = "Search...",
   pagination,
   pageSize,
   onPageChange,
@@ -64,7 +66,7 @@ export default function DataTable({
               <Input
                 value={searchValue}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Search..."
+                placeholder={placeholder}
                 className="pl-10"
               />
             </div>

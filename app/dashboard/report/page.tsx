@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { thousandSeparator } from "@/lib/utils";
+import { agentsList, thousandSeparator } from "@/lib/utils";
 import DataTable from "@/components/ui/DataTable";
 import {
   DropdownMenu,
@@ -344,20 +344,6 @@ export default function PaymentsPage() {
     }
   };
 
-  const agentsList = [
-    "EL",
-    "IW",
-    "TF",
-    "IT",
-    "OW",
-    "BF",
-    "CT",
-    "BW",
-    "MT",
-    "MZ",
-    "TX",
-    "DR",
-  ];
 
   function toggleAgent(agent: string) {
     setSelectedAgents((prev) =>
@@ -501,7 +487,7 @@ export default function PaymentsPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start">
             <TabsTrigger value="driver">Driver Report</TabsTrigger>
-            <TabsTrigger value="tour">Trip Report</TabsTrigger>
+            <TabsTrigger value="tour">Agent Report</TabsTrigger>
           </TabsList>
 
           {/* ================================

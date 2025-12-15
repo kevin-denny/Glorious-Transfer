@@ -42,7 +42,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { currencyList } from "@/lib/utils";
+import { agentsList, currencyList } from "@/lib/utils";
 
 interface Tour {
   id: string;
@@ -304,7 +304,7 @@ export default function ToursPage() {
 
         toast({
           title: "Success",
-          description: "Tour updated successfully",
+          description: "Trip updated successfully",
         });
       } else {
         // Create new driver
@@ -347,7 +347,7 @@ export default function ToursPage() {
 
         toast({
           title: "Success",
-          description: "Tour created successfully",
+          description: "Trip created successfully",
         });
       }
 
@@ -539,7 +539,7 @@ export default function ToursPage() {
 
       await Swal.fire({
         title: "Deleted!",
-        text: "Tour deleted successfully.",
+        text: "Trip deleted successfully.",
         icon: "success",
         confirmButtonColor: "#3085d6",
       });
@@ -624,7 +624,7 @@ export default function ToursPage() {
               <DialogTrigger asChild>
                 <Button className="gap-2">
                   <Plus className="h-4 w-4" />
-                  Create Tour
+                  Create Trip
                 </Button>
               </DialogTrigger>
             )}
@@ -632,7 +632,7 @@ export default function ToursPage() {
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
-                  {selectedTour ? "Edit Tour" : "Create New Tour"}
+                  {selectedTour ? "Edit Trip" : "Create New Trip"}
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -678,18 +678,11 @@ export default function ToursPage() {
                         <SelectValue placeholder="Select an agent" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="EL">EL</SelectItem>
-                        <SelectItem value="IW">IW</SelectItem>
-                        <SelectItem value="TF">TF</SelectItem>
-                        <SelectItem value="IT">IT</SelectItem>
-                        <SelectItem value="OW">OW</SelectItem>
-                        <SelectItem value="BF">BF</SelectItem>
-                        <SelectItem value="CT">CT</SelectItem>
-                        <SelectItem value="BW">BW</SelectItem>
-                        <SelectItem value="MT">MT</SelectItem>
-                        <SelectItem value="MZ">MZ</SelectItem>
-                        <SelectItem value="TX">TX</SelectItem>
-                        <SelectItem value="DR">DR</SelectItem>
+                        {agentsList.map((agent) => (
+                          <SelectItem key={agent} value={agent}>
+                            {agent}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -865,7 +858,7 @@ export default function ToursPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="destination">Destination</Label>
+                    <Label htmlFor="destination">Drop off</Label>
                     <Input
                       id="destination"
                       value={formData.destination}
@@ -938,7 +931,7 @@ export default function ToursPage() {
                     Cancel
                   </Button>
                   <Button type="submit" disabled={loading}>
-                    {selectedTour ? "Update" : "Create"} Tour
+                    {selectedTour ? "Update" : "Create"} Trip
                   </Button>
                 </div>
               </form>
@@ -950,6 +943,7 @@ export default function ToursPage() {
           data={filteredTours}
           searchValue={search}
           onSearchChange={setSearch}
+           placeholder="Search by Bookin Ref, Client, Agent, Agent Ref, Status"
           pagination={pagination}
           pageSize={pageSize}
           onPageChange={setPage}
@@ -1002,13 +996,13 @@ export default function ToursPage() {
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Assign Driver to Tour</DialogTitle>
+            <DialogTitle>Assign Driver to Trip</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             {selectedTour && (
               <div className="rounded-lg bg-gray-50 p-4">
-                <p className="text-sm text-gray-500">Tour Details</p>
+                <p className="text-sm text-gray-500">Trip Details</p>
                 <p className="text-sm">
                   {selectedTour.id} | {selectedTour.customer_name}
                 </p>
@@ -1118,7 +1112,7 @@ export default function ToursPage() {
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <span>Tour Details: {selectedTour?.id}</span>
+              <span>Trip Details: {selectedTour?.id}</span>
 
               {selectedTour && (
                 <Button
@@ -1138,7 +1132,7 @@ Arrival Date-Time: ${selectedTour.arrival_datetime}
 Departure Time: ${selectedTour.departure_datetime}
 Flight Number: ${selectedTour.flight_no ?? ""}
 Pickup: ${selectedTour.pickup ?? ""}
-Destination: ${selectedTour.destination ?? ""}
+Drop off: ${selectedTour.destination ?? ""}
 Remarks: ${selectedTour.remarks ?? ""}
 
 Attention:
@@ -1150,7 +1144,7 @@ Attention:
                     navigator.clipboard.writeText(textToCopy).then(() => {
                       toast({
                         title: "Copied!",
-                        description: "Tour details copied to clipboard.",
+                        description: "Trip details copied to clipboard.",
                       });
                     });
                   }}
@@ -1228,7 +1222,7 @@ Attention:
                   <p className="font-medium">{selectedTour.pickup}</p>
                 </div>
                 <div>
-                  <Label className="text-gray-500">Destination</Label>
+                  <Label className="text-gray-500">Drop off</Label>
                   <p className="font-medium">{selectedTour.destination}</p>
                 </div>
                 <div>
@@ -1259,7 +1253,7 @@ Vehicle Number: ${driver?.vehicle_number ?? ""}
 Arrival Date-Time: ${selectedTour.arrival_datetime}
 Departure Time: ${selectedTour.departure_datetime}
 Pickup: ${selectedTour.pickup ?? ""}
-Destination: ${selectedTour.destination ?? ""}
+Drop off: ${selectedTour.destination ?? ""}
           `.trim();
 
                                 navigator.clipboard

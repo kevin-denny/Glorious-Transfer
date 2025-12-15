@@ -69,6 +69,23 @@ export const SYSCONFIG = {
   ASSIGNMENT_CANCELLED: 'Cancelled'
 };
 
+  export const agentsList = [
+    "EL",
+    "IW",
+    "TF",
+    "IT",
+    "OW",
+    "BF",
+    "CT",
+    "BW",
+    "MT",
+    "MZ",
+    "TX",
+    "DR",
+    "1G"
+  ];
+
+
 // Currency List
 export const currencyList = [
   { code: "AED", name: "UAE Dirham", symbol: "د.إ" },

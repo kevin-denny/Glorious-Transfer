@@ -39,11 +39,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/lib/activity-logger";
-import { currencyList, thousandSeparator } from "@/lib/utils";
+import { agentsList, currencyList, thousandSeparator } from "@/lib/utils";
 import DataTable from "@/components/ui/DataTable";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -573,21 +574,6 @@ export default function PaymentsPage() {
         return "bg-gray-100 text-gray-800";
     }
   };
-
-  const agentsList = [
-    "EL",
-    "IW",
-    "TF",
-    "IT",
-    "OW",
-    "BF",
-    "CT",
-    "BW",
-    "MT",
-    "MZ",
-    "TX",
-    "DR",
-  ];
 
   function toggleAgent(agent: string) {
     setSelectedAgents((prev) =>
@@ -1137,17 +1123,15 @@ export default function PaymentsPage() {
 
                 {/* Agents List */}
                 {agentsList.map((agent) => (
-                  <div
+                  <DropdownMenuItem
                     key={agent}
+                    onSelect={(e) => e.preventDefault()}
                     className="flex items-center space-x-2 p-1 cursor-pointer"
                     onClick={() => toggleAgent(agent)}
                   >
-                    <Checkbox
-                      checked={selectedAgents.includes(agent)}
-                      onCheckedChange={() => toggleAgent(agent)}
-                    />
+                    <Checkbox checked={selectedAgents.includes(agent)} />
                     <span>{agent}</span>
-                  </div>
+                  </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>

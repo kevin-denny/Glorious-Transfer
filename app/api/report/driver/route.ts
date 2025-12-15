@@ -135,25 +135,46 @@ export async function POST(request: NextRequest) {
     } else {
       // Build dynamic WHERE clause for payment status with fallback datetime logic
       const statusPlaceholders = status.map(() => '?').join(',');
-      const whereClause = `
-        WHERE (
-          (t.pickup_datetime IS NOT NULL AND DATE(t.pickup_datetime) >= ? AND DATE(t.pickup_datetime) <= ?)
-          OR 
-          (t.pickup_datetime IS NULL AND DATE(t.arrival_datetime) >= ? AND DATE(t.arrival_datetime) <= ?)
-        )
-        AND p.status IN (${statusPlaceholders})
-        AND d.id LIKE ?
-      `;
+      let whereClause = '';
+      let queryParams = [];
 
-      // Query parameters - need to include startDate and endDate twice for both conditions
-      const queryParams = [
-        startDate,  // for pickup_datetime >= ?
-        endDate,    // for pickup_datetime <= ?
-        startDate,  // for arrival_datetime >= ?
-        endDate,    // for arrival_datetime <= ?
-        ...status,
-        driverId
-      ];
+      if(driverId && driverId.trim() !== '') {
+        whereClause = `
+          WHERE (
+            (t.pickup_datetime IS NOT NULL AND DATE(t.pickup_datetime) >= ? AND DATE(t.pickup_datetime) <= ?)
+            OR 
+            (t.pickup_datetime IS NULL AND DATE(t.arrival_datetime) >= ? AND DATE(t.arrival_datetime) <= ?)
+          )
+          AND p.status IN (${statusPlaceholders})
+          AND d.id LIKE ?
+        `;
+        // Query parameters - need to include startDate and endDate twice for both conditions
+        queryParams = [
+          startDate,  // for pickup_datetime >= ?
+          endDate,    // for pickup_datetime <= ?
+          startDate,  // for arrival_datetime >= ?
+          endDate,    // for arrival_datetime <= ?
+          ...status,
+          driverId
+        ];
+      } else {
+        whereClause = `
+          WHERE (
+            (t.pickup_datetime IS NOT NULL AND DATE(t.pickup_datetime) >= ? AND DATE(t.pickup_datetime) <= ?)
+            OR 
+            (t.pickup_datetime IS NULL AND DATE(t.arrival_datetime) >= ? AND DATE(t.arrival_datetime) <= ?)
+          )
+          AND p.status IN (${statusPlaceholders})
+        `;
+        // Query parameters - need to include startDate and endDate twice for both conditions
+        queryParams = [
+          startDate,  // for pickup_datetime >= ?
+          endDate,    // for pickup_datetime <= ?
+          startDate,  // for arrival_datetime >= ?
+          endDate,    // for arrival_datetime <= ?
+          ...status
+        ];
+      }
 
     //   console.log('Query params:', queryParams);
     //   console.log('Where clause:', whereClause);

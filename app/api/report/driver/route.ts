@@ -13,6 +13,7 @@ interface DriverReportRequest {
   downloadAll?: boolean;
   page?: number;
   pageSize?: number;
+  driverId?: string;
 }
 
 interface DriverReportData {
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
     });
 
     const body: DriverReportRequest = await request.json();
-    const { startDate, endDate, status, download=false, downloadAll=false, page = 1, pageSize = 10 } = body;
+    const { startDate, endDate, status, download=false, downloadAll=false, page = 1, pageSize = 10, driverId = "" } = body;
 
     // Skip validation if downloadAll is true
     if (!downloadAll) {
@@ -139,6 +140,7 @@ export async function POST(request: NextRequest) {
           (t.pickup_datetime IS NULL AND DATE(t.arrival_datetime) >= ? AND DATE(t.arrival_datetime) <= ?)
         )
         AND p.status IN (${statusPlaceholders})
+        AND d.id LIKE ?
       `;
 
       // Query parameters - need to include startDate and endDate twice for both conditions
@@ -147,7 +149,8 @@ export async function POST(request: NextRequest) {
         endDate,    // for pickup_datetime <= ?
         startDate,  // for arrival_datetime >= ?
         endDate,    // for arrival_datetime <= ?
-        ...status
+        ...status,
+        driverId
       ];
 
     //   console.log('Query params:', queryParams);

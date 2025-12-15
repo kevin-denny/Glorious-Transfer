@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
         )
       `, [startDate, endDate, startDate, endDate]);
 
-      const queryResult = await query(dateFilterQuery, [startDate, endDate, startDate, endDate, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm]);
+      const queryResult = await query(dateFilterQuery, [startDate, endDate, startDate, endDate, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`]);
       tours = Array.isArray(queryResult) ? queryResult : [];
       total = totalDateResult?.total || 0;
     } else if(startDate && endDate) {

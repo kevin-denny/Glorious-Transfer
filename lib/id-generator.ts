@@ -40,7 +40,7 @@ export const generateUniqueDriverId = async (): Promise<string> => {
     const result = await queryOne(`
       SELECT MAX(CAST(SUBSTRING(id, 2) AS UNSIGNED)) as max_number 
       FROM drivers 
-      WHERE id REGEXP '^D[0-9]+$'
+      WHERE id REGEXP '^GTD[0-9]+$'
     `);
     
     // Calculate next sequential number
@@ -55,7 +55,7 @@ export const generateUniqueDriverId = async (): Promise<string> => {
     
     if (exists) {
       // If somehow it exists, try the next number
-      return `D${nextNumber + 1}`;
+      return `GTD${nextNumber + 1}`;
     }
     
     return driverId;
@@ -64,7 +64,7 @@ export const generateUniqueDriverId = async (): Promise<string> => {
     
     // Fallback to timestamp-based ID if there's an error
     const timestamp = Date.now().toString().slice(-6);
-    return `D${timestamp}`;
+    return `GTD${timestamp}`;
   }
 };
 
@@ -91,7 +91,7 @@ export const generateUniqueTourId = async (): Promise<string> => {
     const result = await queryOne(`
       SELECT MAX(CAST(SUBSTRING(id, 2) AS UNSIGNED)) as max_number 
       FROM tours 
-      WHERE id REGEXP '^T[0-9]+$'
+      WHERE id REGEXP '^GT[0-9]+$'
     `);
     
     // Calculate next sequential number
@@ -106,7 +106,7 @@ export const generateUniqueTourId = async (): Promise<string> => {
     
     if (exists) {
       // If somehow it exists, try the next number
-      return `T${nextNumber + 1}`;
+      return `GT${nextNumber + 1}`;
     }
     
     return tourId;
@@ -115,7 +115,7 @@ export const generateUniqueTourId = async (): Promise<string> => {
     
     // Fallback to timestamp-based ID if there's an error
     const timestamp = Date.now().toString().slice(-6);
-    return `T${timestamp}`;
+    return `GT${timestamp}`;
   }
 };
 

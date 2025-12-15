@@ -62,10 +62,10 @@ export async function POST(request: NextRequest) {
         FROM tours t
         LEFT JOIN assignments a ON t.id = a.tour_id
         LEFT JOIN drivers d ON a.driver_id = d.id
-        WHERE t.id LIKE ? OR t.customer_name LIKE ?
+        WHERE t.id LIKE ? OR t.customer_name LIKE ? OR t.agent LIKE ? OR t.agent_ref LIKE ? OR t.status LIKE ?
         ORDER BY t.created_at DESC 
         LIMIT ${limit} OFFSET ${offset}
-      `, [`%${searchTerm}%`, `%${searchTerm}%`]);
+      `, [`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`]);
       tours = Array.isArray(queryResult) ? queryResult : [];
       total = tours.length;
     } else {

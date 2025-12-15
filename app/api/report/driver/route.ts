@@ -13,12 +13,14 @@ interface DriverReportRequest {
   downloadAll?: boolean;
   page?: number;
   pageSize?: number;
+  driverId?: string;
 }
 
 interface DriverReportData {
   driver: string;
   trip_id: string;
   agent_id: string;
+  agent_ref?: string;
   amount: number;
   paid_amount: number;
   pick_up: string;
@@ -47,7 +49,7 @@ export async function POST(request: NextRequest) {
     });
 
     const body: DriverReportRequest = await request.json();
-    const { startDate, endDate, status, download=false, downloadAll=false, page = 1, pageSize = 10 } = body;
+    const { startDate, endDate, status, download=false, downloadAll=false, page = 1, pageSize = 10, driverId = "" } = body;
 
     // Skip validation if downloadAll is true
     if (!downloadAll) {
@@ -111,6 +113,7 @@ export async function POST(request: NextRequest) {
           d.id as driver_id,
           t.id as trip_id,
           t.agent as agent_id,
+          t.agent_ref,
           COALESCE(p.amount, 0) as amount,
           COALESCE(p.paid_amount, 0) as paid_amount,
           t.pickup as pick_up,
@@ -139,6 +142,7 @@ export async function POST(request: NextRequest) {
           (t.pickup_datetime IS NULL AND DATE(t.arrival_datetime) >= ? AND DATE(t.arrival_datetime) <= ?)
         )
         AND p.status IN (${statusPlaceholders})
+        AND d.id LIKE ?
       `;
 
       // Query parameters - need to include startDate and endDate twice for both conditions
@@ -147,7 +151,8 @@ export async function POST(request: NextRequest) {
         endDate,    // for pickup_datetime <= ?
         startDate,  // for arrival_datetime >= ?
         endDate,    // for arrival_datetime <= ?
-        ...status
+        ...status,
+        driverId
       ];
 
     //   console.log('Query params:', queryParams);
@@ -162,6 +167,7 @@ export async function POST(request: NextRequest) {
             d.id as driver_id,
             t.id as trip_id,
             t.agent as agent_id,
+            t.agent_ref as agent_ref,
             COALESCE(p.amount, 0) as amount,
             COALESCE(p.paid_amount, 0) as paid_amount,
             t.pickup as pick_up,
@@ -251,6 +257,7 @@ export async function POST(request: NextRequest) {
             d.id as driver_id,
             t.id as trip_id,
             t.agent as agent_id,
+            t.agent_ref as agent_ref,
             COALESCE(p.amount, 0) as amount,
             COALESCE(p.paid_amount, 0) as paid_amount,
             t.pickup as pick_up,
@@ -287,6 +294,7 @@ export async function POST(request: NextRequest) {
           driver: report.driver || 'Unknown Driver',
           trip_id: report.trip_id || '-',
           agent_id: report.agent_id || '-',
+          agent_ref: report.agent_ref || '-',
           amount: parseFloat(report.amount || 0),
           paid_amount: parseFloat(report.paid_amount || 0),
           pick_up: report.pick_up || '-',
@@ -304,6 +312,7 @@ export async function POST(request: NextRequest) {
           driver: 'Error',
           trip_id: '-',
           agent_id: '-',
+          agent_ref: '-',
           amount: 0,
           paid_amount: 0,
           pick_up: '-',
@@ -378,12 +387,13 @@ export async function POST(request: NextRequest) {
           'Driver': report.driver,
           'Trip ID': report.trip_id,
           'Agent ID': report.agent_id,
-          'Amount': report.amount,
-          'Paid Amount': report.paid_amount,
+          'Agent Ref': report.agent_ref,
           'Pick Up': report.pick_up,
           'Drop Off': report.drop_off,
           'Passenger Name': report.passenger_name,
           'Transfer Date': report.pickup_datetime,
+          'Amount': report.amount,
+          'Paid Amount': report.paid_amount,
           'Currency': report.currency,
           'Payment Status': report.payment_status
         }));

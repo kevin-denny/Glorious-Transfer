@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Get search term and pagination from body
     const body = await request.json();
-    const { searchTerm = '', limit = 15, page = 1, pageSize = 10 } = body;
+    const { searchTerm = '', limit = 15, page = 1, pageSize = 10, startDate, endDate } = body;
 
     // Validate pagination parameters
     if (page < 1 || pageSize < 1 || pageSize > 100) {
@@ -62,12 +62,50 @@ export async function POST(request: NextRequest) {
         FROM tours t
         LEFT JOIN assignments a ON t.id = a.tour_id
         LEFT JOIN drivers d ON a.driver_id = d.id
-        WHERE t.id LIKE ? OR t.customer_name LIKE ?
+        WHERE t.id LIKE ? OR t.customer_name LIKE ? OR t.agent LIKE ? OR t.agent_ref LIKE ? OR t.status LIKE ?
         ORDER BY t.created_at DESC 
         LIMIT ${limit} OFFSET ${offset}
-      `, [`%${searchTerm}%`, `%${searchTerm}%`]);
+      `, [`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`]);
       tours = Array.isArray(queryResult) ? queryResult : [];
       total = tours.length;
+    } else if(startDate && endDate) {
+      // Filter by date with pickup_datetime priority, fallback to arrival_datetime
+      const dateFilterQuery = `
+        SELECT 
+          t.*,
+          a.id as assignment_id,
+          a.assigned_at,
+          a.assigned_by,
+          d.id as driver_id,
+          d.name as driver_name,
+          d.driver_number as driver_number,
+          d.vehicle_type as driver_vehicle_type,
+          d.vehicle_plate as driver_vehicle_plate
+        FROM tours t
+        LEFT JOIN assignments a ON t.id = a.tour_id
+        LEFT JOIN drivers d ON a.driver_id = d.id
+        WHERE (
+          (t.pickup_datetime IS NOT NULL AND DATE(t.pickup_datetime) >= ? AND DATE(t.pickup_datetime) <= ?)
+          OR 
+          (t.pickup_datetime IS NULL AND t.arrival_datetime IS NOT NULL AND DATE(t.arrival_datetime) >= ? AND DATE(t.arrival_datetime) <= ?)
+        )
+        ORDER BY COALESCE(t.pickup_datetime, t.arrival_datetime) DESC, t.created_at DESC 
+        LIMIT ${pageSize} OFFSET ${offset}
+      `;
+
+      // Get total count for date range
+      const totalDateResult = await queryOne<{ total: number }>(`
+        SELECT COUNT(*) as total FROM tours t
+        WHERE (
+          (t.pickup_datetime IS NOT NULL AND DATE(t.pickup_datetime) >= ? AND DATE(t.pickup_datetime) <= ?)
+          OR 
+          (t.pickup_datetime IS NULL AND t.arrival_datetime IS NOT NULL AND DATE(t.arrival_datetime) >= ? AND DATE(t.arrival_datetime) <= ?)
+        )
+      `, [startDate, endDate, startDate, endDate]);
+
+      const queryResult = await query(dateFilterQuery, [startDate, endDate, startDate, endDate]);
+      tours = Array.isArray(queryResult) ? queryResult : [];
+      total = totalDateResult?.total || 0;
     } else {
       const queryResult = await query(`
         SELECT 

@@ -17,6 +17,7 @@ interface DriverReportRequest {
 }
 
 interface DriverReportData {
+  driverId: string;
   driver: string;
   trip_id: string;
   agent_id: string;
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     });
 
     const body: DriverReportRequest = await request.json();
-    const { startDate, endDate, status, download=false, downloadAll=false, page = 1, pageSize = 10, driverId = "" } = body;
+    const { startDate, endDate, status, download = false, downloadAll = false, page = 1, pageSize = 10, driverId = "" } = body;
 
     // Skip validation if downloadAll is true
     if (!downloadAll) {
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
       let whereClause = '';
       let queryParams = [];
 
-      if(driverId && driverId.trim() !== '') {
+      if (driverId && driverId.trim() !== '') {
         whereClause = `
           WHERE (
             (t.pickup_datetime IS NOT NULL AND DATE(t.pickup_datetime) >= ? AND DATE(t.pickup_datetime) <= ?)
@@ -176,8 +177,8 @@ export async function POST(request: NextRequest) {
         ];
       }
 
-    //   console.log('Query params:', queryParams);
-    //   console.log('Where clause:', whereClause);
+      //   console.log('Query params:', queryParams);
+      //   console.log('Where clause:', whereClause);
 
       if (download) {
         console.log('Fetching driver report...');
@@ -220,28 +221,28 @@ export async function POST(request: NextRequest) {
           queryParams
         ) as any[];
         totalCount = totalResult[0]?.total || 0;
-        
+
         console.log(`Total count: ${totalCount}`);
 
         // If no records found, return early with debug info
         if (totalCount === 0) {
           // Debug query to see what data exists
-        //   const debugData = await query(
-        //     `SELECT 
-        //       COUNT(*) as total_assignments,
-        //       COUNT(DISTINCT p.status) as unique_payment_statuses,
-        //       GROUP_CONCAT(DISTINCT p.status) as all_payment_statuses,
-        //       COUNT(DISTINCT t.status) as unique_tour_statuses,
-        //       GROUP_CONCAT(DISTINCT t.status) as all_tour_statuses,
-        //       MIN(DATE(COALESCE(t.pickup_datetime, t.arrival_datetime))) as earliest_date,
-        //       MAX(DATE(COALESCE(t.pickup_datetime, t.arrival_datetime))) as latest_date
-        //     FROM assignments a
-        //     INNER JOIN drivers d ON a.driver_id = d.id
-        //     INNER JOIN tours t ON a.tour_id = t.id
-        //     LEFT JOIN payments p ON (p.driver_id = d.id AND p.tour_id = t.id AND p.type = 'driver_payment')`
-        //   ) as any[];
+          //   const debugData = await query(
+          //     `SELECT 
+          //       COUNT(*) as total_assignments,
+          //       COUNT(DISTINCT p.status) as unique_payment_statuses,
+          //       GROUP_CONCAT(DISTINCT p.status) as all_payment_statuses,
+          //       COUNT(DISTINCT t.status) as unique_tour_statuses,
+          //       GROUP_CONCAT(DISTINCT t.status) as all_tour_statuses,
+          //       MIN(DATE(COALESCE(t.pickup_datetime, t.arrival_datetime))) as earliest_date,
+          //       MAX(DATE(COALESCE(t.pickup_datetime, t.arrival_datetime))) as latest_date
+          //     FROM assignments a
+          //     INNER JOIN drivers d ON a.driver_id = d.id
+          //     INNER JOIN tours t ON a.tour_id = t.id
+          //     LEFT JOIN payments p ON (p.driver_id = d.id AND p.tour_id = t.id AND p.type = 'driver_payment')`
+          //   ) as any[];
 
-        //   console.log('Debug data:', debugData[0]);
+          //   console.log('Debug data:', debugData[0]);
 
           return NextResponse.json({
             message: 'No driver reports found for the specified criteria',
@@ -249,8 +250,8 @@ export async function POST(request: NextRequest) {
             filters: { startDate, endDate, status },
             summary: {
               total_records: 0,
-            //   total_amount: 0,
-            //   total_paid_amount: 0,
+              //   total_amount: 0,
+              //   total_paid_amount: 0,
               unique_drivers: 0,
               date_range: { start_date: startDate, end_date: endDate },
               drivers_included: [],
@@ -312,6 +313,7 @@ export async function POST(request: NextRequest) {
     const formattedReports: DriverReportData[] = driverReports.map((report, index) => {
       try {
         return {
+          driverId: report.driver_id || '-',
           driver: report.driver || 'Unknown Driver',
           trip_id: report.trip_id || '-',
           agent_id: report.agent_id || '-',
@@ -321,8 +323,8 @@ export async function POST(request: NextRequest) {
           pick_up: report.pick_up || '-',
           drop_off: report.drop_off || '-',
           passenger_name: report.passenger_name || '-',
-          pickup_datetime: report.pickup_datetime 
-            ? formatToIST(report.pickup_datetime) 
+          pickup_datetime: report.pickup_datetime
+            ? formatToIST(report.pickup_datetime)
             : (report.arrival_datetime ? formatToIST(report.arrival_datetime) : '-'),
           currency: report.currency || '-',
           payment_status: report.payment_status || '-'
@@ -330,6 +332,7 @@ export async function POST(request: NextRequest) {
       } catch (formatError) {
         console.error(`Error formatting record ${index}:`, formatError, report);
         return {
+          driverId: '',
           driver: 'Error',
           trip_id: '-',
           agent_id: '-',
@@ -405,6 +408,7 @@ export async function POST(request: NextRequest) {
         // Prepare data for Excel
         const excelData = formattedReports.map((report, index) => ({
           'S/N': index + 1,
+          'Driver ID': report.driverId,
           'Driver': report.driver,
           'Trip ID': report.trip_id,
           'Agent ID': report.agent_id,
@@ -442,6 +446,7 @@ export async function POST(request: NextRequest) {
         // Set column widths
         const columnWidths = [
           { wch: 5 },   // S/N
+          { wch: 12 },  // Driver ID
           { wch: 20 },  // Driver
           { wch: 12 },  // Trip ID
           { wch: 15 },  // Agent ID
@@ -463,7 +468,7 @@ export async function POST(request: NextRequest) {
         };
 
         // Apply header styling (row 1)
-        const headerCells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1', 'L1'];
+        const headerCells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1', 'L1', 'M1'];
         headerCells.forEach(cell => {
           if (worksheet[cell]) {
             worksheet[cell].s = headerStyle;
@@ -478,9 +483,9 @@ export async function POST(request: NextRequest) {
         };
 
         // Apply total row styling
-        const totalCells = [`A${totalRowNum}`, `B${totalRowNum}`, `C${totalRowNum}`, `D${totalRowNum}`, 
-                           `E${totalRowNum}`, `F${totalRowNum}`, `G${totalRowNum}`, `H${totalRowNum}`, 
-                           `I${totalRowNum}`, `J${totalRowNum}`, `K${totalRowNum}`, `L${totalRowNum}`];
+        const totalCells = [`A${totalRowNum}`, `B${totalRowNum}`, `C${totalRowNum}`, `D${totalRowNum}`,
+        `E${totalRowNum}`, `F${totalRowNum}`, `G${totalRowNum}`, `H${totalRowNum}`,
+        `I${totalRowNum}`, `J${totalRowNum}`, `K${totalRowNum}`, `L${totalRowNum}`, `M${totalRowNum}`];
         totalCells.forEach(cell => {
           if (worksheet[cell]) {
             worksheet[cell].s = totalRowStyle;
@@ -491,15 +496,15 @@ export async function POST(request: NextRequest) {
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Driver Report');
 
         // Generate Excel buffer
-        const excelBuffer = XLSX.write(workbook, { 
-          type: 'buffer', 
+        const excelBuffer = XLSX.write(workbook, {
+          type: 'buffer',
           bookType: 'xlsx',
           compression: true
         });
 
         // Create filename with timestamp
         const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-        const filename = downloadAll 
+        const filename = downloadAll
           ? `All_Drivers_Report_${timestamp}.xlsx`
           : `Driver_Report_${startDate}_to_${endDate}_${timestamp}.xlsx`;
 
@@ -507,8 +512,8 @@ export async function POST(request: NextRequest) {
         await auditLogger.logRead('driver_report_excel', 'download_excel', SYSCONFIG.SUCCESS, {
           filters: downloadAll ? { downloadAll: true } : { startDate, endDate, status: status },
           result_count: totalRecords,
-        //   total_amount: totalAmount,
-        //   total_paid_amount: totalPaidAmount,
+          //   total_amount: totalAmount,
+          //   total_paid_amount: totalPaidAmount,
           filename
         });
 
@@ -535,8 +540,8 @@ export async function POST(request: NextRequest) {
     await auditLogger.logRead('driver_report', 'generate_report', SYSCONFIG.SUCCESS, {
       filters: downloadAll ? { downloadAll: true } : { startDate, endDate, status: status },
       result_count: totalRecords,
-    //   total_amount: totalAmount,
-    //   total_paid_amount: totalPaidAmount
+      //   total_amount: totalAmount,
+      //   total_paid_amount: totalPaidAmount
     });
 
     // Build response

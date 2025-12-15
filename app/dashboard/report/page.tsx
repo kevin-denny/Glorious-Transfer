@@ -418,6 +418,10 @@ export default function PaymentsPage() {
 
   const drivercolumns = [
     {
+      key: "driverId",
+      label: "Driver ID",
+    },
+    {
       key: "driver",
       label: "Driver",
     },

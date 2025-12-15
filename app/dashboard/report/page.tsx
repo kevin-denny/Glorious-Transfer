@@ -13,6 +13,7 @@ import DataTable from "@/components/ui/DataTable";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -155,7 +156,7 @@ export default function PaymentsPage() {
           endDate: selectedRange.endDate,
           status: selectedStatus,
           download: download,
-          driverId:driverId,
+          driverId: driverId,
           downloadAll: downloadAll,
           page: pageTour,
           pageSize: pageSizeTour,
@@ -509,7 +510,8 @@ export default function PaymentsPage() {
           ================================= */}
           <TabsContent value="driver">
             {/* Table */}
-            <div className="mb-4 flex gap-4">
+            <div className="mb-4 flex flex-wrap gap-4 items-end">
+              {/* Start Date */}
               <div>
                 <label className="text-sm font-medium text-gray-700 mr-2">
                   Start Date:
@@ -518,10 +520,11 @@ export default function PaymentsPage() {
                   type="date"
                   value={selectedRange.startDate}
                   onChange={handleStartMonthChange}
-                  className="border px-2 py-1 rounded"
+                  className="border px-2 rounded h-9"
                 />
               </div>
 
+              {/* End Date */}
               <div>
                 <label className="text-sm font-medium text-gray-700 mr-2">
                   End Date:
@@ -530,24 +533,24 @@ export default function PaymentsPage() {
                   type="date"
                   value={selectedRange.endDate}
                   onChange={handleEndMonthChange}
-                  className="border px-2 py-1 rounded"
+                  className="border px-2 rounded h-9"
                 />
               </div>
 
-              <DropdownMenu>
+              {/* Status Filter */}
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-100 justify-between">
+                  <Button variant="outline" className="h-9 justify-between">
                     Filter by Status
                   </Button>
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent className="w-56 p-2 max-h-64 overflow-y-auto space-y-1">
-                  {/* Buttons side by side */}
                   <div className="flex gap-2 mb-2">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 h-8"
                       disabled={selectedStatus.length === 0}
                       onClick={() => setSelectedStatus([])}
                     >
@@ -556,7 +559,7 @@ export default function PaymentsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 h-8"
                       disabled={selectedStatus.length === statusList.length}
                       onClick={() => setSelectedStatus([...statusList])}
                     >
@@ -564,47 +567,46 @@ export default function PaymentsPage() {
                     </Button>
                   </div>
 
-                  {/* Agents List */}
                   {statusList.map((status) => (
-                    <div
+                    <DropdownMenuItem
                       key={status}
-                      className="flex items-center space-x-2 p-1 cursor-pointer"
+                      onSelect={(e) => e.preventDefault()}
+                      className="flex items-center space-x-2 cursor-pointer"
                       onClick={() => toggleStatus(status)}
                     >
-                      <Checkbox
-                        checked={selectedStatus.includes(status)}
-                        onCheckedChange={() => toggleStatus(status)}
-                      />
+                      <Checkbox checked={selectedStatus.includes(status)} />
                       <span>{status}</span>
-                    </div>
+                    </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+              {/* Driver ID Search */}
               <div>
-                <div className="relative flex items-center">
+                <div className="relative">
                   <input
                     type="text"
                     value={driverId}
                     onChange={(e) => setDriverId(e.target.value)}
                     onKeyDown={handleDriverKeyDown}
                     placeholder="Enter Driver ID"
-                    className="border px-2 py-2 rounded"
+                    className="border px-2 pr-9 rounded h-9"
                   />
-
                   <button
                     type="button"
                     onClick={handleDriverSearch}
-                    className="absolute right-2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-9 flex items-center text-gray-500 hover:text-gray-700"
                   >
                     <Search className="h-4 w-4" />
                   </button>
                 </div>
               </div>
 
+              {/* Action Buttons */}
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="h-9"
+                  disabled={selectedStatus.length === 0}
                   onClick={async () => {
                     const result = await Swal.fire({
                       title: "Are you sure?",
@@ -613,28 +615,19 @@ export default function PaymentsPage() {
                       showCancelButton: true,
                       confirmButtonText: "Yes, Download!",
                       cancelButtonText: "Cancel",
-                      customClass: {
-                        confirmButton: "swal-confirm-btn",
-                        cancelButton: "swal-cancel-btn",
-                        popup:
-                          "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
-                      },
                       buttonsStyling: false,
-                      background: "hsl(var(--background))",
-                      color: "hsl(var(--foreground))",
                     });
 
                     if (!result.isConfirmed) return;
-
                     setDownload(true);
                   }}
-                  disabled={selectedStatus.length === 0}
                 >
                   Download
                 </Button>
+
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="h-9"
                   onClick={async () => {
                     const result = await Swal.fire({
                       title: "Are you sure?",
@@ -643,19 +636,10 @@ export default function PaymentsPage() {
                       showCancelButton: true,
                       confirmButtonText: "Yes, Download!",
                       cancelButtonText: "Cancel",
-                      customClass: {
-                        confirmButton: "swal-confirm-btn",
-                        cancelButton: "swal-cancel-btn",
-                        popup:
-                          "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
-                      },
                       buttonsStyling: false,
-                      background: "hsl(var(--background))",
-                      color: "hsl(var(--foreground))",
                     });
 
                     if (!result.isConfirmed) return;
-
                     setDownloadAll(true);
                   }}
                 >
@@ -663,6 +647,7 @@ export default function PaymentsPage() {
                 </Button>
               </div>
             </div>
+
             <DataTable
               columns={drivercolumns}
               data={filteredDrivers}
@@ -766,17 +751,27 @@ export default function PaymentsPage() {
 
                   {/* Agents List */}
                   {agentsList.map((agent) => (
-                    <div
+                    <DropdownMenuItem
                       key={agent}
-                      className="flex items-center space-x-2 p-1 cursor-pointer"
+                      onSelect={(e) => e.preventDefault()}
+                      className="flex items-center space-x-2 cursor-pointer"
                       onClick={() => toggleAgent(agent)}
                     >
-                      <Checkbox
-                        checked={selectedAgents.includes(agent)}
-                        onCheckedChange={() => toggleAgent(agent)}
-                      />
+                      <Checkbox checked={selectedAgents.includes(agent)} />
                       <span>{agent}</span>
-                    </div>
+                    </DropdownMenuItem>
+
+                    // <div
+                    //   key={agent}
+                    //   className="flex items-center space-x-2 p-1 cursor-pointer"
+                    //   onClick={() => toggleAgent(agent)}
+                    // >
+                    //   <Checkbox
+                    //     checked={selectedAgents.includes(agent)}
+                    //     onCheckedChange={() => toggleAgent(agent)}
+                    //   />
+                    //   <span>{agent}</span>
+                    // </div>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>

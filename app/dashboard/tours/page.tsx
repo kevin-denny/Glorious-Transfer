@@ -112,6 +112,18 @@ export default function ToursPage() {
   // assign driver
   const assigndrivers = `http://${baseUrl}/api/assign`;
 
+  const [selectedRange, setSelectedRange] = useState(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, "0");
+    const day = now.getDate().toString().padStart(2, "0");
+
+    return {
+      startDate: `${year}-${month}-${day}`,
+      endDate: `${year}-${month}-${day}`,
+    };
+  });
+
   const [formData, setFormData] = useState({
     booking_date: new Date().toISOString().split("T")[0],
     customer_name: "",
@@ -154,7 +166,7 @@ export default function ToursPage() {
 
   useEffect(() => {
     fetchTours();
-  }, [page, pageSize]);
+  }, [selectedRange, page, pageSize]);
 
   useEffect(() => {
     fetchDrivers();
@@ -182,6 +194,8 @@ export default function ToursPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          startDate: selectedRange.startDate,
+          endDate: selectedRange.endDate,
           searchTerm: search,
           page: page,
           pageSize: pageSize,
@@ -607,6 +621,35 @@ export default function ToursPage() {
     },
   ];
 
+  function handleStartMonthChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const newStart = e.target.value;
+
+    setSelectedRange((prev) => {
+      // if end < start → adjust end = start
+      const adjustedEnd = prev.endDate < newStart ? newStart : prev.endDate;
+
+      return {
+        startDate: newStart,
+        endDate: adjustedEnd,
+      };
+    });
+  }
+
+  function handleEndMonthChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const newEnd = e.target.value;
+
+    setSelectedRange((prev) => {
+      // enforce: end >= start
+      if (newEnd < prev.startDate) {
+        return {
+          ...prev,
+          endDate: prev.startDate, // auto-fix
+        };
+      }
+      return { ...prev, endDate: newEnd };
+    });
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -938,12 +981,37 @@ export default function ToursPage() {
             </DialogContent>
           </Dialog>
         </div>
+        <div className="mb-4 flex gap-4">
+          <div>
+            <label className="text-sm font-medium text-gray-700 mr-2">
+              Start Date:
+            </label>
+            <input
+              type="date"
+              value={selectedRange.startDate}
+              onChange={handleStartMonthChange}
+              className="border px-2 py-1 rounded"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700 mr-2">
+              End Date:
+            </label>
+            <input
+              type="date"
+              value={selectedRange.endDate}
+              onChange={handleEndMonthChange}
+              className="border px-2 py-1 rounded"
+            />
+          </div>
+        </div>
         <DataTable
           columns={columns}
           data={filteredTours}
           searchValue={search}
           onSearchChange={setSearch}
-           placeholder="Search by Bookin Ref, Client, Agent, Agent Ref, Status"
+          placeholder="Search by Bookin Ref, Client, Agent, Agent Ref, Status"
           pagination={pagination}
           pageSize={pageSize}
           onPageChange={setPage}

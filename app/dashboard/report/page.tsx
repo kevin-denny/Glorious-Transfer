@@ -430,15 +430,8 @@ export default function PaymentsPage() {
       label: "Agent ID",
     },
     {
-      key: "amount",
-      label: "Total Amount",
-      render: (row: Tour) => `${thousandSeparator(row.amount)} ${row.currency}`,
-    },
-    {
-      key: "paid_amount",
-      label: "Paid Amount",
-      render: (row: Tour) =>
-        `${thousandSeparator(row.paid_amount)} ${row.currency}`,
+      key: "agent_ref",
+      label: "Agent Ref",
     },
     {
       key: "pickup_datetime",
@@ -451,6 +444,17 @@ export default function PaymentsPage() {
     {
       key: "drop_off",
       label: "Drop off",
+    },
+    {
+      key: "amount",
+      label: "Total Amount",
+      render: (row: Tour) => `${thousandSeparator(row.amount)} ${row.currency}`,
+    },
+    {
+      key: "paid_amount",
+      label: "Paid Amount",
+      render: (row: Tour) =>
+        `${thousandSeparator(row.paid_amount)} ${row.currency}`,
     },
     {
       key: "payment_status",

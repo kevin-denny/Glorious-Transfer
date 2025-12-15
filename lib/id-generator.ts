@@ -48,7 +48,7 @@ export const generateUniqueDriverId = async (): Promise<string> => {
     const nextNumber = maxNumber + 1;
     
     // Generate new driver ID
-    const driverId = `D${nextNumber}`;
+    const driverId = `GTD${nextNumber}`;
     
     // Double-check that this ID doesn't exist (safety check)
     const exists = await queryOne('SELECT id FROM drivers WHERE id = ?', [driverId]);
@@ -99,7 +99,7 @@ export const generateUniqueTourId = async (): Promise<string> => {
     const nextNumber = maxNumber + 1;
     
     // Generate new tour ID
-    const tourId = `T${nextNumber}`;
+    const tourId = `GT${nextNumber}`;
     
     // Double-check that this ID doesn't exist (safety check)
     const exists = await queryOne('SELECT id FROM tours WHERE id = ?', [tourId]);

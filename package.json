@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start:server": "node server.js",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "create-user": "node scripts/create-user.js"
+    "create-user": "node scripts/create-user.js",
+    "production": "npm run build && npm run start:server"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

@@ -99,7 +99,7 @@ export default function ToursPage() {
 
   const { profile } = useAuth();
   const { toast } = useToast();
-  const token = localStorage.getItem("auth_token");
+  const [token, setToken] = useState<string | null>(null);
 
   const baseUrl = process.env.NEXT_PUBLIC_API;
 
@@ -165,12 +165,21 @@ export default function ToursPage() {
   });
 
   useEffect(() => {
-    fetchTours();
-  }, [selectedRange, page, pageSize]);
+    // Set token from localStorage after component mounts
+    setToken(localStorage.getItem("auth_token"));
+  }, []);
 
   useEffect(() => {
-    fetchDrivers();
-  }, []);
+    if (token && profile) {
+      fetchTours();
+    }
+  }, [selectedRange, page, pageSize, token, profile]);
+
+  useEffect(() => {
+    if (token && profile) {
+      fetchDrivers();
+    }
+  }, [token]);
 
   useEffect(() => {
     // const filtered = tours.filter(
@@ -179,13 +188,18 @@ export default function ToursPage() {
     //     tour.customer_name.includes(search) || tour.agent.includes(search)
     // );
     // setFilteredTours(filtered);
-    fetchTours();
-  }, [search]);
+    if (token && profile) {
+      fetchTours();
+    }
+  }, [search, token, profile]);
 
   async function fetchTours() {
+    if (!token || !profile) {
+      console.log("Skipping fetchTours - no auth");
+      return;
+    }
     setLoading(true);
     try {
-      if (!token) throw new Error("No auth token found");
 
       const response = await fetch(`${gettours}`, {
         method: "POST",
@@ -224,7 +238,10 @@ export default function ToursPage() {
 
   async function fetchDrivers() {
     try {
-      if (!token) throw new Error("No auth token found");
+      if (!token || !profile) {
+        console.log("Skipping fetchDrivers - no auth");
+        return;
+      }
 
       const response = await fetch(`${activedrivers}`, {
         method: "GET",
@@ -250,9 +267,12 @@ export default function ToursPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!token || !profile) {
+      console.log("Skipping handleSubmit - no auth");
+      return;
+    }
     setLoading(true);
     try {
-      if (!token) throw new Error("No auth token found");
       let response: Response;
       if (selectedTour) {
         const result = await Swal.fire({
@@ -381,10 +401,13 @@ export default function ToursPage() {
 
   async function handleAssignDriver() {
     if (!selectedTour) return;
+    if (!token || !profile) {
+      console.log("Skipping handleAssignDriver - no auth");
+      return;
+    }
 
     setLoading(true);
     try {
-      if (!token) throw new Error("No auth token found");
       let response: Response;
       response = await fetch(assigndrivers, {
         method: "POST",
@@ -536,6 +559,11 @@ export default function ToursPage() {
     });
 
     if (!result.isConfirmed) return;
+
+    if (!token || !profile) {
+      console.log("Skipping handleDelete - no auth");
+      return;
+    }
 
     setLoading(true);
     try {

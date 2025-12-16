@@ -67,7 +67,7 @@ export default function DashboardPage() {
   const { user, profile, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  const token = localStorage.getItem("auth_token");
+  const [token, setToken] = useState<string | null>(null);
   const baseUrl = process.env.NEXT_PUBLIC_API;
   const getstats = `http://${baseUrl}/api/dashboard`;
 
@@ -78,20 +78,28 @@ export default function DashboardPage() {
   const [currentMonthOnly, setCurrentMonthOnly] = useState(true);
 
   useEffect(() => {
+    // Set token from localStorage after component mounts
+    setToken(localStorage.getItem("auth_token"));
+  }, []);
+
+  useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login");
     }
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (profile) {
+    if (profile && token && !authLoading) {
       fetchStats();
     }
-  }, [profile, currentMonthOnly]);
+  }, [profile, currentMonthOnly, token, authLoading]);
 
   async function fetchStats() {
     try {
-      if (!token) throw new Error("No auth token found");
+      if (!token || !profile) {
+        console.log("Skipping fetchStats - no auth");
+        return;
+      }
       setLoading(true);
 
       const response = await fetch(getstats, {

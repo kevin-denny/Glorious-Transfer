@@ -45,7 +45,7 @@ interface Tour {
 export default function PaymentsPage() {
   const { profile } = useAuth();
   const { toast } = useToast();
-  const token = localStorage.getItem("auth_token");
+  const [token, setToken] = useState<string | null>(null);
 
   const baseUrl = process.env.NEXT_PUBLIC_API;
 
@@ -110,40 +110,48 @@ export default function PaymentsPage() {
   });
 
   useEffect(() => {
+    // Set token from localStorage after component mounts
+    setToken(localStorage.getItem("auth_token"));
+  }, []);
+
+  useEffect(() => {
     resetForm();
   }, [activeTab]);
 
   // Fetch initial data
   useEffect(() => {
-    if (selectedStatus?.length > 0) {
+    if (selectedStatus?.length > 0 && token && profile) {
       fetchDrivers();
     }
-  }, [selectedRange, selectedStatus, pageDriver, pageSizeDriver]);
+  }, [selectedRange, selectedStatus, pageDriver, pageSizeDriver, token, profile]);
 
   useEffect(() => {
-    if (selectedAgents?.length > 0) {
+    if (selectedAgents?.length > 0 && token && profile) {
       fetchTours();
     }
-  }, [selectedRange, selectedAgents, pageTour, pageSizeTour]);
+  }, [selectedRange, selectedAgents, pageTour, pageSizeTour, token, profile]);
 
   useEffect(() => {
-    if (download == true || downloadAll == true) {
+    if ((download == true || downloadAll == true) && token && profile) {
       if (activeTab == "driver") {
         fetchDrivers();
       } else {
         fetchTours();
       }
     }
-  }, [download, downloadAll]);
+  }, [download, downloadAll, token, profile]);
 
   // -------------------------
   // FETCH FUNCTIONS
   // -------------------------
 
   async function fetchDrivers() {
+    if (!token || !profile) {
+      console.log("Skipping fetchDrivers - no auth");
+      return;
+    }
     setLoading(true);
     try {
-      if (!token) throw new Error("No auth token found");
 
       const response = await fetch(`${getreports}/driver`, {
         method: "POST",
@@ -237,9 +245,12 @@ export default function PaymentsPage() {
   };
 
   async function fetchTours() {
+    if (!token || !profile) {
+      console.log("Skipping fetchTours - no auth");
+      return;
+    }
     setLoading(true);
     try {
-      if (!token) throw new Error("No auth token found");
 
       const response = await fetch(`${getreports}/tour`, {
         method: "POST",

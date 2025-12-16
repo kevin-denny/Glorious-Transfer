@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/dashboard-layout";
 import { Badge } from "@/components/ui/badge";
 import { Activity, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth-context";
 import DataTable from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,7 +39,8 @@ export default function ActivityLogsPage() {
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const token = localStorage.getItem("auth_token");
+  const { profile } = useAuth();
+  const [token, setToken] = useState<string | null>(null);
 
   const baseUrl = process.env.NEXT_PUBLIC_API;
 
@@ -58,17 +60,29 @@ export default function ActivityLogsPage() {
   });
 
   useEffect(() => {
-    fetchLogs();
-  }, [page, pageSize]);
+    // Set token from localStorage after component mounts
+    setToken(localStorage.getItem("auth_token"));
+  }, []);
 
   useEffect(() => {
-    fetchLogs();
-  }, [search]);
+    if (token && profile) {
+      fetchLogs();
+    }
+  }, [page, pageSize, token, profile]);
+
+  useEffect(() => {
+    if (token && profile) {
+      fetchLogs();
+    }
+  }, [search, token, profile]);
 
   async function fetchLogs() {
+    if (!token || !profile) {
+      console.log("Skipping fetchLogs - no auth");
+      return;
+    }
     setLoading(true);
     try {
-      if (!token) throw new Error("No auth token found");
 
       const response = await fetch(`${getlogs}`, {
         method: "POST",

@@ -25,6 +25,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if we're in the browser before accessing localStorage
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
+    
     const token = localStorage.getItem('auth_token');
     if (token) {
       api.getCurrentUser()

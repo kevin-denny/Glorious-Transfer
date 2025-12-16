@@ -66,7 +66,7 @@ export default function DriversPage() {
   const [tours, setTours] = useState<TourAssignment[]>([]);
   const { profile } = useAuth();
   const { toast } = useToast();
-  const token = localStorage.getItem("auth_token");
+  const [token, setToken] = useState<string | null>(null);
 
   const baseUrl = process.env.NEXT_PUBLIC_API;
 
@@ -99,8 +99,15 @@ export default function DriversPage() {
   });
 
   useEffect(() => {
-    fetchDrivers();
-  }, [page, pageSize]);
+    // Set token from localStorage after component mounts
+    setToken(localStorage.getItem("auth_token"));
+  }, []);
+
+  useEffect(() => {
+    if (token && profile) {
+      fetchDrivers();
+    }
+  }, [page, pageSize, token, profile]);
 
   useEffect(() => {
     // const filtered = drivers.filter(
@@ -114,9 +121,12 @@ export default function DriversPage() {
   }, [search]);
 
   async function fetchDrivers() {
+    if (!token || !profile) {
+      console.log("Skipping fetchDrivers - no auth");
+      return;
+    }
     setLoading(true);
     try {
-      if (!token) throw new Error("No auth token found");
 
       const response = await fetch(`${getdrivers}`, {
         method: "POST",
@@ -186,7 +196,6 @@ export default function DriversPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const token = localStorage.getItem("auth_token");
       if (!token) throw new Error("No auth token found");
 
       const languagesArray = formData.languages
@@ -232,7 +241,7 @@ export default function DriversPage() {
         });
       } else {
         // Create new driver
-        response = await fetch(createdriver, {
+        response = await fetch(drivercall, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

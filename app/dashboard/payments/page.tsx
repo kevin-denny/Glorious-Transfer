@@ -114,7 +114,7 @@ interface Tour {
 export default function PaymentsPage() {
   const { profile } = useAuth();
   const { toast } = useToast();
-  const token = localStorage.getItem("auth_token");
+  const [token, setToken] = useState<string | null>(null);
 
   const baseUrl = process.env.NEXT_PUBLIC_API;
 
@@ -217,32 +217,47 @@ export default function PaymentsPage() {
   const [summary, setSummary] = useState({} as any);
 
   useEffect(() => {
+    // Set token from localStorage after component mounts
+    setToken(localStorage.getItem("auth_token"));
+  }, []);
+
+  useEffect(() => {
     resetForm();
   }, [activeTab]);
 
   useEffect(() => {
-    fetchTourPayments();
-  }, [selectedAgents, pageTour, pageSizeTour]);
+    if (token && profile) {
+      fetchTourPayments();
+    }
+  }, [selectedAgents, pageTour, pageSizeTour, token, profile]);
 
   useEffect(() => {
-    fetchDriverPayments();
-  }, [pageDriver, pageSizeDriver]);
+    if (token && profile) {
+      fetchDriverPayments();
+    }
+  }, [pageDriver, pageSizeDriver, token, profile]);
 
   // Fetch initial data
   useEffect(() => {
-    fetchDrivers();
-    fetchTours();
-    fetchSummary();
-    fetchRates();
-  }, []);
+    if (token && profile) {
+      fetchDrivers();
+      fetchTours();
+      fetchSummary();
+      fetchRates();
+    }
+  }, [token, profile]);
 
   useEffect(() => {
-    fetchTourPayments();
-  }, [searchTour]);
+    if (token && profile) {
+      fetchTourPayments();
+    }
+  }, [searchTour, token, profile]);
 
   useEffect(() => {
-    fetchDriverPayments();
-  }, [searchDriver]);
+    if (token && profile) {
+      fetchDriverPayments();
+    }
+  }, [searchDriver, token, profile]);
 
   useEffect(() => {
     fetchSummary();
@@ -270,9 +285,12 @@ export default function PaymentsPage() {
   }
 
   async function fetchDriverPayments() {
+    if (!token || !profile) {
+      console.log("Skipping fetchDriverPayments - no auth");
+      return;
+    }
     setLoading(true);
     try {
-      if (!token) throw new Error("No auth token found");
 
       const response = await fetch(`${createpayments}/driver`, {
         method: "POST",
@@ -308,9 +326,12 @@ export default function PaymentsPage() {
   }
 
   async function fetchTourPayments() {
+    if (!token || !profile) {
+      console.log("Skipping fetchTourPayments - no auth");
+      return;
+    }
     setLoading(true);
     try {
-      if (!token) throw new Error("No auth token found");
 
       const response = await fetch(`${createpayments}/tour`, {
         method: "POST",
@@ -347,8 +368,11 @@ export default function PaymentsPage() {
   }
 
   async function fetchSummary() {
+    if (!token || !profile) {
+      console.log("Skipping fetchSummary - no auth");
+      return;
+    }
     try {
-      if (!token) throw new Error("No auth token found");
 
       const response = await fetch(`${createpayments}/summary`, {
         method: "POST",
@@ -377,8 +401,11 @@ export default function PaymentsPage() {
   }
 
   async function fetchDrivers() {
+    if (!token || !profile) {
+      console.log("Skipping fetchDrivers - no auth");
+      return;
+    }
     try {
-      if (!token) throw new Error("No auth token found");
 
       const response = await fetch(`${activedrivers}`, {
         method: "GET",
@@ -403,8 +430,11 @@ export default function PaymentsPage() {
   }
 
   async function fetchTours() {
+    if (!token || !profile) {
+      console.log("Skipping fetchTours - no auth");
+      return;
+    }
     try {
-      if (!token) throw new Error("No auth token found");
 
       const response = await fetch(`${gettours}`, {
         method: "GET",

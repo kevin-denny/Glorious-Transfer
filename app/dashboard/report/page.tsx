@@ -229,7 +229,7 @@ export default function PaymentsPage() {
   }
 
   const handleDriverSearch = () => {
-    if (!driverId.trim()) return;
+    // if (!driverId.trim()) return;
     if (!selectedStatus || selectedStatus.length === 0) return;
 
     fetchDrivers();
@@ -237,7 +237,7 @@ export default function PaymentsPage() {
 
   const handleDriverKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      if (!driverId.trim()) return;
+      // if (!driverId.trim()) return;
       if (!selectedStatus || selectedStatus.length === 0) return;
 
       fetchDrivers();

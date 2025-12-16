@@ -5,6 +5,8 @@ import { AuditLogger } from '@/lib/activity-logger.server';
 import { SYSCONFIG } from '@/lib/utils';
 import { stat } from 'node:fs';
 
+export const dynamic = 'force-dynamic';
+
 export async function PUT(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');

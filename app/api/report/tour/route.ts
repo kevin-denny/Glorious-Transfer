@@ -5,6 +5,8 @@ import { formatToIST, SYSCONFIG } from '@/lib/utils';
 import { AuditLogger } from '@/lib/activity-logger.server';
 import * as XLSX from 'xlsx';
 
+export const dynamic = 'force-dynamic';
+
 interface TourReportRequest {
   startDate: string;
   endDate: string;

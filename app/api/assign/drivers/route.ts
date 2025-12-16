@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
 import { formatToIST, SYSCONFIG } from '@/lib/utils';
 import { AuditLogger } from '@/lib/activity-logger.server';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {

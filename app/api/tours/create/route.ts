@@ -5,6 +5,8 @@ import { generateUniquePaymentId, generateUniqueTourId } from "@/lib/id-generato
 import { SYSCONFIG } from "@/lib/utils";
 import { AuditLogger } from "@/lib/activity-logger.server";
 
+export const dynamic = 'force-dynamic';
+
 interface CreateTourRequest {
   booking_date: string;
   customer_name: string;

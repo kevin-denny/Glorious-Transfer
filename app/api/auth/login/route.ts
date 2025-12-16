@@ -4,6 +4,8 @@ import { verifyPassword, generateToken } from '@/lib/auth';
 import { AuditLogger } from '@/lib/activity-logger.server';
 import { SYSCONFIG } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();

@@ -4,6 +4,8 @@ import { getUserFromToken } from "@/lib/auth";
 import { formatToIST, SYSCONFIG } from "@/lib/utils";
 import { AuditLogger } from "@/lib/activity-logger.server";
 
+export const dynamic = 'force-dynamic';
+
 // GET assignment by ID
 export async function GET(
   request: NextRequest,

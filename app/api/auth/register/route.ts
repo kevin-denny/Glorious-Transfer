@@ -5,6 +5,8 @@ import { generateUniqueUserId } from '@/lib/id-generator';
 import { SYSCONFIG } from '@/lib/utils';
 import { AuditLogger } from '@/lib/activity-logger.server';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const { email, password, full_name, role } = await request.json();

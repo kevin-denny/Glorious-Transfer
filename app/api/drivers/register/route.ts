@@ -5,6 +5,8 @@ import { generateUniqueDriverId } from '@/lib/id-generator';
 import { SYSCONFIG } from '@/lib/utils';
 import { AuditLogger } from '@/lib/activity-logger.server';
 
+export const dynamic = 'force-dynamic';
+
 interface RegisterDriverRequest {
   driver_number: string;
   name: string;

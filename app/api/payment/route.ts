@@ -5,6 +5,8 @@ import { formatToIST, SYSCONFIG } from '@/lib/utils';
 import { generateUniquePaymentId } from '@/lib/id-generator';
 import { AuditLogger } from '@/lib/activity-logger.server';
 
+export const dynamic = 'force-dynamic';
+
 interface CreatePaymentRequest {
   driver_id?: string;
   tour_id: string;

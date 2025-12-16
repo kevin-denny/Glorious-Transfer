@@ -5,6 +5,8 @@ import { generateUniqueAssignmentId, generateUniquePaymentId } from "@/lib/id-ge
 import { SYSCONFIG, formatToIST } from "@/lib/utils";
 import { AuditLogger } from "@/lib/activity-logger.server";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');

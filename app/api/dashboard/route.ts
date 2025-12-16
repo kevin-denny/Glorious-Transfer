@@ -3,6 +3,8 @@ import { query, queryOne } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
 import { formatToIST, SYSCONFIG } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 interface DashboardRequest {
   current_month_only?: boolean; // Flag to switch between current month and all-time
 }

@@ -21,7 +21,12 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build the app
-RUN yarn build
+RUN \
+  if [ -f yarn.lock ]; then yarn build; \
+  elif [ -f package-lock.json ]; then npm run build; \
+  elif [ -f pnpm-lock.yaml ]; then pnpm build; \
+  else echo "No package manager found." && exit 1; \
+  fi
 
 # Production image, copy all the files and run next
 FROM base AS runner

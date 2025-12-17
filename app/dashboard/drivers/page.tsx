@@ -68,14 +68,14 @@ export default function DriversPage() {
   const { toast } = useToast();
   const [token, setToken] = useState<string | null>(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API;
+  const baseUrl = process.env.NEXTAUTH_URL;
 
   // For all drivers
-  const getdrivers = `https://${baseUrl}/api/drivers`;
+  const getdrivers = `${baseUrl}/api/drivers`;
   // update driver
-  const drivercall = `https://${baseUrl}/api/drivers`;
+  const drivercall = `${baseUrl}/api/drivers`;
   // create driver
-  const createdriver = `https://${baseUrl}/api/drivers/register`;
+  const createdriver = `${baseUrl}/api/drivers/register`;
   const [formData, setFormData] = useState({
     name: "",
     languages: "",

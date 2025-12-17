@@ -101,16 +101,16 @@ export default function ToursPage() {
   const { toast } = useToast();
   const [token, setToken] = useState<string | null>(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API;
+  const baseUrl = process.env.NEXTAUTH_URL;
 
   // For all tours
-  const gettours = `https://${baseUrl}/api/tours`;
+  const gettours = `${baseUrl}/api/tours`;
   // create tour
-  const createtour = `https://${baseUrl}/api/tours/create`;
+  const createtour = `${baseUrl}/api/tours/create`;
   // create tour
-  const activedrivers = `https://${baseUrl}/api/assign/drivers`;
+  const activedrivers = `${baseUrl}/api/assign/drivers`;
   // assign driver
-  const assigndrivers = `https://${baseUrl}/api/assign`;
+  const assigndrivers = `${baseUrl}/api/assign`;
 
   const [selectedRange, setSelectedRange] = useState(() => {
     const now = new Date();

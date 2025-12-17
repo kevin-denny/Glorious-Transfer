@@ -47,10 +47,10 @@ export default function PaymentsPage() {
   const { toast } = useToast();
   const [token, setToken] = useState<string | null>(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API;
+  const baseUrl = process.env.NEXTAUTH_URL;
 
   // gettourdropdown
-  const getreports = `https://${baseUrl}/api/report`;
+  const getreports = `${baseUrl}/api/report`;
 
   const [driverId, setDriverId] = useState("");
 

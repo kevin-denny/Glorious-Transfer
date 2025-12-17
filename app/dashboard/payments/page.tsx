@@ -116,14 +116,14 @@ export default function PaymentsPage() {
   const { toast } = useToast();
   const [token, setToken] = useState<string | null>(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API;
+  const baseUrl = process.env.NEXTAUTH_URL;
 
   // gettourdropdown
-  const gettours = `https://${baseUrl}/api/payment/tour`;
+  const gettours = `${baseUrl}/api/payment/tour`;
   // get active tour
-  const activedrivers = `https://${baseUrl}/api/assign/drivers`;
+  const activedrivers = `${baseUrl}/api/assign/drivers`;
   // create payments
-  const createpayments = `https://${baseUrl}/api/payment`;
+  const createpayments = `${baseUrl}/api/payment`;
   // Tabs
   const [activeTab, setActiveTab] = useState("driver");
 

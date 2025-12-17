@@ -42,10 +42,10 @@ export default function ActivityLogsPage() {
   const { profile } = useAuth();
   const [token, setToken] = useState<string | null>(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API;
+  const baseUrl = process.env.NEXTAUTH_URL;
 
   // For all drivers
-  const getlogs = `https://${baseUrl}/api/audit`;
+  const getlogs = `${baseUrl}/api/audit`;
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);

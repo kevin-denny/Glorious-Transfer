@@ -68,7 +68,7 @@ export default function DriversPage() {
   const { toast } = useToast();
   const [token, setToken] = useState<string | null>(null);
 
-  const baseUrl = process.env.NEXTAUTH_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_API;
 
   // For all drivers
   const getdrivers = `${baseUrl}/api/drivers`;

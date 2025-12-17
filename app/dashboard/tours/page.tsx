@@ -101,7 +101,7 @@ export default function ToursPage() {
   const { toast } = useToast();
   const [token, setToken] = useState<string | null>(null);
 
-  const baseUrl = process.env.NEXTAUTH_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_API;
 
   // For all tours
   const gettours = `${baseUrl}/api/tours`;

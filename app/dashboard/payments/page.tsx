@@ -116,7 +116,7 @@ export default function PaymentsPage() {
   const { toast } = useToast();
   const [token, setToken] = useState<string | null>(null);
 
-  const baseUrl = process.env.NEXTAUTH_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_API;
 
   // gettourdropdown
   const gettours = `${baseUrl}/api/payment/tour`;

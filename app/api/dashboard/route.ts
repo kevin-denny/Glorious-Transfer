@@ -5,6 +5,17 @@ import { formatToIST, SYSCONFIG } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
 interface DashboardRequest {
   current_month_only?: boolean; // Flag to switch between current month and all-time
 }

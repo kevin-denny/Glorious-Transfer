@@ -24,7 +24,7 @@ const nextConfig = {
     
     return config;
   },
-  // output: 'standalone', // optional; keeps it easy to deploy on Node or Docker
+  output: 'standalone', // optional; keeps it easy to deploy on Node or Docker
 };
 
 module.exports = nextConfig;

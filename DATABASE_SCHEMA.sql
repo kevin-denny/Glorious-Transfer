@@ -1,7 +1,7 @@
 -- Glorious Transfer MySQL Database Schema
 
-DROP DATABASE IF EXISTS glorious_transfer;
-CREATE DATABASE glorious_transfer CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- DROP DATABASE IF EXISTS glorious_transfer;
+-- CREATE DATABASE glorious_transfer CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE glorious_transfer;
 
 -- =============================================

@@ -104,13 +104,13 @@ export default function ToursPage() {
   const baseUrl = process.env.NEXT_PUBLIC_API;
 
   // For all tours
-  const gettours = `http://${baseUrl}/api/tours`;
+  const gettours = `https://${baseUrl}/api/tours`;
   // create tour
-  const createtour = `http://${baseUrl}/api/tours/create`;
+  const createtour = `https://${baseUrl}/api/tours/create`;
   // create tour
-  const activedrivers = `http://${baseUrl}/api/assign/drivers`;
+  const activedrivers = `https://${baseUrl}/api/assign/drivers`;
   // assign driver
-  const assigndrivers = `http://${baseUrl}/api/assign`;
+  const assigndrivers = `https://${baseUrl}/api/assign`;
 
   const [selectedRange, setSelectedRange] = useState(() => {
     const now = new Date();

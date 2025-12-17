@@ -119,12 +119,11 @@ export default function PaymentsPage() {
   const baseUrl = process.env.NEXT_PUBLIC_API;
 
   // gettourdropdown
-  const gettours = `http://${baseUrl}/api/payment/tour`;
+  const gettours = `https://${baseUrl}/api/payment/tour`;
   // get active tour
-  const activedrivers = `http://${baseUrl}/api/assign/drivers`;
+  const activedrivers = `https://${baseUrl}/api/assign/drivers`;
   // create payments
-  const createpayments = `http://${baseUrl}/api/payment`;
-
+  const createpayments = `https://${baseUrl}/api/payment`;
   // Tabs
   const [activeTab, setActiveTab] = useState("driver");
 

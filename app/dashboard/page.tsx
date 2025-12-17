@@ -69,7 +69,7 @@ export default function DashboardPage() {
 
   const [token, setToken] = useState<string | null>(null);
   const baseUrl = process.env.NEXT_PUBLIC_API;
-  const getstats = `http://${baseUrl}/api/dashboard`;
+  const getstats = `https://${baseUrl}/api/dashboard`;
 
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(
     null

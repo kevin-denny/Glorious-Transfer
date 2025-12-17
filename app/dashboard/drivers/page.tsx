@@ -71,12 +71,11 @@ export default function DriversPage() {
   const baseUrl = process.env.NEXT_PUBLIC_API;
 
   // For all drivers
-  const getdrivers = `http://${baseUrl}/api/drivers`;
+  const getdrivers = `https://${baseUrl}/api/drivers`;
   // update driver
-  const drivercall = `http://${baseUrl}/api/drivers`;
+  const drivercall = `https://${baseUrl}/api/drivers`;
   // create driver
-  const createdriver = `http://${baseUrl}/api/drivers/register`;
-
+  const createdriver = `https://${baseUrl}/api/drivers/register`;
   const [formData, setFormData] = useState({
     name: "",
     languages: "",

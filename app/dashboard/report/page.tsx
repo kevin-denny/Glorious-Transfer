@@ -50,7 +50,7 @@ export default function PaymentsPage() {
   const baseUrl = process.env.NEXT_PUBLIC_API;
 
   // gettourdropdown
-  const getreports = `http://${baseUrl}/api/report`;
+  const getreports = `https://${baseUrl}/api/report`;
 
   const [driverId, setDriverId] = useState("");
 

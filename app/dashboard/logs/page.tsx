@@ -45,7 +45,7 @@ export default function ActivityLogsPage() {
   const baseUrl = process.env.NEXT_PUBLIC_API;
 
   // For all drivers
-  const getlogs = `http://${baseUrl}/api/audit`;
+  const getlogs = `https://${baseUrl}/api/audit`;
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);

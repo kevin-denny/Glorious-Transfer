@@ -240,7 +240,7 @@ export default function DriversPage() {
         });
       } else {
         // Create new driver
-        response = await fetch(drivercall, {
+        response = await fetch(createdriver, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

@@ -14,6 +14,11 @@ BACKUP_FILE="$BACKUP_DIR/${DB_NAME}_backup_$TIMESTAMP.sql"
 LOG_FILE="$BACKUP_DIR/backup.log"
 RETENTION_DAYS=30  # Keep backups for 30 days
 
+# Advanced backup options (uncomment and modify as needed)
+# EXCLUDE_TABLES="temp_table1 temp_table2"  # Tables to exclude completely
+# STRUCTURE_ONLY_TABLES="large_log_table"   # Tables to backup structure only (no data)
+# DATA_ONLY_TABLES=""                       # Tables to backup data only (no structure)
+
 # Create backup directory if it doesn't exist
 mkdir -p "$BACKUP_DIR"
 
@@ -24,12 +29,27 @@ log_message() {
 
 log_message "Starting database backup for $DB_NAME"
 
-# Create database backup
-mysqldump -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" \
-    --single-transaction \
-    --routines \
-    --triggers \
-    "$DB_NAME" > "$BACKUP_FILE"
+# Build mysqldump command with options
+MYSQLDUMP_CMD="mysqldump -h $DB_HOST -P $DB_PORT -u $DB_USER -p$DB_PASSWORD"
+MYSQLDUMP_CMD="$MYSQLDUMP_CMD --single-transaction --routines --triggers"
+
+# Add table exclusions if specified
+if [ ! -z "$EXCLUDE_TABLES" ]; then
+    for table in $EXCLUDE_TABLES; do
+        MYSQLDUMP_CMD="$MYSQLDUMP_CMD --ignore-table=$DB_NAME.$table"
+    done
+    log_message "Excluding tables: $EXCLUDE_TABLES"
+fi
+
+# Create main backup
+$MYSQLDUMP_CMD "$DB_NAME" > "$BACKUP_FILE"
+
+# Handle structure-only tables if specified
+if [ ! -z "$STRUCTURE_ONLY_TABLES" ]; then
+    log_message "Adding structure-only tables: $STRUCTURE_ONLY_TABLES"
+    mysqldump -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" \
+        --no-data --routines --triggers "$DB_NAME" $STRUCTURE_ONLY_TABLES >> "$BACKUP_FILE"
+fi
 
 if [ $? -eq 0 ]; then
     # Compress the backup file

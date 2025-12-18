@@ -193,7 +193,7 @@ export default function PaymentsPage() {
 
         // Extract filename
         const contentDisposition = response.headers.get("Content-Disposition");
-        let filename = "tour_report.xlsx";
+        let filename = "driver_report.xlsx";
 
         if (contentDisposition) {
           const match = contentDisposition.match(/filename="(.+)"/);

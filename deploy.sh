@@ -3,7 +3,7 @@
 echo "Starting deployment..."
 
 # Pull latest code
-git pull origin main
+git pull origin delpoyment
 
 # Build and restart containers
 docker-compose down

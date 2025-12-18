@@ -15,13 +15,39 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   timezone: '+05:30', // Set timezone to IST
   waitForConnections: true,
-  connectionLimit: 20, // Increased from 10
-  queueLimit: 0, // Don't queue, fail fast
+  connectionLimit: 10,
+  queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
-  maxIdle: 10, // Maximum idle connections
-  idleTimeout: 60000, // Close idle connections after 60 seconds
+  multipleStatements: false,
 });
+
+// Pool connection error handling is done per connection
+
+// Graceful shutdown - only in Node.js environment
+if (typeof process !== 'undefined') {
+  process.on('SIGINT', async () => {
+    console.log('Closing database pool...');
+    try {
+      await pool.end();
+      console.log('Database pool closed.');
+    } catch (error) {
+      console.error('Error closing pool:', error);
+    }
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', async () => {
+    console.log('Closing database pool...');
+    try {
+      await pool.end();
+      console.log('Database pool closed.');
+    } catch (error) {
+      console.error('Error closing pool:', error);
+    }
+    process.exit(0);
+  });
+}
 
 export async function query(sql: string, params?: any[]) {
   let connection;
@@ -78,7 +104,7 @@ export async function getConnection() {
 
 // Transaction helper function
 export async function transaction<T>(
-  callback: (connection: mysql.PoolConnection) => Promise<T>
+  callback: (connection: any) => Promise<T>
 ): Promise<T> {
   const connection = await pool.getConnection();
   

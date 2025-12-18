@@ -6,9 +6,9 @@ echo "Starting deployment..."
 git pull origin delpoyment
 
 # Build and restart containers
-docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
+docker compose down
+docker compose build --no-cache
+docker compose up -d
 
 echo "Deployment completed!"
 echo "App should be running on port 3000"

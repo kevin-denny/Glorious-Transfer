@@ -475,6 +475,7 @@ export default function DriversPage() {
                         <SelectValue placeholder="Select vehicle type" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="Car">Car</SelectItem>
                         <SelectItem value="Sedan">Sedan</SelectItem>
                         <SelectItem value="SUV">SUV</SelectItem>
                         <SelectItem value="Van">Van</SelectItem>

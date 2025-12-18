@@ -6,7 +6,7 @@ DB_PORT="3306"
 DB_USER="root"
 DB_PASSWORD="root"
 DB_NAME="glorious_transfer"
-SCHEMA_FILE="DATABASE_SCHEMA.sql"
+SCHEMA_FILE="../DATABASE_SCHEMA.sql"
 
 echo "Creating database: $DB_NAME"
 

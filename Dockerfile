@@ -35,15 +35,23 @@ ENV DB_PASSWORD=$DB_PASSWORD
 ENV DB_NAME=$DB_NAME
 ENV JWT_SECRET=$JWT_SECRET
 
+# Add network timeout and retry configuration
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS="--max_old_space_size=4096"
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build the app
-RUN \
-  if [ -f yarn.lock ]; then yarn build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  elif [ -f pnpm-lock.yaml ]; then pnpm build; \
-  else echo "No package manager found." && exit 1; \
+RUN set -e; \
+  if [ -f yarn.lock ]; then \
+    yarn build --network-timeout 300000; \
+  elif [ -f package-lock.json ]; then \
+    npm run build --timeout=300000; \
+  elif [ -f pnpm-lock.yaml ]; then \
+    pnpm build --network-timeout 300000; \
+  else \
+    echo "No package manager found." && exit 1; \
   fi
 
 # Production image, copy all the files and run next

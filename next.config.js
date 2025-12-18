@@ -4,6 +4,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: { unoptimized: true },
+  optimizeFonts: false,
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Don't resolve these modules on client-side

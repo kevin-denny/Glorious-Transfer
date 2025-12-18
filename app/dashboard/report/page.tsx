@@ -123,7 +123,14 @@ export default function PaymentsPage() {
     if (selectedStatus?.length > 0 && token && profile) {
       fetchDrivers();
     }
-  }, [selectedRange, selectedStatus, pageDriver, pageSizeDriver, token, profile]);
+  }, [
+    selectedRange,
+    selectedStatus,
+    pageDriver,
+    pageSizeDriver,
+    token,
+    profile,
+  ]);
 
   useEffect(() => {
     if (selectedAgents?.length > 0 && token && profile) {
@@ -152,7 +159,6 @@ export default function PaymentsPage() {
     }
     setLoading(true);
     try {
-
       const response = await fetch(`${getreports}/driver`, {
         method: "POST",
         headers: {
@@ -251,7 +257,6 @@ export default function PaymentsPage() {
     }
     setLoading(true);
     try {
-
       const response = await fetch(`${getreports}/tour`, {
         method: "POST",
         headers: {
@@ -650,12 +655,20 @@ export default function PaymentsPage() {
                   onClick={async () => {
                     const result = await Swal.fire({
                       title: "Are you sure?",
-                      text: "Do you really want to download all?",
+                      text: "Do you really want to download?",
                       icon: "warning",
                       showCancelButton: true,
                       confirmButtonText: "Yes, Download!",
                       cancelButtonText: "Cancel",
+                      customClass: {
+                        confirmButton: "swal-confirm-btn",
+                        cancelButton: "swal-cancel-btn",
+                        popup:
+                          "dark:bg-[hsl(var(--background))] dark:text-[hsl(var(--foreground))]",
+                      },
                       buttonsStyling: false,
+                      background: "hsl(var(--background))",
+                      color: "hsl(var(--foreground))",
                     });
 
                     if (!result.isConfirmed) return;

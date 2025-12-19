@@ -1229,9 +1229,9 @@ Thank you!
 Customer Name: ${selectedTour.customer_name}
 Pax: ${selectedTour.pax}
 Contact Details: ${selectedTour.contact_details}
-Pick Up Date-Time: ${selectedTour.pickup_datetime ?? ""}
-Arrival Date-Time: ${selectedTour.arrival_datetime ?? ""}
-Departure Time: ${selectedTour.departure_datetime ?? ""}
+Pick Up Date-Time: ${selectedTour.pickup_datetime ? formatDateTime(selectedTour.pickup_datetime): ""}
+Arrival Date-Time: ${selectedTour.arrival_datetime ? formatDateTime(selectedTour.arrival_datetime): ""}
+Departure Time: ${selectedTour.departure_datetime ? formatDateTime(selectedTour.departure_datetime): ""}
 Flight Number: ${selectedTour.flight_no ?? ""}
 Pickup: ${selectedTour.pickup ?? ""}
 Drop off: ${selectedTour.destination ?? ""}
@@ -1354,9 +1354,9 @@ Driver Name: ${driver?.name ?? ""}
 Driver Contact: ${driver?.phone ?? ""}
 Vehicle Type: ${driver?.vehicle_type ?? ""}
 Vehicle Number: ${driver?.vehicle_number ?? ""}
-Pick Up Date-Time: ${selectedTour.pickup_datetime ?? ""}
-Arrival Date-Time: ${selectedTour.arrival_datetime ?? ""}
-Departure Time: ${selectedTour.departure_datetime ?? ""}
+Pick Up Date-Time: ${selectedTour.pickup_datetime ? formatDateTime(selectedTour.pickup_datetime): ""}
+Arrival Date-Time: ${selectedTour.arrival_datetime ? formatDateTime(selectedTour.arrival_datetime): ""}
+Departure Time: ${selectedTour.departure_datetime ? formatDateTime(selectedTour.departure_datetime): ""}
 Pickup: ${selectedTour.pickup ?? ""}
 Drop off: ${selectedTour.destination ?? ""}
 Remarks:${selectedTour.remarks ?? ""}

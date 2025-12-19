@@ -2,7 +2,7 @@ import http from 'http';
 import next from 'next';
 
 const dev = process.env.NODE_ENV !== 'production';
-const port = process.env.PORT; // ✅ MUST use dynamic port from cPanel
+const port = process.env.PORT;
 
 const app = next({ dev });
 const handle = app.getRequestHandler();
@@ -16,7 +16,7 @@ async function startServer() {
     });
 
     server.listen(port, () => {
-      console.log('✅ Next.js app running on port ${port}');
+      console.log('Next.js app running on port ${port}');
     });
 
     // Optional: handle errors

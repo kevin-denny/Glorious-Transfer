@@ -124,7 +124,22 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ message: 'Driver not found' }, { status: 404 });
     }
 
-    const result: any = await query(`DELETE FROM drivers WHERE id = ?`, [params.id]);
+    // check for dependencies (e.g., assigned trips) before deletion
+    const assignedTrips = await query(
+      `SELECT * FROM assignments WHERE driver_id = ? AND status = ?`,
+      [params.id, SYSCONFIG.ASSIGNMENT_ONGOING]
+    ) as any[];
+
+    if (assignedTrips.length > 0) {
+      return NextResponse.json(
+        { message: 'Cannot delete driver with assigned or in-progress trips' },
+        { status: 400 }
+      );
+    }
+
+    // Proceed to delete the driver
+
+    const result = await query(`DELETE FROM drivers WHERE id = ?`, [params.id]) as any;
 
     // Check if deletion was successful
     if (result.affectedRows === 0) {

@@ -5,6 +5,11 @@ const nextConfig = {
   },
   images: { unoptimized: true },
   optimizeFonts: false,
+  experimental: {
+    serverComponentsExternalPackages: ['mysql2'],
+    // Disable worker threads in production Docker
+    workerThreads: false,
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Don't resolve these modules on client-side

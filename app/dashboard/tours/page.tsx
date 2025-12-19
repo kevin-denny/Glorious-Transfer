@@ -42,7 +42,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { agentsList, currencyList } from "@/lib/utils";
+import { agentsList, currencyList, formatDateTime } from "@/lib/utils";
 
 interface Tour {
   id: string;
@@ -1229,8 +1229,9 @@ Thank you!
 Customer Name: ${selectedTour.customer_name}
 Pax: ${selectedTour.pax}
 Contact Details: ${selectedTour.contact_details}
-Arrival Date-Time: ${selectedTour.arrival_datetime}
-Departure Time: ${selectedTour.departure_datetime}
+Pick Up Date-Time: ${selectedTour.pickup_datetime ?? ""}
+Arrival Date-Time: ${selectedTour.arrival_datetime ?? ""}
+Departure Time: ${selectedTour.departure_datetime ?? ""}
 Flight Number: ${selectedTour.flight_no ?? ""}
 Pickup: ${selectedTour.pickup ?? ""}
 Drop off: ${selectedTour.destination ?? ""}
@@ -1261,7 +1262,9 @@ Attention:
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label className="text-gray-500">Booking Date</Label>
-                  <p className="font-medium">{selectedTour.booking_date}</p>
+                  <p className="font-medium">
+                    {formatDateTime(selectedTour.booking_date)}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-gray-500">Customer Name</Label>
@@ -1292,7 +1295,7 @@ Attention:
                     <div>
                       <Label className="text-gray-500">Arrival Date-Time</Label>
                       <p className="font-medium">
-                        {selectedTour.arrival_datetime}
+                        {formatDateTime(selectedTour.arrival_datetime)}
                       </p>
                     </div>
                     <div>
@@ -1300,7 +1303,7 @@ Attention:
                         Departure Date-Time
                       </Label>
                       <p className="font-medium">
-                        {selectedTour.departure_datetime}
+                        {formatDateTime(selectedTour.departure_datetime)}
                       </p>
                     </div>
                   </>
@@ -1310,7 +1313,7 @@ Attention:
                   <div>
                     <Label className="text-gray-500">Pickup Date & Time</Label>
                     <p className="font-medium">
-                      {selectedTour.pickup_datetime}
+                      {formatDateTime(selectedTour.pickup_datetime)}
                     </p>
                   </div>
                 )}
@@ -1351,10 +1354,12 @@ Driver Name: ${driver?.name ?? ""}
 Driver Contact: ${driver?.phone ?? ""}
 Vehicle Type: ${driver?.vehicle_type ?? ""}
 Vehicle Number: ${driver?.vehicle_number ?? ""}
-Arrival Date-Time: ${selectedTour.arrival_datetime}
-Departure Time: ${selectedTour.departure_datetime}
+Pick Up Date-Time: ${selectedTour.pickup_datetime ?? ""}
+Arrival Date-Time: ${selectedTour.arrival_datetime ?? ""}
+Departure Time: ${selectedTour.departure_datetime ?? ""}
 Pickup: ${selectedTour.pickup ?? ""}
 Drop off: ${selectedTour.destination ?? ""}
+Remarks:${selectedTour.remarks ?? ""}
           `.trim();
 
                                 navigator.clipboard
@@ -1394,11 +1399,15 @@ Drop off: ${selectedTour.destination ?? ""}
 
                 <div>
                   <Label className="text-gray-500">Created Time</Label>
-                  <p className="font-medium">{selectedTour.created_at}</p>
+                  <p className="font-medium">
+                    {formatDateTime(selectedTour.created_at)}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-gray-500">Last Updated Time</Label>
-                  <p className="font-medium">{selectedTour.updated_at}</p>
+                  <p className="font-medium">
+                    {formatDateTime(selectedTour.updated_at)}
+                  </p>
                 </div>
               </div>
             </div>

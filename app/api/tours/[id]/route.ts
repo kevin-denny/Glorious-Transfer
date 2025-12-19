@@ -60,7 +60,7 @@ export async function GET(
 
     if (!tour) {
       return NextResponse.json(
-        { message: 'Tour not found' },
+        { message: 'Trip not found' },
         { status: 404 }
       );
     }
@@ -109,9 +109,9 @@ export async function GET(
     return NextResponse.json({ tour: formattedTour });
 
   } catch (error: any) {
-    console.error('Get tour error:', error);
+    console.error('Get trip error:', error);
     return NextResponse.json(
-      { message: 'Failed to get tour', error: error.message },
+      { message: 'Failed to get trip', error: error.message },
       { status: 500 }
     );
   }
@@ -376,14 +376,14 @@ export async function PUT(
     });
 
     return NextResponse.json({
-      message: 'Tour updated successfully',
+      message: 'Trip updated successfully',
       tour: formattedTour
     });
 
   } catch (error: any) {
-    console.error('Update tour error:', error);
+    console.error('Update trip error:', error);
     return NextResponse.json(
-      { message: 'Failed to update tour', error: error.message },
+      { message: 'Failed to update trip', error: error.message },
       { status: 500 }
     );
   }
@@ -434,7 +434,7 @@ export async function DELETE(
     if (assignment) {
       return NextResponse.json(
         { 
-          message: 'Cannot delete tour: tour is currently assigned to a driver. Please unassign first.' 
+          message: 'Cannot delete trip: trip is currently assigned to a driver. Please unassign first.' 
         },
         { status: 409 }
       );
@@ -454,7 +454,7 @@ export async function DELETE(
     });
 
     return NextResponse.json({
-      message: 'Tour deleted successfully',
+      message: 'Trip deleted successfully',
       deletedTour: {
         id: tourId,
         customer_name: tour.customer_name,
@@ -463,9 +463,9 @@ export async function DELETE(
     });
 
   } catch (error: any) {
-    console.error('Delete tour error:', error);
+    console.error('Delete trip error:', error);
     return NextResponse.json(
-      { message: 'Failed to delete tour', error: error.message },
+      { message: 'Failed to delete trip', error: error.message },
       { status: 500 }
     );
   }

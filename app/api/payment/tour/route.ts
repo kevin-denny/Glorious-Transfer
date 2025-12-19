@@ -190,9 +190,9 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Tour payments error:', error);
+    console.error('Trip payments error:', error);
     return NextResponse.json(
-      { message: 'Failed to get tour payments', error: error.message },
+      { message: 'Failed to get trip payments', error: error.message },
       { status: 500 }
     );
   }
@@ -237,9 +237,9 @@ export async function GET(request: NextRequest) {
       });
   
     } catch (error: any) {
-      console.error('Tours dropdown error:', error);
+      console.error('Trips dropdown error:', error);
       return NextResponse.json(
-        { message: 'Failed to get tours dropdown', error: error.message },
+        { message: 'Failed to get trips dropdown', error: error.message },
         { status: 500 }
       );
     }

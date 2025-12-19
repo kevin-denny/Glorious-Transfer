@@ -202,13 +202,13 @@ export default function DashboardPage() {
 
         {/* Main Stats Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Tours Overview */}
+          {/* Trips Overview */}
           {["operations", "administrator"].includes(profile.role) && (
             <Card className="col-span-1">
               <CardHeader className="flex flex-row items-center justify-between pb-3">
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-blue-600" />
-                  Tours
+                  Trips
                 </CardTitle>
                 <Badge variant="outline" className="text-xl font-bold">
                   {stats.tours.total}
@@ -373,7 +373,7 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-green-600" />
-                  Tour Payments
+                  Trip Payments
                   <Badge variant="secondary">
                     {stats.payments.tour_payments.total}
                   </Badge>
@@ -429,7 +429,7 @@ export default function DashboardPage() {
                   <Car className="h-8 w-8 text-blue-600" />
                   <div className="text-left">
                     <p className="font-medium text-gray-900">Manage Drivers</p>
-                    <p className="text-sm text-gray-500">Add or edit drivers</p>
+                    <p className="text-sm text-gray-500">Add or Edit drivers</p>
                   </div>
                 </button>
               )}
@@ -440,9 +440,9 @@ export default function DashboardPage() {
                 >
                   <Calendar className="h-8 w-8 text-green-600" />
                   <div className="text-left">
-                    <p className="font-medium text-gray-900">Manage Tours</p>
+                    <p className="font-medium text-gray-900">Manage Trips</p>
                     <p className="text-sm text-gray-500">
-                      Schedule and assign tours
+                      Schedule and assign trips
                     </p>
                   </div>
                 </button>

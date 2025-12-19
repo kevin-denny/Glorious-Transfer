@@ -186,16 +186,16 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message: "Tour created successfully",
+        message: "Trip created successfully",
         tour_id: tour.id,
       },
       { status: 201 }
     );
   } catch (error: any) {
-    console.error("Tour creation error:", error);
+    console.error("Trip creation error:", error);
 
     return NextResponse.json(
-      { message: "Failed to create tour" },
+      { message: "Failed to create trip" },
       { status: 500 }
     );
   }

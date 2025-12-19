@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     let tours: any[] = [];
     // Get paginated tours with assignment details
-    if(startDate && endDate && searchTerm && searchTerm.trim().length > 0) {
+    if (startDate && endDate && searchTerm && searchTerm.trim().length > 0) {
       // Filter by date with pickup_datetime priority, fallback to arrival_datetime
       const dateFilterQuery = `
         SELECT 
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       const queryResult = await query(dateFilterQuery, [startDate, endDate, startDate, endDate, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`]);
       tours = Array.isArray(queryResult) ? queryResult : [];
       total = totalDateResult?.total || 0;
-    } else if(startDate && endDate) {
+    } else if (startDate && endDate) {
       // Filter by date with pickup_datetime priority, fallback to arrival_datetime
       const dateFilterQuery = `
         SELECT 
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       const queryResult = await query(dateFilterQuery, [startDate, endDate, startDate, endDate]);
       tours = Array.isArray(queryResult) ? queryResult : [];
       total = totalDateResult?.total || 0;
-    } else if(searchTerm && searchTerm.trim().length > 0) {
+    } else if (searchTerm && searchTerm.trim().length > 0) {
       const queryResult = await query(`
         SELECT 
           t.*,
@@ -204,17 +204,17 @@ export async function POST(request: NextRequest) {
       complaints: tour.complaints,
       assignment: tour.assignment_id
         ? {
-            id: tour.assignment_id,
-            assigned_at: formatToIST(tour.assigned_at),
-            assigned_by: tour.assigned_by,
-            driver: {
-              id: tour.driver_id,
-              name: tour.driver_name,
-              phone: tour.driver_number,
-              vehicle_type: tour.driver_vehicle_type,
-              vehicle_number: tour.driver_vehicle_plate,
-            },
-          }
+          id: tour.assignment_id,
+          assigned_at: formatToIST(tour.assigned_at),
+          assigned_by: tour.assigned_by,
+          driver: {
+            id: tour.driver_id,
+            name: tour.driver_name,
+            phone: tour.driver_number,
+            vehicle_type: tour.driver_vehicle_type,
+            vehicle_number: tour.driver_vehicle_plate,
+          },
+        }
         : null,
     })) : [];
 
@@ -244,7 +244,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('Tours fetch error:', error);
+    console.error('Trips fetch error:', error);
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }

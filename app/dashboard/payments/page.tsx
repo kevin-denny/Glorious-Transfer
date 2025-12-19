@@ -39,7 +39,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/lib/activity-logger";
-import { agentsList, currencyList, thousandSeparator } from "@/lib/utils";
+import {
+  agentsList,
+  currencyList,
+  formatDateTime,
+  thousandSeparator,
+} from "@/lib/utils";
 import DataTable from "@/components/ui/DataTable";
 import {
   DropdownMenu,
@@ -107,6 +112,7 @@ interface Tour {
   paid_amount: string;
   currency: string;
   value: string;
+  created_at: string;
   label: string;
   status: string;
 }
@@ -290,7 +296,6 @@ export default function PaymentsPage() {
     }
     setLoading(true);
     try {
-
       const response = await fetch(`${createpayments}/driver`, {
         method: "POST",
         headers: {
@@ -331,7 +336,6 @@ export default function PaymentsPage() {
     }
     setLoading(true);
     try {
-
       const response = await fetch(`${createpayments}/tour`, {
         method: "POST",
         headers: {
@@ -372,7 +376,6 @@ export default function PaymentsPage() {
       return;
     }
     try {
-
       const response = await fetch(`${createpayments}/summary`, {
         method: "POST",
         headers: {
@@ -405,7 +408,6 @@ export default function PaymentsPage() {
       return;
     }
     try {
-
       const response = await fetch(`${activedrivers}`, {
         method: "GET",
         headers: {
@@ -434,7 +436,6 @@ export default function PaymentsPage() {
       return;
     }
     try {
-
       const response = await fetch(`${gettours}`, {
         method: "GET",
         headers: {
@@ -634,6 +635,7 @@ export default function PaymentsPage() {
     {
       key: "created_at",
       label: "Payment Date",
+      render: (row: Tour) => `${formatDateTime(row.created_at)}`,
     },
     {
       key: "status",
@@ -667,6 +669,7 @@ export default function PaymentsPage() {
     {
       key: "created_at",
       label: "Payment Date",
+      render: (row: Tour) => `${formatDateTime(row.created_at)}`,
     },
     {
       key: "status",
@@ -1051,7 +1054,7 @@ export default function PaymentsPage() {
                           Created Date-Time
                         </Label>
                         <p className="font-medium">
-                          {driverPayment.created_at}
+                          {formatDateTime(driverPayment.created_at)}
                         </p>
                       </div>
                       <div>
@@ -1059,7 +1062,7 @@ export default function PaymentsPage() {
                           Update Date-Time
                         </Label>
                         <p className="font-medium">
-                          {driverPayment.updated_at}
+                          {formatDateTime(driverPayment.updated_at)}
                         </p>
                       </div>
                     </div>
@@ -1256,13 +1259,17 @@ export default function PaymentsPage() {
                         <Label className="text-gray-500">
                           Created Date-Time
                         </Label>
-                        <p className="font-medium">{tourPayment.created_at}</p>
+                        <p className="font-medium">
+                          {formatDateTime(tourPayment.created_at)}
+                        </p>
                       </div>
                       <div>
                         <Label className="text-gray-500">
                           Update Date-Time
                         </Label>
-                        <p className="font-medium">{tourPayment.updated_at}</p>
+                        <p className="font-medium">
+                          {formatDateTime(tourPayment.updated_at)}
+                        </p>
                       </div>
                     </div>
                   </div>

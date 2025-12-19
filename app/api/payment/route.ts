@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
 
     if (!tour) {
       return NextResponse.json(
-        { message: 'Tour not found' },
+        { message: 'Trip not found' },
         { status: 404 }
       );
     }

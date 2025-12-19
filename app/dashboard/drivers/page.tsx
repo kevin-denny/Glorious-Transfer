@@ -27,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/lib/activity-logger";
 import Swal from "sweetalert2";
 import DataTable from "@/components/ui/DataTable";
+import { formatDateTime } from "@/lib/utils";
 
 interface Driver {
   id: string;
@@ -628,11 +629,11 @@ export default function DriversPage() {
                 </div>
                 <div>
                   <Label className="text-gray-500">Created Time</Label>
-                  <p className="font-medium">{selectedDriver.created_at}</p>
+                  <p className="font-medium">{formatDateTime(selectedDriver.created_at)}</p>
                 </div>
                 <div>
                   <Label className="text-gray-500">Last Updated Time</Label>
-                  <p className="font-medium">{selectedDriver.updated_at}</p>
+                  <p className="font-medium">{formatDateTime(selectedDriver.updated_at)}</p>
                 </div>
                 <div>
                   <Label className="text-gray-500">Total Rides</Label>

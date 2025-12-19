@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { formatDateTime } from "@/lib/utils";
 
 interface ActivityLog {
   id: string;
@@ -83,7 +84,6 @@ export default function ActivityLogsPage() {
     }
     setLoading(true);
     try {
-
       const response = await fetch(`${getlogs}`, {
         method: "POST",
         headers: {
@@ -228,7 +228,9 @@ export default function ActivityLogsPage() {
                 </div>
                 <div>
                   <Label className="text-gray-500">Created Time</Label>
-                  <p className="font-medium">{selectedLog.created_at}</p>
+                  <p className="font-medium">
+                    {formatDateTime(selectedLog.created_at)}
+                  </p>
                 </div>
               </div>
             </div>

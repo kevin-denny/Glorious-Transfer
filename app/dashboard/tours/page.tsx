@@ -68,6 +68,7 @@ interface Tour {
   created_at: string;
   updated_at: string;
   assigned_driver_id: string | null;
+  driver_id: string | null;
   assignment?: { driver: Driver; driver_number: string } | null;
 }
 interface Assign {
@@ -83,6 +84,7 @@ interface Driver {
   phone: string;
   vehicle_type: string;
   vehicle_number: string;
+  id: string | null;
 }
 
 export default function ToursPage() {
@@ -142,6 +144,7 @@ export default function ToursPage() {
     flight_no: "",
     remarks: "",
     complaints: "",
+    driver_id: "",
     status: "Pending",
   });
 
@@ -200,7 +203,6 @@ export default function ToursPage() {
     }
     setLoading(true);
     try {
-
       const response = await fetch(`${gettours}`, {
         method: "POST",
         headers: {
@@ -320,6 +322,7 @@ export default function ToursPage() {
             remarks: formData.remarks,
             complaints: formData.complaints,
             status: formData.status,
+            driver_id: formData?.driver_id,
             created_by: profile?.id,
           }),
         });
@@ -472,6 +475,7 @@ export default function ToursPage() {
       flight_no: "",
       remarks: "",
       complaints: "",
+      driver_id: "",
       status: "Pending",
     });
     setSelectedTour(null);
@@ -504,6 +508,7 @@ export default function ToursPage() {
       remarks: tour.remarks || "",
       complaints: tour.complaints || "",
       status: tour.status,
+      driver_id: tour?.assignment?.driver?.id || "",
     });
     setDialogOpen(true);
     setAssignData({

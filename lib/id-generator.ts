@@ -1,5 +1,5 @@
 import 'server-only';
-import { queryOne } from './db';
+import { queryOne, transaction } from './db';
 
 // Generate unique user ID with format U123456
 export const generateUniqueUserId = async (): Promise<string> => {
@@ -17,119 +17,101 @@ export const generateUniqueUserId = async (): Promise<string> => {
   return userId;
 };
 
-// // Generate unique driver ID with format D123456
-// export const generateUniqueDriverId = async (): Promise<string> => {
-//   let driverId: string;
-//   let exists: any;
-
-//   do {
-//     const randomNumber = Math.floor(100000 + Math.random() * 900000); // Generate 6-digit number
-//     driverId = `D${randomNumber}`;
-    
-//     // Check if ID exists in database
-//     exists = await queryOne('SELECT id FROM drivers WHERE id = ?', [driverId]);
-//   } while (exists);
-
-//   return driverId;
-// };
-
-// Generate unique driver ID with sequential format D1, D2, D3, etc.
+// Generate unique driver ID with transaction-safe sequential format GTD000001, GTD000002, GTD000003, etc.
 export const generateUniqueDriverId = async (): Promise<string> => {
-  try {
-    // Get the highest existing driver ID number
-    const result = await queryOne(`
-      SELECT MAX(CAST(SUBSTRING(id, 2) AS UNSIGNED)) as max_number 
-      FROM drivers 
-      WHERE id REGEXP '^GTD[0-9]+$'
-    `);
+  return await transaction(async (connection) => {
+    // Lock the table to prevent race conditions
+    await connection.execute('LOCK TABLES drivers WRITE');
     
-    // Calculate next sequential number
-    const maxNumber = result?.max_number || 0;
-    const nextNumber = maxNumber + 1;
-    
-    // Generate new driver ID
-    const driverId = `GTD${nextNumber}`;
-    
-    // Double-check that this ID doesn't exist (safety check)
-    const exists = await queryOne('SELECT id FROM drivers WHERE id = ?', [driverId]);
-    
-    if (exists) {
-      // If somehow it exists, try the next number
-      return `GTD${nextNumber + 1}`;
+    try {
+      // Get the highest existing driver ID number with explicit lock
+      const result = await connection.execute(`
+        SELECT MAX(CAST(SUBSTRING(id, 4) AS UNSIGNED)) as max_number 
+        FROM drivers 
+        WHERE id REGEXP '^GTD[0-9]+$'
+        FOR UPDATE
+      `);
+      
+      // Calculate next sequential number
+      const maxNumber = result[0][0]?.max_number || 0;
+      const nextNumber = maxNumber + 1;
+      
+      // Generate new driver ID with 6-digit zero padding
+      const driverId = `GTD${nextNumber.toString().padStart(6, '0')}`;
+      
+      // Verify the ID doesn't exist (additional safety)
+      const existsResult = await connection.execute('SELECT id FROM drivers WHERE id = ? FOR UPDATE', [driverId]);
+      
+      if (existsResult[0].length > 0) {
+        throw new Error('Generated ID already exists');
+      }
+      
+      return driverId;
+    } finally {
+      // Always unlock tables
+      await connection.execute('UNLOCK TABLES');
     }
-    
-    return driverId;
-  } catch (error) {
-    console.error('Error generating sequential driver ID:', error);
-    
-    // Fallback to timestamp-based ID if there's an error
-    const timestamp = Date.now().toString().slice(-6);
-    return `GTD${timestamp}`;
-  }
+  });
 };
 
-// // Generate unique tour ID with format T123456
-// export const generateUniqueTourId = async (): Promise<string> => {
-//   let tourId: string;
-//   let exists: any;
-
-//   do {
-//     const randomNumber = Math.floor(100000 + Math.random() * 900000); // Generate 6-digit number
-//     tourId = `T${randomNumber}`;
-    
-//     // Check if ID exists in database
-//     exists = await queryOne('SELECT id FROM tours WHERE id = ?', [tourId]);
-//   } while (exists);
-
-//   return tourId;
-// };
-
-// Generate unique tour ID with sequential format T1, T2, T3, etc.
+// Generate unique tour ID with transaction-safe sequential format GT000001, GT000002, GT000003, etc.
 export const generateUniqueTourId = async (): Promise<string> => {
-  try {
-    // Get the highest existing tour ID number
-    const result = await queryOne(`
-      SELECT MAX(CAST(SUBSTRING(id, 2) AS UNSIGNED)) as max_number 
-      FROM tours 
-      WHERE id REGEXP '^GT[0-9]+$'
-    `);
+  return await transaction(async (connection) => {
+    // Lock the table to prevent race conditions
+    await connection.execute('LOCK TABLES tours WRITE');
     
-    // Calculate next sequential number
-    const maxNumber = result?.max_number || 0;
-    const nextNumber = maxNumber + 1;
-    
-    // Generate new tour ID
-    const tourId = `GT${nextNumber}`;
-    
-    // Double-check that this ID doesn't exist (safety check)
-    const exists = await queryOne('SELECT id FROM tours WHERE id = ?', [tourId]);
-    
-    if (exists) {
-      // If somehow it exists, try the next number
-      return `GT${nextNumber + 1}`;
+    try {
+      // Get the highest existing tour ID number with explicit lock
+      const result = await connection.execute(`
+        SELECT MAX(CAST(SUBSTRING(id, 3) AS UNSIGNED)) as max_number 
+        FROM tours 
+        WHERE id REGEXP '^GT[0-9]+$'
+        FOR UPDATE
+      `);
+      
+      // Calculate next sequential number
+      const maxNumber = result[0][0]?.max_number || 0;
+      const nextNumber = maxNumber + 1;
+      
+      // Generate new tour ID with 6-digit zero padding
+      const tourId = `GT${nextNumber.toString().padStart(6, '0')}`;
+      
+      // Verify the ID doesn't exist (additional safety)
+      const existsResult = await connection.execute('SELECT id FROM tours WHERE id = ? FOR UPDATE', [tourId]);
+      
+      if (existsResult[0].length > 0) {
+        throw new Error('Generated ID already exists');
+      }
+      
+      return tourId;
+    } finally {
+      // Always unlock tables
+      await connection.execute('UNLOCK TABLES');
     }
-    
-    return tourId;
-  } catch (error) {
-    console.error('Error generating sequential tour ID:', error);
-    
-    // Fallback to timestamp-based ID if there's an error
-    const timestamp = Date.now().toString().slice(-6);
-    return `GT${timestamp}`;
-  }
+  });
 };
 
 // Generate unique payment ID with format P123456
 export const generateUniquePaymentId = async (): Promise<string> => {
   let paymentId: string;
   let exists: any;
+  let attempts = 0;
+  const maxAttempts = 10;
 
   do {
-    const randomNumber = Math.floor(100000 + Math.random() * 900000); // Generate 6-digit number
+    if (attempts >= maxAttempts) {
+      // If we've tried too many times, use a timestamp-based approach
+      const timestamp = Date.now().toString();
+      paymentId = `P${timestamp.slice(-6)}`;
+      break;
+    }
+    
+    const randomNumber = Math.floor(100000 + Math.random() * 900000);
     paymentId = `P${randomNumber}`;
     
     // Check if ID exists in database
     exists = await queryOne('SELECT id FROM payments WHERE id = ?', [paymentId]);
+    attempts++;
   } while (exists);
 
   return paymentId;
@@ -139,13 +121,23 @@ export const generateUniquePaymentId = async (): Promise<string> => {
 export const generateUniqueAssignmentId = async (): Promise<string> => {
   let assignmentId: string;
   let exists: any;
+  let attempts = 0;
+  const maxAttempts = 10;
 
   do {
-    const randomNumber = Math.floor(100000 + Math.random() * 900000); // Generate 6-digit number
+    if (attempts >= maxAttempts) {
+      // If we've tried too many times, use a timestamp-based approach
+      const timestamp = Date.now().toString();
+      assignmentId = `A${timestamp.slice(-6)}`;
+      break;
+    }
+    
+    const randomNumber = Math.floor(100000 + Math.random() * 900000);
     assignmentId = `A${randomNumber}`;
     
     // Check if ID exists in database
     exists = await queryOne('SELECT id FROM assignments WHERE id = ?', [assignmentId]);
+    attempts++;
   } while (exists);
 
   return assignmentId;

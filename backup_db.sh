@@ -8,7 +8,7 @@ DB_PASSWORD="root"
 DB_NAME="glorious_transfer"
 
 # Backup configuration
-BACKUP_DIR="./backups"
+BACKUP_DIR="/var/www/backups"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_FILE="$BACKUP_DIR/${DB_NAME}_backup_$TIMESTAMP.sql"
 LOG_FILE="$BACKUP_DIR/backup.log"

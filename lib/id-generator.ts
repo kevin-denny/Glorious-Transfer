@@ -20,8 +20,8 @@ export const generateUniqueUserId = async (): Promise<string> => {
 // Generate unique driver ID with transaction-safe sequential format GTD000001, GTD000002, GTD000003, etc.
 export const generateUniqueDriverId = async (): Promise<string> => {
   return await transaction(async (connection) => {
-    // Lock the table to prevent race conditions
-    await connection.execute('LOCK TABLES drivers WRITE');
+    // Lock the table to prevent race conditions (use query instead of execute for LOCK TABLES)
+    await connection.query('LOCK TABLES drivers WRITE');
     
     try {
       // Get the highest existing driver ID number with explicit lock
@@ -48,8 +48,8 @@ export const generateUniqueDriverId = async (): Promise<string> => {
       
       return driverId;
     } finally {
-      // Always unlock tables
-      await connection.execute('UNLOCK TABLES');
+      // Always unlock tables (use query instead of execute for UNLOCK TABLES)
+      await connection.query('UNLOCK TABLES');
     }
   });
 };
@@ -57,8 +57,8 @@ export const generateUniqueDriverId = async (): Promise<string> => {
 // Generate unique tour ID with transaction-safe sequential format GT000001, GT000002, GT000003, etc.
 export const generateUniqueTourId = async (): Promise<string> => {
   return await transaction(async (connection) => {
-    // Lock the table to prevent race conditions
-    await connection.execute('LOCK TABLES tours WRITE');
+    // Lock the table to prevent race conditions (use query instead of execute for LOCK TABLES)
+    await connection.query('LOCK TABLES tours WRITE');
     
     try {
       // Get the highest existing tour ID number with explicit lock
@@ -85,8 +85,8 @@ export const generateUniqueTourId = async (): Promise<string> => {
       
       return tourId;
     } finally {
-      // Always unlock tables
-      await connection.execute('UNLOCK TABLES');
+      // Always unlock tables (use query instead of execute for UNLOCK TABLES)
+      await connection.query('UNLOCK TABLES');
     }
   });
 };

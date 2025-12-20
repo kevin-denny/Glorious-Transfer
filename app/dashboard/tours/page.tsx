@@ -620,6 +620,10 @@ export default function ToursPage() {
       render: (row: Tour) => `${formatDateTime(row.booking_date)}`,
     },
     {
+      key: "category",
+      label: "Trip Type",
+    },
+    {
       key: "agent",
       label: "Agent",
     },

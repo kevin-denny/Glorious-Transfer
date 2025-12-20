@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
-import { formatToIST, SYSCONFIG } from '@/lib/utils';
+import { formatToIST, formatToISTDDMMYYYY, SYSCONFIG } from '@/lib/utils';
 import { AuditLogger } from '@/lib/activity-logger.server';
 import * as XLSX from 'xlsx';
 
@@ -429,7 +429,9 @@ export async function POST(request: NextRequest) {
           'Pick Up': report.pick_up,
           'Drop Off': report.drop_off,
           'Passenger Name': report.passenger_name,
-          'Transfer Date': report.pickup_datetime,
+          'Transfer Date': report.pickup_datetime && report.pickup_datetime !== '-' 
+            ? formatToISTDDMMYYYY(report.pickup_datetime) 
+            : report.pickup_datetime,
           'Amount': report.amount,
           'Paid Amount': report.paid_amount,
           'Currency': report.currency,

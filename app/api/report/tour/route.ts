@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { getUserFromToken } from '@/lib/auth';
-import { formatToIST, SYSCONFIG } from '@/lib/utils';
+import { formatToIST, SYSCONFIG, formatToISTDDMMYYYY } from '@/lib/utils';
 import { AuditLogger } from '@/lib/activity-logger.server';
 import * as XLSX from 'xlsx';
 
@@ -289,7 +289,9 @@ export async function POST(request: NextRequest) {
         const excelData = formattedReports.map((report, index) => ({
           'S/N': index + 1,
           'Agent': report.agent,
-          'Transfer Date': report.pickup_datetime,
+          'Transfer Date': report.pickup_datetime && report.pickup_datetime !== '-' 
+                      ? formatToISTDDMMYYYY(report.pickup_datetime) 
+                      : report.pickup_datetime,
           'Agent Ref': report.agent_ref,
           'Trip ID': report.trip_id,
           'Passenger Name': report.passenger_name,

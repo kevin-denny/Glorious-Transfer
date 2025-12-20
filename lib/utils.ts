@@ -12,6 +12,18 @@ export const formatToIST = (date: any) => {
   return d.toISOString().slice(0, 19).replace('T', ' ');
 };
 
+// Format dates to GMT+5:30 (IST) - Format: DD-MM-YYYY HH:mm:ss
+export const formatToISTDDMMYYYY = (date: any) => {
+  const d = new Date(date);
+  d.setMinutes(d.getMinutes() + 330); // Add 5 hours 30 minutes (330 minutes)
+  const isoString = d.toISOString().slice(0, 19).replace('T', ' ');
+  
+  // Convert from YYYY-MM-DD HH:mm:ss to DD-MM-YYYY HH:mm:ss
+  const [datePart, timePart] = isoString.split(' ');
+  const [year, month, day] = datePart.split('-');
+  return `${day}-${month}-${year} ${timePart}`;
+};
+
 // SYSCONFIG constants
 export const SYSCONFIG = {
   APP_NAME: 'Glorious Transfer',

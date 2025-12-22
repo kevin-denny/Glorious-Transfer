@@ -2,7 +2,7 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_SCRIPT="$SCRIPT_DIR/backup_db.sh"
-CRON_TIME="0 23 * * *"  # Run daily at 11 PM (23:00)
+CRON_TIME="30 23 * * *"  # Run daily at 11 PM (23:00)
 
 echo "Setting up daily database backup..."
 

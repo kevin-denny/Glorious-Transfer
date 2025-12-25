@@ -4,7 +4,7 @@ DB_HOST="159.223.52.48"
 DB_USER="root"
 DB_PASSWORD="root"
 DB_NAME="glorious_transfer"
-BACKUP_DIR="/e:/Other_projects/GLORIOUS_TRANSFER/Glorious-Transfer/backups"
+BACKUP_DIR="/var/www/Glorious-Transfer/backups"
 
 # Create backup directory
 mkdir -p "$BACKUP_DIR"
@@ -59,6 +59,32 @@ case "$1" in
             echo "❌ Restore failed"
         fi
         ;;
+
+    "restore-latest")
+        echo "Finding latest backup..."
+        LATEST_BACKUP=$(ls -t "$BACKUP_DIR"/*.sql* 2>/dev/null | head -n 1)
+        
+        if [ -z "$LATEST_BACKUP" ]; then
+            echo "❌ No backups found in $BACKUP_DIR"
+            exit 1
+        fi
+        
+        echo "Latest backup found: $LATEST_BACKUP"
+        echo "Restoring database from: $LATEST_BACKUP"
+        
+        # Check if file is compressed
+        if [[ "$LATEST_BACKUP" == *.gz ]]; then
+            zcat "$LATEST_BACKUP" | mysql -h "$DB_HOST" -P 3306 -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME"
+        else
+            mysql -h "$DB_HOST" -P 3306 -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "$LATEST_BACKUP"
+        fi
+        
+        if [ $? -eq 0 ]; then
+            echo "✅ Database restored successfully from latest backup"
+        else
+            echo "❌ Restore failed"
+        fi
+        ;;
         
     "auto-backup")
         echo "Setting up automatic daily backups..."
@@ -73,10 +99,12 @@ case "$1" in
         echo "Usage:"
         echo "  $0 backup                    - Create database backup"
         echo "  $0 restore <backup_file>     - Restore from backup"
+        echo "  $0 restore-latest            - Restore from latest backup"
         echo "  $0 auto-backup              - Setup automatic daily backups"
         echo ""
         echo "Examples:"
         echo "  $0 backup"
         echo "  $0 restore $BACKUP_DIR/glorious_transfer_backup_20240101_120000.sql.gz"
+        echo "  $0 restore-latest"
         ;;
 esac

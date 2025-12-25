@@ -4,7 +4,7 @@ DB_HOST="159.223.52.48"
 DB_USER="root"
 DB_PASSWORD="root"
 DB_NAME="glorious_transfer"
-BACKUP_DIR="/var/www/Glorious-Transfer/backups"
+BACKUP_DIR="/var/www/backups"
 
 # Create backup directory
 mkdir -p "$BACKUP_DIR"

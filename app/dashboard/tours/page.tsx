@@ -46,6 +46,7 @@ import {
   agentsList,
   currencyList,
   formatDateTime,
+  thousandSeparator,
   vehicletypedata,
 } from "@/lib/utils";
 
@@ -80,6 +81,8 @@ interface Tour {
     phone: string;
     driver_number: string;
     vehicle_number: string;
+    assigned_amount: string | null;
+    assigned_currency: string | null;
   } | null;
 }
 interface Assign {
@@ -1358,6 +1361,10 @@ Attention:
                   <p className="font-medium">{selectedTour.pax}</p>
                 </div>
                 <div>
+                  <Label className="text-gray-500">Vehicle Type</Label>
+                  <p className="font-medium">{selectedTour.vehicle_type}</p>
+                </div>
+                <div>
                   <Label className="text-gray-500">Contact Details</Label>
                   <p className="font-medium">{selectedTour.contact_details}</p>
                 </div>
@@ -1439,7 +1446,11 @@ Pickup: ${selectedTour.pickup ?? ""}
 Drop off: ${selectedTour.destination ?? ""}
 Remarks:${selectedTour.remarks ?? ""}
 
-Ride Amount: ${selectedTour.amount} ${selectedTour.currency}
+Ride Amount: ${thousandSeparator(
+                                  Number(
+                                    selectedTour.assignment?.assigned_amount
+                                  )
+                                )} ${selectedTour.assignment?.assigned_currency}
           `.trim();
 
                                 navigator.clipboard

@@ -103,3 +103,11 @@ ADD COLUMN agent_ref CHAR(50);
 -- 10-12-2025
 ALTER TABLE tours
 ADD COLUMN complaints TEXT;
+
+-- 12-20-2025
+-- truncate whole db at one command
+-- mysql -u root -p glorious_transfer -e "SET FOREIGN_KEY_CHECKS=0; $(mysql -u root -p glorious_transfer -e 'SHOW TABLES;' | awk 'NR>1 {print "TRUNCATE TABLE "$1";"}') SET FOREIGN_KEY_CHECKS=1;"
+
+-- 27-12-2025
+ALTER TABLE tours
+ADD COLUMN vehicle_type CHAR(20);

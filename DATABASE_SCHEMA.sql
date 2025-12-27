@@ -1,7 +1,7 @@
 -- Glorious Transfer MySQL Database Schema
 
--- DROP DATABASE IF EXISTS glorious_transfer;
--- CREATE DATABASE glorious_transfer CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+DROP DATABASE IF EXISTS glorious_transfer;
+CREATE DATABASE glorious_transfer CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE glorious_transfer;
 
 -- =============================================
@@ -81,6 +81,7 @@ CREATE TABLE tours (
   agent_ref CHAR(50),
   amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
   complaints TEXT,
+  vehicle_type CHAR(20),
   FOREIGN KEY (created_by) REFERENCES auth_users(id) ON DELETE SET NULL,
   INDEX idx_booking_date (booking_date),
   INDEX idx_status (status),

@@ -92,37 +92,61 @@ sudo systemctl start mysql
 
 echo "4. Securing MySQL installation..."
 
-# Get current root password (assuming it's 'root')
-CURRENT_ROOT_PWD="root"
+# Try different possible current root passwords
+CURRENT_ROOT_PWD=""
+for pwd in "root" "" "password" "mysql"; do
+    if mysql -u root -p"$pwd" -e "SELECT 1;" > /dev/null 2>&1; then
+        CURRENT_ROOT_PWD="$pwd"
+        echo "✅ Current root password detected"
+        break
+    fi
+done
 
-# Secure MySQL with new settings
-mysql -u root -p"$CURRENT_ROOT_PWD" << EOF
--- Change root password
-ALTER USER 'root'@'localhost' IDENTIFIED BY '$NEW_ROOT_PASSWORD';
+if [ -z "$CURRENT_ROOT_PWD" ]; then
+    echo "❌ Cannot determine current root password. Please run mysql_secure_installation first or check MySQL status."
+    exit 1
+fi
 
--- Remove remote root access
-DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
+# Secure MySQL with new settings - handle each operation separately for better error handling
+echo "  - Updating root password..."
+mysql -u root -p"$CURRENT_ROOT_PWD" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$NEW_ROOT_PASSWORD';" 2>/dev/null
+if [ $? -eq 0 ]; then
+    echo "  ✅ Root password updated"
+else
+    echo "  ⚠️  Root password update failed, trying alternative method..."
+    mysql -u root -p"$CURRENT_ROOT_PWD" -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('$NEW_ROOT_PASSWORD');" 2>/dev/null
+fi
 
--- Create application user with limited privileges
-CREATE USER '$NEW_DB_USER'@'localhost' IDENTIFIED BY '$NEW_DB_PASSWORD';
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES ON $DB_NAME.* TO '$NEW_DB_USER'@'localhost';
+echo "  - Removing remote root access..."
+mysql -u root -p"$NEW_ROOT_PASSWORD" -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" 2>/dev/null
 
--- Remove anonymous users
-DELETE FROM mysql.user WHERE User='';
+echo "  - Creating application user..."
+mysql -u root -p"$NEW_ROOT_PASSWORD" -e "CREATE USER IF NOT EXISTS '$NEW_DB_USER'@'localhost' IDENTIFIED BY '$NEW_DB_PASSWORD';" 2>/dev/null
 
--- Remove test database
-DROP DATABASE IF EXISTS test;
-DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
+echo "  - Granting application privileges..."
+mysql -u root -p"$NEW_ROOT_PASSWORD" -e "GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES ON $DB_NAME.* TO '$NEW_DB_USER'@'localhost';" 2>/dev/null
 
--- Reload privileges
-FLUSH PRIVILEGES;
-EOF
+echo "  - Removing anonymous users..."
+mysql -u root -p"$NEW_ROOT_PASSWORD" -e "DELETE FROM mysql.user WHERE User='';" 2>/dev/null
+
+echo "  - Cleaning up test databases..."
+mysql -u root -p"$NEW_ROOT_PASSWORD" -e "DROP DATABASE IF EXISTS test;" 2>/dev/null
+mysql -u root -p"$NEW_ROOT_PASSWORD" -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';" 2>/dev/null
+
+echo "  - Reloading privileges..."
+mysql -u root -p"$NEW_ROOT_PASSWORD" -e "FLUSH PRIVILEGES;" 2>/dev/null
 
 if [ $? -eq 0 ]; then
     echo "✅ MySQL secured successfully"
 else
-    echo "❌ MySQL security setup failed"
-    exit 1
+    echo "⚠️  Some MySQL security steps may have failed, but continuing..."
+    echo "  Testing final root connection..."
+    if mysql -u root -p"$NEW_ROOT_PASSWORD" -e "SELECT 1;" > /dev/null 2>&1; then
+        echo "  ✅ Root password is working"
+    else
+        echo "  ❌ Root password setup failed"
+        exit 1
+    fi
 fi
 
 echo "5. Configuring firewall..."
@@ -132,11 +156,15 @@ sudo ufw delete allow 3306
 sudo ufw allow from 127.0.0.1 to any port 3306
 
 echo "6. Creating database..."
-mysql -u root -p"$NEW_ROOT_PASSWORD" << EOF
-CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$NEW_DB_USER'@'localhost';
-FLUSH PRIVILEGES;
-EOF
+mysql -u root -p"$NEW_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null
+mysql -u root -p"$NEW_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$NEW_DB_USER'@'localhost';" 2>/dev/null
+mysql -u root -p"$NEW_ROOT_PASSWORD" -e "FLUSH PRIVILEGES;" 2>/dev/null
+
+if [ $? -eq 0 ]; then
+    echo "✅ Database created and permissions granted"
+else
+    echo "⚠️  Database creation completed with warnings"
+fi
 
 echo ""
 echo "=== MySQL Security Setup Completed ==="

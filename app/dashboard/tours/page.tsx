@@ -42,7 +42,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { agentsList, currencyList, formatDateTime } from "@/lib/utils";
+import {
+  agentsList,
+  currencyList,
+  formatDateTime,
+  vehicletypedata,
+} from "@/lib/utils";
 
 interface Tour {
   id: string;
@@ -69,7 +74,13 @@ interface Tour {
   updated_at: string;
   assigned_driver_id: string | null;
   driver_id: string | null;
-  assignment?: { driver: Driver; driver_number: string } | null;
+  vehicle_type: string | null;
+  assignment?: {
+    driver: Driver;
+    phone: string;
+    driver_number: string;
+    vehicle_number: string;
+  } | null;
 }
 interface Assign {
   selectedDriver: string;
@@ -145,6 +156,7 @@ export default function ToursPage() {
     remarks: "",
     complaints: "",
     driver_id: "",
+    vehicle_type: "",
     status: "Pending",
   });
 
@@ -321,6 +333,7 @@ export default function ToursPage() {
             flight_no: formData.flight_no,
             remarks: formData.remarks,
             complaints: formData.complaints,
+            vehicle_type: formData.vehicle_type,
             status: formData.status,
             driver_id: formData?.driver_id,
             created_by: profile?.id,
@@ -369,6 +382,7 @@ export default function ToursPage() {
             flight_no: formData.flight_no,
             remarks: formData.remarks,
             status: formData.status,
+            vehicle_type: formData.vehicle_type,
             created_by: profile?.id,
           }),
         });
@@ -476,6 +490,7 @@ export default function ToursPage() {
       remarks: "",
       complaints: "",
       driver_id: "",
+      vehicle_type: "",
       status: "Pending",
     });
     setSelectedTour(null);
@@ -508,6 +523,7 @@ export default function ToursPage() {
       remarks: tour.remarks || "",
       complaints: tour.complaints || "",
       status: tour.status,
+      vehicle_type: tour?.vehicle_type || "",
       driver_id: tour?.assignment?.driver?.id || "",
     });
     setDialogOpen(true);
@@ -611,17 +627,21 @@ export default function ToursPage() {
       label: "Booking Ref #",
     },
     {
+      key: "pickup_datetime",
+      label: "Pickup Date-Time",
+      render: (row: Tour) => `${formatDateTime(row.pickup_datetime)}`,
+    },
+    {
+      key: "pickup",
+      label: "Pickup",
+    },
+    {
+      key: "destination",
+      label: "Drop off",
+    },
+    {
       key: "customer_name",
       label: "Client",
-    },
-    {
-      key: "booking_date",
-      label: "Booking Date",
-      render: (row: Tour) => `${formatDateTime(row.booking_date)}`,
-    },
-    {
-      key: "category",
-      label: "Trip Type",
     },
     {
       key: "agent",
@@ -632,8 +652,8 @@ export default function ToursPage() {
       label: "Agent Ref",
     },
     {
-      key: "pax",
-      label: "Pax",
+      key: "vehicle_type",
+      label: "Vehicle Type",
     },
     {
       key: "drivers_name",
@@ -816,6 +836,26 @@ export default function ToursPage() {
                       }
                       required
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="vehicle_type">Vehicle Type</Label>
+                    <Select
+                      value={formData.vehicle_type}
+                      onValueChange={(v) =>
+                        setFormData({ ...formData, vehicle_type: v })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Vehicle Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vehicletypedata.map((vehicle) => (
+                          <SelectItem key={vehicle} value={vehicle}>
+                            {vehicle}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="contact_details">Contact Details</Label>
@@ -1223,7 +1263,7 @@ export default function ToursPage() {
             <DialogTitle className="flex items-center gap-2">
               <span>Trip Details: {selectedTour?.id}</span>
 
-              {selectedTour && (
+              {selectedTour?.status === "Assigned" && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -1234,28 +1274,39 @@ export default function ToursPage() {
 We have received your booking for transport and please review the transfer date and time below and let us know if everything is correct. 
 Thank you!
 
-Customer Name: ${selectedTour.customer_name}
-Pax: ${selectedTour.pax}
-Contact Details: ${selectedTour.contact_details}
+BOOKING DETAILS
+
 Pick Up Date-Time: ${
                       selectedTour.pickup_datetime
                         ? formatDateTime(selectedTour.pickup_datetime)
                         : ""
                     }
-Arrival Date-Time: ${
-                      selectedTour.arrival_datetime
-                        ? formatDateTime(selectedTour.arrival_datetime)
-                        : ""
-                    }
-Departure Time: ${
-                      selectedTour.departure_datetime
-                        ? formatDateTime(selectedTour.departure_datetime)
-                        : ""
-                    }
-Flight Number: ${selectedTour.flight_no ?? ""}
 Pickup: ${selectedTour.pickup ?? ""}
 Drop off: ${selectedTour.destination ?? ""}
 Remarks: ${selectedTour.remarks ?? ""}
+
+DRIVER DETAILS
+
+Driver Name: ${
+                      selectedTour.assignment
+                        ? selectedTour.assignment.driver.name
+                        : ""
+                    }
+Driver Contact: ${
+                      selectedTour.assignment
+                        ? selectedTour.assignment.driver.phone
+                        : ""
+                    }
+Vehicle: ${
+                      selectedTour.assignment
+                        ? selectedTour.assignment.driver.vehicle_type
+                        : ""
+                    }
+Vehicle Number: ${
+                      selectedTour.assignment
+                        ? selectedTour.assignment.driver.vehicle_number
+                        : ""
+                    }
 
 Attention:
 1. Please connect free WiFi at the CMB airport & notify us on WhatsApp once you land.
@@ -1369,11 +1420,14 @@ Attention:
                               onClick={() => {
                                 const driver = selectedTour.assignment?.driver;
                                 const textToCopy = `
-Booking Date: ${selectedTour.booking_date}
-Driver Name: ${driver?.name ?? ""}
-Driver Contact: ${driver?.phone ?? ""}
-Vehicle Type: ${driver?.vehicle_type ?? ""}
-Vehicle Number: ${driver?.vehicle_number ?? ""}
+To Driver Copy
+
+PASSENGER DETAILS
+
+Customer Name: ${selectedTour.customer_name}
+Pax: ${selectedTour.pax}
+Contact Details: ${selectedTour.contact_details}
+Flight Number: ${selectedTour.flight_no ?? ""}
 Pick Up Date-Time: ${
                                   selectedTour.pickup_datetime
                                     ? formatDateTime(
@@ -1381,23 +1435,11 @@ Pick Up Date-Time: ${
                                       )
                                     : ""
                                 }
-Arrival Date-Time: ${
-                                  selectedTour.arrival_datetime
-                                    ? formatDateTime(
-                                        selectedTour.arrival_datetime
-                                      )
-                                    : ""
-                                }
-Departure Time: ${
-                                  selectedTour.departure_datetime
-                                    ? formatDateTime(
-                                        selectedTour.departure_datetime
-                                      )
-                                    : ""
-                                }
 Pickup: ${selectedTour.pickup ?? ""}
 Drop off: ${selectedTour.destination ?? ""}
 Remarks:${selectedTour.remarks ?? ""}
+
+Ride Amount: ${selectedTour.amount} ${selectedTour.currency}
           `.trim();
 
                                 navigator.clipboard

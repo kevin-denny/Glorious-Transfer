@@ -161,6 +161,7 @@ export async function PUT(
       pickup_datetime,
       complaints,
       driver_id,
+      vehicle_type
     } = body;
 
     // Check if tour exists
@@ -253,6 +254,7 @@ export async function PUT(
           agent_ref = ?,
           pickup_datetime = ?,
           complaints = ?,
+          vehicle_type = ?,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `, [
@@ -261,7 +263,7 @@ export async function PUT(
         agent,
         pax,
         contact_details,
-        arrival_datetime,
+        arrival_datetime || pickup_datetime || null,
         departure_datetime,
         flight_no || null,
         remarks || null,
@@ -272,8 +274,9 @@ export async function PUT(
         amount || 0,
         currency || null,
         agent_ref || null,
-        pickup_datetime || null,
+        pickup_datetime || arrival_datetime || null,
         complaints || null,
+        vehicle_type || null,
         tourId
       ]);
 
@@ -308,6 +311,14 @@ export async function PUT(
         await connection.execute(
           'UPDATE drivers SET number_of_rides = COALESCE(number_of_rides, 0) + 1 WHERE id = ?',
           [driver_id]
+        );
+      }
+
+      // Update currency in payments table if changed
+      if (currency) {
+        await connection.execute(
+          'UPDATE payments SET currency = ? WHERE tour_id = ? AND type = ?',
+          [currency, tourId, SYSCONFIG.PAYMENT_TYPE_TOUR]
         );
       }
 

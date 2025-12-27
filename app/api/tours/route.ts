@@ -68,6 +68,8 @@ export async function POST(request: NextRequest) {
           a.id as assignment_id,
           a.assigned_at,
           a.assigned_by,
+          a.amount as assigned_amount,
+          a.currency as assigned_currency,
           d.id as driver_id,
           d.name as driver_name,
           d.driver_number as driver_number,
@@ -81,7 +83,7 @@ export async function POST(request: NextRequest) {
           OR 
           (t.pickup_datetime IS NULL AND t.arrival_datetime IS NOT NULL AND DATE(t.arrival_datetime) >= ? AND DATE(t.arrival_datetime) <= ?)
         ) AND (t.id LIKE ? OR t.customer_name LIKE ? OR t.agent LIKE ? OR t.agent_ref LIKE ? OR t.status LIKE ?)
-        ORDER BY COALESCE(t.pickup_datetime, t.arrival_datetime) DESC, t.created_at DESC 
+        ORDER BY COALESCE(t.pickup_datetime, t.arrival_datetime) ASC, t.created_at DESC 
         LIMIT ${pageSize} OFFSET ${offset}
       `;
 
@@ -106,6 +108,8 @@ export async function POST(request: NextRequest) {
           a.id as assignment_id,
           a.assigned_at,
           a.assigned_by,
+          a.amount as assigned_amount,
+          a.currency as assigned_currency,
           d.id as driver_id,
           d.name as driver_name,
           d.driver_number as driver_number,
@@ -119,7 +123,7 @@ export async function POST(request: NextRequest) {
           OR 
           (t.pickup_datetime IS NULL AND t.arrival_datetime IS NOT NULL AND DATE(t.arrival_datetime) >= ? AND DATE(t.arrival_datetime) <= ?)
         )
-        ORDER BY COALESCE(t.pickup_datetime, t.arrival_datetime) DESC, t.created_at DESC 
+        ORDER BY COALESCE(t.pickup_datetime, t.arrival_datetime) ASC, t.created_at DESC 
         LIMIT ${pageSize} OFFSET ${offset}
       `;
 
@@ -143,6 +147,8 @@ export async function POST(request: NextRequest) {
           a.id as assignment_id,
           a.assigned_at,
           a.assigned_by,
+          a.amount as assigned_amount,
+          a.currency as assigned_currency,
           d.id as driver_id,
           d.name as driver_name,
           d.driver_number as driver_number,
@@ -152,7 +158,7 @@ export async function POST(request: NextRequest) {
         LEFT JOIN assignments a ON t.id = a.tour_id
         LEFT JOIN drivers d ON a.driver_id = d.id
         WHERE t.id LIKE ? OR t.customer_name LIKE ? OR t.agent LIKE ? OR t.agent_ref LIKE ? OR t.status LIKE ?
-        ORDER BY t.created_at DESC 
+        ORDER BY COALESCE(t.pickup_datetime, t.arrival_datetime) ASC, t.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `, [`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`]);
       tours = Array.isArray(queryResult) ? queryResult : [];
@@ -164,6 +170,8 @@ export async function POST(request: NextRequest) {
           a.id as assignment_id,
           a.assigned_at,
           a.assigned_by,
+          a.amount as assigned_amount,
+          a.currency as assigned_currency,
           d.id as driver_id,
           d.name as driver_name,
           d.driver_number as driver_number,
@@ -172,7 +180,7 @@ export async function POST(request: NextRequest) {
         FROM tours t
         LEFT JOIN assignments a ON t.id = a.tour_id
         LEFT JOIN drivers d ON a.driver_id = d.id
-        ORDER BY t.created_at DESC 
+        ORDER BY COALESCE(t.pickup_datetime, t.arrival_datetime) ASC, t.created_at DESC
         LIMIT ${pageSize} OFFSET ${offset}
       `);
       tours = Array.isArray(queryResult) ? queryResult : [];
@@ -202,11 +210,14 @@ export async function POST(request: NextRequest) {
       currency: tour.currency,
       agent_ref: tour.agent_ref,
       complaints: tour.complaints,
+      vehicle_type: tour.vehicle_type,
       assignment: tour.assignment_id
         ? {
           id: tour.assignment_id,
           assigned_at: formatToIST(tour.assigned_at),
           assigned_by: tour.assigned_by,
+          assigned_amount: tour.assigned_amount,
+          assigned_currency: tour.assigned_currency,
           driver: {
             id: tour.driver_id,
             name: tour.driver_name,

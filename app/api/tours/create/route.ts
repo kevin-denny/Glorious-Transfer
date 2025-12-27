@@ -37,6 +37,7 @@ interface CreateTourRequest {
   currency?: string;
   agent_ref?: string;
   pickup_datetime?: string;
+  vehicle_type?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -119,10 +120,10 @@ export async function POST(request: NextRequest) {
     await query(
       `INSERT INTO tours (
         id, booking_date, customer_name, agent, pax,
-        contact_details, arrival_datetime, departure_datetime,
-        flight_no, remarks, pickup, destination, category, amount, currency, agent_ref, pickup_datetime,
-        created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        contact_details, arrival_datetime, departure_datetime, flight_no, remarks, 
+        pickup, destination, category, amount, currency, 
+        agent_ref, pickup_datetime, vehicle_type, created_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         tourId,
         body.booking_date,
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
         body.agent,
         body.pax,
         body.contact_details,
-        body.arrival_datetime || null,
+        body.arrival_datetime || body.pickup_datetime || null,
         body.departure_datetime || null,
         body.flight_no || null,
         body.remarks || null,
@@ -140,7 +141,8 @@ export async function POST(request: NextRequest) {
         body.amount || 0,
         body.currency || null,
         body.agent_ref || null,
-        body.pickup_datetime || null,
+        body.pickup_datetime || body.arrival_datetime || null,
+        body.vehicle_type || null,
         user.id,
       ]
     );

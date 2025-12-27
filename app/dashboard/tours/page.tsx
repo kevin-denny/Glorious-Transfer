@@ -1300,11 +1300,7 @@ Driver Contact: ${
                         ? selectedTour.assignment.driver.phone
                         : ""
                     }
-Vehicle: ${
-                      selectedTour.assignment
-                        ? selectedTour.assignment.driver.vehicle_type
-                        : ""
-                    }
+Vehicle: ${selectedTour.vehicle_type}
 Vehicle Number: ${
                       selectedTour.assignment
                         ? selectedTour.assignment.driver.vehicle_number
@@ -1431,6 +1427,7 @@ To Driver Copy
 
 PASSENGER DETAILS
 
+Trip Ref #: ${selectedTour.id}
 Customer Name: ${selectedTour.customer_name}
 Pax: ${selectedTour.pax}
 Contact Details: ${selectedTour.contact_details}

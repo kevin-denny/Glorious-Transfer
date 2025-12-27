@@ -5,10 +5,10 @@ echo "This script will migrate your data from the insecure remote DB to secure l
 echo ""
 
 # Configuration
-REMOTE_DB_HOST="159.223.52.48"
+REMOTE_DB_HOST="127.0.0.1"
 REMOTE_DB_PORT="3306"
 REMOTE_DB_USER="root"
-REMOTE_DB_PASSWORD="root"
+REMOTE_DB_PASSWORD="kKh0JAk5THKXMqfVazYBTT7sM"
 REMOTE_DB_NAME="glorious_transfer"
 
 LOCAL_DB_HOST="127.0.0.1"

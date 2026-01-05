@@ -397,6 +397,90 @@ log_info "  - SSL renewal: Daily at 12:00 PM"
 log_info "  - DB backup: Daily at 11:30 PM"
 log_info "  - Certbot installed for SSL setup"
 
+# 16. SSL Certificate Setup
+echo ""
+echo "🔒 SSL Certificate Setup"
+echo "========================"
+read -p "Do you want to set up SSL certificates now? [Y/n]: " SETUP_SSL
+
+if [ "$SETUP_SSL" != "n" ] && [ "$SETUP_SSL" != "N" ]; then
+    read -p "Enter your domain name (e.g., yourdomain.com): " DOMAIN_NAME
+    
+    if [ -n "$DOMAIN_NAME" ]; then
+        read -p "Enter your email for Let's Encrypt notifications: " SSL_EMAIL
+        
+        if [ -n "$SSL_EMAIL" ]; then
+            log_info "Setting up SSL certificate for $DOMAIN_NAME..."
+            
+            # Create a basic nginx configuration for the domain
+            $SUDO tee /etc/nginx/sites-available/$DOMAIN_NAME > /dev/null << EOF
+server {
+    listen 80;
+    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
+    
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+    }
+    
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+}
+EOF
+            
+            # Enable the site
+            $SUDO ln -sf /etc/nginx/sites-available/$DOMAIN_NAME /etc/nginx/sites-enabled/
+            
+            # Test nginx configuration
+            $SUDO nginx -t
+            
+            if [ $? -eq 0 ]; then
+                $SUDO systemctl reload nginx
+                
+                # Request SSL certificate
+                log_info "Requesting SSL certificate from Let's Encrypt..."
+                $SUDO certbot --nginx -d $DOMAIN_NAME -d www.$DOMAIN_NAME --email $SSL_EMAIL --agree-tos --no-eff-email --redirect
+                
+                if [ $? -eq 0 ]; then
+                    log_success "SSL certificate installed successfully!"
+                    log_info "Your site is now accessible via HTTPS"
+                    
+                    # Update the credentials file with SSL info
+                    $SUDO tee -a $CREDENTIALS_FILE > /dev/null << EOF
+
+SSL Certificate Information:
+Domain: $DOMAIN_NAME
+Email: $SSL_EMAIL
+Certificate Path: /etc/letsencrypt/live/$DOMAIN_NAME/
+Auto-renewal: Configured (daily at 12:00 PM)
+HTTPS URL: https://$DOMAIN_NAME
+EOF
+                else
+                    log_warning "SSL certificate setup failed. You can try again later with:"
+                    log_info "sudo certbot --nginx -d $DOMAIN_NAME"
+                fi
+            else
+                log_error "Nginx configuration test failed. SSL setup skipped."
+            fi
+        else
+            log_warning "Email required for SSL setup. Skipping SSL configuration."
+        fi
+    else
+        log_warning "Domain name required for SSL setup. Skipping SSL configuration."
+    fi
+else
+    log_info "SSL setup skipped. You can set it up later with:"
+    log_info "sudo certbot --nginx -d yourdomain.com"
+fi
+
 echo ""
 echo "=============================================="
 log_success "🎉 SERVER SETUP COMPLETED SUCCESSFULLY!"
@@ -411,6 +495,7 @@ echo "  ✅ Firewall and fail2ban configured"
 echo "  ✅ User permissions set up"
 echo "  ✅ SSL renewal cronjob configured"
 echo "  ✅ Database backup cronjob configured"
+$([ "$SETUP_SSL" != "n" ] && [ "$SETUP_SSL" != "N" ] && [ -n "$DOMAIN_NAME" ] && echo "  ✅ SSL certificate configured")
 echo ""
 echo "📁 Credentials saved to: $CREDENTIALS_FILE"
 echo ""
@@ -419,16 +504,11 @@ echo "  1. Logout and login again (or run: newgrp docker)"
 echo "  2. Test Docker: docker run hello-world"
 echo "  3. View credentials: sudo cat $CREDENTIALS_FILE"
 echo "  4. Deploy your application to /var/www/Glorious-Transfer/"
-echo "  5. Set up SSL: sudo certbot --nginx -d yourdomain.com"
+$([ -z "$DOMAIN_NAME" ] && echo "  5. Set up SSL: sudo certbot --nginx -d yourdomain.com")
 echo ""
 echo "🚀 Your server is ready for Glorious Transfer deployment!"
+$([ -n "$DOMAIN_NAME" ] && echo "🌐 Your site will be available at: https://$DOMAIN_NAME")
 echo ""
-
-# Test Docker installation
-if [ "$NEW_USERNAME" != "root" ]; then
-    echo "💡 To test Docker immediately, run:"
-    echo "   sudo -u $NEW_USERNAME docker run hello-world"
-fi
 
 echo ""
 echo "📅 Scheduled Tasks:"
@@ -439,3 +519,4 @@ echo ""
 
 log_warning "Remember to delete $CREDENTIALS_FILE after noting the credentials!"
 log_warning "Create backup_db_secure.sh script before the first backup runs!"
+$([ -n "$DOMAIN_NAME" ] && echo "" && log_info "SSL certificate will auto-renew. Check renewal with: sudo certbot renew --dry-run")

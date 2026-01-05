@@ -148,7 +148,7 @@ telnet 159.223.52.48 3306
 # Should fail to connect
 
 # 2. Verify app is working
-curl https://fierryranger.me/api/auth/status
+curl https://app.shemsilvatech.com/api/auth/status
 
 # 3. Check backup job
 tail -f /var/www/backups/backup_cron.log

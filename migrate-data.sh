@@ -157,14 +157,14 @@ DATABASE_URL="mysql://$LOCAL_APP_USER:$LOCAL_APP_PASSWORD@host.docker.internal:3
 
 # Next.js Configuration
 NEXTAUTH_SECRET="your-secret-key-here"
-NEXTAUTH_URL="https://fierryranger.me"
+NEXTAUTH_URL="https://app.shemsilvatech.com"
 
 # Application Configuration
 NODE_ENV=production
 PORT=3000
 
 # API Name
-NEXT_PUBLIC_API=https://fierryranger.me
+NEXT_PUBLIC_API=https://app.shemsilvatech.com
 
 # Database Configuration (for local MySQL)
 DB_HOST=host.docker.internal

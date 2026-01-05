@@ -2,7 +2,7 @@
 
 echo "=== SSL Certificate Setup ==="
 
-DOMAIN="fierryranger.me"
+DOMAIN="app.shemsilvatech.com"
 echo "Setting up SSL for domain: $DOMAIN"
 
 read -p "Do you want to use Let's Encrypt SSL (free) or create self-signed certificate? (letsencrypt/self-signed): " ssl_type

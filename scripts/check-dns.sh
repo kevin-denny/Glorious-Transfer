@@ -2,7 +2,7 @@
 
 echo "=== DNS Configuration Check ==="
 
-DOMAIN="fierryranger.me"
+DOMAIN="app.shemsilvatech.com"
 SERVER_IP=$(curl -s ifconfig.me)
 
 echo "Domain: $DOMAIN"

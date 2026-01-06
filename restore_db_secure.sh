@@ -32,7 +32,7 @@ echo "=============================================="
 echo ""
 
 # Configuration - Load from credentials file or use defaults
-CREDENTIALS_FILE="/var/server_credentials.txt"
+CREDENTIALS_FILE="/var/www/server_credentials.txt"
 BACKUP_DIR="/var/www/backups"
 
 # Default database configuration

@@ -21,7 +21,8 @@ if [ "$ssl_type" = "letsencrypt" ] || [ "$ssl_type" = "le" ]; then
     
     # Obtain certificate using standalone mode
     echo "Obtaining SSL certificate from Let's Encrypt..."
-    sudo certbot certonly --standalone --agree-tos --no-eff-email --email admin@$DOMAIN -d $DOMAIN -d www.$DOMAIN
+    # sudo certbot certonly --standalone --agree-tos --no-eff-email --email admin@$DOMAIN -d $DOMAIN -d www.$DOMAIN
+    sudo certbot certonly --standalone --agree-tos --no-eff-email --email admin@$DOMAIN -d $DOMAIN
     
     if [ $? -eq 0 ]; then
         # Create ssl directory and copy certificates

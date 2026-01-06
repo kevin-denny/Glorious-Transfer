@@ -15,16 +15,16 @@ if [ -f "$CREDENTIALS_FILE" ]; then
     log_info "Loading database credentials from $CREDENTIALS_FILE"
     
     # Extract database password from credentials file
-    DB_PASSWORD=$(grep "Database Password:" "$CREDENTIALS_FILE" 2>/dev/null | cut -d':' -f2 | tr -d ' ' || echo "")
+    DB_PASSWORD=$(grep "Application Password:" "$CREDENTIALS_FILE" 2>/dev/null | cut -d':' -f2 | tr -d ' ' || echo "")
     
     # Extract database name if different
-    CUSTOM_DB_NAME=$(grep "Application Database:" "$CREDENTIALS_FILE" 2>/dev/null | cut -d':' -f2 | tr -d ' ' || echo "")
+    CUSTOM_DB_NAME=$(grep "Database:" "$CREDENTIALS_FILE" 2>/dev/null | cut -d':' -f2 | tr -d ' ' || echo "")
     if [ -n "$CUSTOM_DB_NAME" ]; then
         DB_NAME="$CUSTOM_DB_NAME"
     fi
     
     # Extract database user if different
-    CUSTOM_DB_USER=$(grep "Database User:" "$CREDENTIALS_FILE" 2>/dev/null | cut -d':' -f2 | tr -d ' ' || echo "")
+    CUSTOM_DB_USER=$(grep "Application User:" "$CREDENTIALS_FILE" 2>/dev/null | cut -d':' -f2 | tr -d ' ' || echo "")
     if [ -n "$CUSTOM_DB_USER" ]; then
         DB_USER="$CUSTOM_DB_USER"
     fi

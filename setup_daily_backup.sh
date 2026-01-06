@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKUP_SCRIPT="$SCRIPT_DIR/backup_db.sh"
+BACKUP_SCRIPT="$SCRIPT_DIR/backup_db_secure.sh"
 CRON_TIME="30 23 * * *"  # Run daily at 11 PM (23:00)
 
 echo "Setting up daily database backup..."

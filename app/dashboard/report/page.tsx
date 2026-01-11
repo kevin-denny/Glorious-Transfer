@@ -34,6 +34,7 @@ interface Tour {
   client_name: string;
   amount: string;
   income_amount: string;
+  income_currency: string;
   paid_amount: string;
   currency: string;
   value: string;
@@ -452,6 +453,12 @@ export default function PaymentsPage() {
     {
       key: "agent_ref",
       label: "Agent Ref",
+    },
+    {
+      key: "income_amount",
+      label: "Income Amount",
+      render: (row: Tour) =>
+        `${thousandSeparator(row.income_amount)} ${row.income_currency}`,
     },
     {
       key: "pickup_datetime",

@@ -35,6 +35,8 @@ interface DriverReportData {
   trip_id: string;
   agent_id: string;
   agent_ref?: string;
+  income_amount?: number;
+  income_currency?: string;
   amount: number;
   paid_amount: number;
   pick_up: string;
@@ -128,6 +130,8 @@ export async function POST(request: NextRequest) {
           t.id as trip_id,
           t.agent as agent_id,
           t.agent_ref,
+          t.amount as income_amount,
+          t.currency as income_currency,
           COALESCE(p.amount, 0) as amount,
           COALESCE(p.paid_amount, 0) as paid_amount,
           t.pickup as pick_up,
@@ -203,6 +207,8 @@ export async function POST(request: NextRequest) {
             t.id as trip_id,
             t.agent as agent_id,
             t.agent_ref as agent_ref,
+            t.amount as income_amount,
+            t.currency as income_currency,
             COALESCE(p.amount, 0) as amount,
             COALESCE(p.paid_amount, 0) as paid_amount,
             t.pickup as pick_up,
@@ -293,6 +299,8 @@ export async function POST(request: NextRequest) {
             t.id as trip_id,
             t.agent as agent_id,
             t.agent_ref as agent_ref,
+            t.amount as income_amount,
+            t.currency as income_currency,
             COALESCE(p.amount, 0) as amount,
             COALESCE(p.paid_amount, 0) as paid_amount,
             t.pickup as pick_up,
@@ -331,6 +339,8 @@ export async function POST(request: NextRequest) {
           trip_id: report.trip_id || '-',
           agent_id: report.agent_id || '-',
           agent_ref: report.agent_ref || '-',
+          income_amount: report.income_amount ? parseFloat(report.income_amount) : 0,
+          income_currency: report.income_currency || '-',
           amount: parseFloat(report.amount || 0),
           paid_amount: parseFloat(report.paid_amount || 0),
           pick_up: report.pick_up || '-',
@@ -350,6 +360,8 @@ export async function POST(request: NextRequest) {
           trip_id: '-',
           agent_id: '-',
           agent_ref: '-',
+          income_amount: 0,
+          income_currency: '-',
           amount: 0,
           paid_amount: 0,
           pick_up: '-',
@@ -426,11 +438,13 @@ export async function POST(request: NextRequest) {
           'Trip ID': report.trip_id,
           'Agent ID': report.agent_id,
           'Agent Ref': report.agent_ref,
+          'Income Amount': report.income_amount,
+          'Income Currency': report.income_currency,
           'Pick Up': report.pick_up,
           'Drop Off': report.drop_off,
           'Passenger Name': report.passenger_name,
-          'Transfer Date': report.pickup_datetime && report.pickup_datetime !== '-' 
-            ? formatToISTDDMMYYYY(report.pickup_datetime) 
+          'Transfer Date': report.pickup_datetime && report.pickup_datetime !== '-'
+            ? formatToISTDDMMYYYY(report.pickup_datetime)
             : report.pickup_datetime,
           'Amount': report.amount,
           'Paid Amount': report.paid_amount,
@@ -465,6 +479,9 @@ export async function POST(request: NextRequest) {
           { wch: 20 },  // Driver
           { wch: 12 },  // Trip ID
           { wch: 15 },  // Agent ID
+          { wch: 15 },  // Agent Ref
+          { wch: 15 },  // Income Amount
+          { wch: 18 },  // Income Currency
           { wch: 15 },  // Amount
           { wch: 15 },  // Paid Amount
           { wch: 20 },  // Pick Up
@@ -483,7 +500,7 @@ export async function POST(request: NextRequest) {
         };
 
         // Apply header styling (row 1)
-        const headerCells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1', 'L1', 'M1'];
+        const headerCells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1', 'L1', 'M1', 'N1', 'O1', 'P1'];
         headerCells.forEach(cell => {
           if (worksheet[cell]) {
             worksheet[cell].s = headerStyle;
@@ -500,7 +517,7 @@ export async function POST(request: NextRequest) {
         // Apply total row styling
         const totalCells = [`A${totalRowNum}`, `B${totalRowNum}`, `C${totalRowNum}`, `D${totalRowNum}`,
         `E${totalRowNum}`, `F${totalRowNum}`, `G${totalRowNum}`, `H${totalRowNum}`,
-        `I${totalRowNum}`, `J${totalRowNum}`, `K${totalRowNum}`, `L${totalRowNum}`, `M${totalRowNum}`];
+        `I${totalRowNum}`, `J${totalRowNum}`, `K${totalRowNum}`, `L${totalRowNum}`, `M${totalRowNum}`, `N${totalRowNum}`, `O${totalRowNum}`, `P${totalRowNum}`];
         totalCells.forEach(cell => {
           if (worksheet[cell]) {
             worksheet[cell].s = totalRowStyle;

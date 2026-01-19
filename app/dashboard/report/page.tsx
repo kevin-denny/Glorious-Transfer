@@ -173,8 +173,8 @@ export default function PaymentsPage() {
           download: download,
           driverId: driverId,
           downloadAll: downloadAll,
-          page: pageTour,
-          pageSize: pageSizeTour,
+          page: pageDriver,
+          pageSize: pageSizeDriver,
         }),
       });
 

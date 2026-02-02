@@ -73,6 +73,8 @@ interface DriverPayment {
   notes: string | null;
   created_at: string;
   pickup_datetime: string;
+  income_amount: number | string;
+  income_currency: string;
   drivers: {
     name: string;
     driver_number: string;
@@ -116,6 +118,8 @@ interface Tour {
   value: string;
   created_at: string;
   pickup_datetime: string;
+  income_amount: string;
+  income_currency: string;
   label: string;
   status: string;
 }
@@ -661,6 +665,11 @@ export default function PaymentsPage() {
       label: "Trip ID",
     },
     {
+      key: "income_amount",
+      label: "Income Amount",
+      render: (row: Tour) => `${thousandSeparator(row.income_amount)} ${row.income_currency}`,
+    },
+    {
       key: "amount",
       label: "Total Amount",
       render: (row: Tour) => `${thousandSeparator(row.amount)} ${row.currency}`,
@@ -1018,6 +1027,13 @@ export default function PaymentsPage() {
                         <Label className="text-gray-500">Driver Number</Label>
                         <p className="font-medium">
                           {driverPayment.driver_number}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-500">Income Amount</Label>
+                        <p className="font-medium">
+                          {`${thousandSeparator(driverPayment.income_amount)} ${driverPayment.income_currency
+                            }`}
                         </p>
                       </div>
                       <div>

@@ -82,6 +82,8 @@ export async function POST(request: NextRequest) {
           d.driver_number,
           t.customer_name,
           t.pickup_datetime,
+          t.amount as income_amount,
+          t.currency as income_currency,
           t.id as tour_booking_ref
         FROM payments p
         LEFT JOIN drivers d ON p.driver_id = d.id
@@ -115,6 +117,8 @@ export async function POST(request: NextRequest) {
           d.driver_number,
           t.customer_name,
           t.pickup_datetime,
+          t.amount as income_amount,
+          t.currency as income_currency,
           t.id as tour_booking_ref
         FROM payments p
         LEFT JOIN drivers d ON p.driver_id = d.id
@@ -135,6 +139,8 @@ export async function POST(request: NextRequest) {
           d.driver_number,
           t.customer_name,
           t.pickup_datetime,
+          t.amount as income_amount,
+          t.currency as income_currency,
           t.id as tour_booking_ref
         FROM payments p
         LEFT JOIN drivers d ON p.driver_id = d.id

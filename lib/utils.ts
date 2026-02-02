@@ -95,7 +95,15 @@ export const agentsList = [
   "MZ",
   "TX",
   "DR",
-  "1G"
+  "1G",
+  "TUK",
+  "WB",
+  "EG",
+  "A01",
+  "A02",
+  "A03",
+  "A04",
+  "A05"
 ];
 
 

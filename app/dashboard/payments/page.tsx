@@ -72,6 +72,7 @@ interface DriverPayment {
   payment_date: string | null;
   notes: string | null;
   created_at: string;
+  pickup_datetime: string;
   drivers: {
     name: string;
     driver_number: string;
@@ -89,6 +90,7 @@ interface TourPayment {
   status: string;
   created_at: string;
   updated_at: string;
+  pickup_datetime: string;
   // payment_date: string | null;
   // created_at: string;
   // tours: {
@@ -113,6 +115,7 @@ interface Tour {
   currency: string;
   value: string;
   created_at: string;
+  pickup_datetime: string;
   label: string;
   status: string;
 }
@@ -635,9 +638,9 @@ export default function PaymentsPage() {
       render: (row: Tour) => `${thousandSeparator(row.amount)} ${row.currency}`,
     },
     {
-      key: "created_at",
-      label: "Payment Date",
-      render: (row: Tour) => `${formatDateTime(row.created_at)}`,
+      key: "pickup_datetime",
+      label: "Trip Start Date",
+      render: (row: Tour) => `${formatDateTime(row.pickup_datetime)}`,
     },
     {
       key: "status",
@@ -669,9 +672,9 @@ export default function PaymentsPage() {
         `${thousandSeparator(row.paid_amount)} ${row.currency}`,
     },
     {
-      key: "created_at",
-      label: "Payment Date",
-      render: (row: Tour) => `${formatDateTime(row.created_at)}`,
+      key: "pickup_datetime",
+      label: "Trip Start Date",
+      render: (row: Tour) => `${formatDateTime(row.pickup_datetime)}`,
     },
     {
       key: "status",

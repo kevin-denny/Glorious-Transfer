@@ -69,18 +69,19 @@ export async function POST(request: NextRequest) {
     let total;
 
     let payments = [];
-    
+
     if (searchTerm && searchTerm.trim().length > 0) {
       // Search mode
       const searchParams = [...queryParams];
       searchParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
-      
+
       payments = await query(
         `SELECT 
           p.*,
           d.name as driver_name,
           d.driver_number,
           t.customer_name,
+          t.pickup_datetime,
           t.id as tour_booking_ref
         FROM payments p
         LEFT JOIN drivers d ON p.driver_id = d.id
@@ -90,10 +91,10 @@ export async function POST(request: NextRequest) {
         LIMIT ${limit} OFFSET ${offset}`,
         searchParams
       ) as any[];
-      
+
       total = payments.length;
-    } else if(startMonth && endMonth && startMonth.trim().length > 0 && endMonth.trim().length > 0) {
-      if(!/^\d{4}-\d{2}$/.test(startMonth) || !/^\d{4}-\d{2}$/.test(endMonth)) {
+    } else if (startMonth && endMonth && startMonth.trim().length > 0 && endMonth.trim().length > 0) {
+      if (!/^\d{4}-\d{2}$/.test(startMonth) || !/^\d{4}-\d{2}$/.test(endMonth)) {
         return NextResponse.json(
           { message: 'Invalid month format. Use YYYY-MM (e.g., 2025-12)' },
           { status: 400 }
@@ -103,16 +104,17 @@ export async function POST(request: NextRequest) {
       // Calculate the last day of the endMonth properly
       const [endYear, endMonthNum] = endMonth.split('-').map(Number);
       const lastDayOfMonth = new Date(endYear, endMonthNum, 0).getDate();
-      
+
       const dateRangeParams = [...queryParams];
       dateRangeParams.push(`${startMonth}-01 00:00:00`, `${endMonth}-${lastDayOfMonth} 23:59:59`);
-      
+
       payments = await query(
         `SELECT 
           p.*,
           d.name as driver_name,
           d.driver_number,
           t.customer_name,
+          t.pickup_datetime,
           t.id as tour_booking_ref
         FROM payments p
         LEFT JOIN drivers d ON p.driver_id = d.id
@@ -122,7 +124,7 @@ export async function POST(request: NextRequest) {
         LIMIT ${limit} OFFSET ${offset}`,
         dateRangeParams
       ) as any[];
-      
+
       total = payments.length;
     } else {
       // Regular pagination mode
@@ -132,6 +134,7 @@ export async function POST(request: NextRequest) {
           d.name as driver_name,
           d.driver_number,
           t.customer_name,
+          t.pickup_datetime,
           t.id as tour_booking_ref
         FROM payments p
         LEFT JOIN drivers d ON p.driver_id = d.id
@@ -141,7 +144,7 @@ export async function POST(request: NextRequest) {
         LIMIT ${pageSize} OFFSET ${offset}`,
         queryParams
       ) as any[];
-      
+
       total = totalResult?.total || 0;
     }
 

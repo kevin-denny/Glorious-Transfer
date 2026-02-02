@@ -449,18 +449,16 @@ export default function PaymentsPage() {
       label: "Trip ID",
     },
     {
+      key: "passenger_name",
+      label: "Customer Name",
+    },
+    {
       key: "agent_id",
       label: "Agent ID",
     },
     {
       key: "agent_ref",
       label: "Agent Ref",
-    },
-    {
-      key: "income_amount",
-      label: "Income Amount",
-      render: (row: Tour) =>
-        `${thousandSeparator(row.income_amount)} ${row.income_currency}`,
     },
     {
       key: "pickup_datetime",
@@ -473,6 +471,12 @@ export default function PaymentsPage() {
     {
       key: "drop_off",
       label: "Drop off",
+    },
+    {
+      key: "income_amount",
+      label: "Income Amount",
+      render: (row: Tour) =>
+        `${thousandSeparator(row.income_amount)} ${row.income_currency}`,
     },
     {
       key: "amount",

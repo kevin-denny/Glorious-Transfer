@@ -89,17 +89,17 @@ export async function GET(
       pickup_datetime: formatToIST(tour.pickup_datetime),
       assignment: tour.assignment_id
         ? {
-            id: tour.assignment_id,
-            assigned_at: formatToIST(tour.assigned_at),
-            assigned_by: tour.assigned_by,
-            driver: {
-              id: tour.driver_id,
-              name: tour.driver_name,
-              phone: tour.driver_number,
-              vehicle_type: tour.driver_vehicle_type,
-              vehicle_number: tour.driver_vehicle_plate,
-            },
-          }
+          id: tour.assignment_id,
+          assigned_at: formatToIST(tour.assigned_at),
+          assigned_by: tour.assigned_by,
+          driver: {
+            id: tour.driver_id,
+            name: tour.driver_name,
+            phone: tour.driver_number,
+            vehicle_type: tour.driver_vehicle_type,
+            vehicle_number: tour.driver_vehicle_plate,
+          },
+        }
         : null,
     };
 
@@ -140,7 +140,7 @@ export async function PUT(
 
     const tourId = params.id;
     const body = await request.json();
-    
+
     const {
       booking_date,
       customer_name,
@@ -288,8 +288,8 @@ export async function PUT(
       //   );
       // }
 
-      // Update assignment status if tour is Completed or Cancelled
-      if (status === SYSCONFIG.COMPLETED || status === SYSCONFIG.CANCELLED) {
+      // Update assignment status if tour is Completed, Cancelled, or No Show
+      if (status === SYSCONFIG.COMPLETED || status === SYSCONFIG.CANCELLED || status === 'No Show') {
         await connection.execute(
           'UPDATE assignments SET status = ? WHERE tour_id = ?',
           [status === SYSCONFIG.COMPLETED ? SYSCONFIG.ASSIGNMENT_COMPLETED : SYSCONFIG.ASSIGNMENT_CANCELLED, tourId]
@@ -444,8 +444,8 @@ export async function DELETE(
 
     if (assignment) {
       return NextResponse.json(
-        { 
-          message: 'Cannot delete trip: trip is currently assigned to a driver. Please unassign first.' 
+        {
+          message: 'Cannot delete trip: trip is currently assigned to a driver. Please unassign first.'
         },
         { status: 409 }
       );

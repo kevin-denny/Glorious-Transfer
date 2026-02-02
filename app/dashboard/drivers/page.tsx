@@ -27,7 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/lib/activity-logger";
 import Swal from "sweetalert2";
 import DataTable from "@/components/ui/DataTable";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, vehicletypedata } from "@/lib/utils";
 
 interface Driver {
   id: string;
@@ -476,12 +476,11 @@ export default function DriversPage() {
                         <SelectValue placeholder="Select vehicle type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Car">Car</SelectItem>
-                        <SelectItem value="Sedan">Sedan</SelectItem>
-                        <SelectItem value="SUV">SUV</SelectItem>
-                        <SelectItem value="Van">Van</SelectItem>
-                        <SelectItem value="Bus">Bus</SelectItem>
-                        <SelectItem value="Luxury">Luxury</SelectItem>
+                        {vehicletypedata.map((vehicle) => (
+                          <SelectItem key={vehicle} value={vehicle}>
+                            {vehicle}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -674,9 +673,8 @@ export default function DriversPage() {
                 </h3>
 
                 <div
-                  className={`space-y-2 ${
-                    complaints.length > 3 ? "max-h-64 overflow-y-auto pr-2" : ""
-                  }`}
+                  className={`space-y-2 ${complaints.length > 3 ? "max-h-64 overflow-y-auto pr-2" : ""
+                    }`}
                 >
                   {complaints.length === 0 ? (
                     <p className="text-sm text-gray-500">

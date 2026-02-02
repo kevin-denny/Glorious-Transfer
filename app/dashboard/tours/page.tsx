@@ -558,6 +558,8 @@ export default function ToursPage() {
         return "bg-green-100 text-green-800";
       case "Cancelled":
         return "bg-red-100 text-red-800";
+      case "No Show":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -946,23 +948,23 @@ export default function ToursPage() {
 
                   {(formData?.category == "Departure" ||
                     formData?.category == "Arrival") && (
-                    <div className="space-y-2">
-                      <Label htmlFor="pickup_datetime">
-                        Pickup Date & Time
-                      </Label>
-                      <Input
-                        id="pickup_datetime"
-                        type="datetime-local"
-                        value={formData.pickup_datetime}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            pickup_datetime: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  )}
+                      <div className="space-y-2">
+                        <Label htmlFor="pickup_datetime">
+                          Pickup Date & Time
+                        </Label>
+                        <Input
+                          id="pickup_datetime"
+                          type="datetime-local"
+                          value={formData.pickup_datetime}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              pickup_datetime: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    )}
 
                   <div className="space-y-2">
                     <Label htmlFor="flight_no">Flight Number</Label>
@@ -1015,6 +1017,7 @@ export default function ToursPage() {
                             <SelectItem value="Completed">Completed</SelectItem>
                           )}
                           <SelectItem value="Cancelled">Cancelled</SelectItem>
+                          <SelectItem value="No Show">No Show</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1278,11 +1281,10 @@ Thank you!
 
 BOOKING DETAILS
 
-Pick Up Date-Time: ${
-                    selectedTour?.pickup_datetime
+Pick Up Date-Time: ${selectedTour?.pickup_datetime
                       ? formatDateTime(selectedTour.pickup_datetime)
                       : ""
-                  }
+                    }
 Pickup: ${selectedTour?.pickup ?? ""}
 Drop off: ${selectedTour?.destination ?? ""}
 Remarks: ${selectedTour?.remarks ?? ""}
@@ -1294,22 +1296,19 @@ Remarks: ${selectedTour?.remarks ?? ""}
                     textToCopy += `
 DRIVER DETAILS
 
-Driver Name: ${
-                      selectedTour?.assignment
+Driver Name: ${selectedTour?.assignment
                         ? selectedTour.assignment.driver.name
                         : ""
-                    }
-Driver Contact: ${
-                      selectedTour?.assignment
+                      }
+Driver Contact: ${selectedTour?.assignment
                         ? selectedTour.assignment.driver.phone
                         : ""
-                    }
+                      }
 Vehicle: ${selectedTour?.vehicle_type ?? ""}
-Vehicle Number: ${
-                      selectedTour?.assignment
+Vehicle Number: ${selectedTour?.assignment
                         ? selectedTour.assignment.driver.vehicle_number
                         : ""
-                    }
+                      }
 
 `;
                   }
@@ -1390,13 +1389,13 @@ Attention:
                 )}
                 {(selectedTour?.category == "Departure" ||
                   selectedTour?.category == "Arrival") && (
-                  <div>
-                    <Label className="text-gray-500">Pickup Date & Time</Label>
-                    <p className="font-medium">
-                      {formatDateTime(selectedTour.pickup_datetime)}
-                    </p>
-                  </div>
-                )}
+                    <div>
+                      <Label className="text-gray-500">Pickup Date & Time</Label>
+                      <p className="font-medium">
+                        {formatDateTime(selectedTour.pickup_datetime)}
+                      </p>
+                    </div>
+                  )}
                 <div>
                   <Label className="text-gray-500">Flight Number</Label>
                   <p className="font-medium">{selectedTour.flight_no}</p>
@@ -1438,22 +1437,21 @@ Customer Name: ${selectedTour.customer_name}
 Pax: ${selectedTour.pax}
 Contact Details: ${selectedTour.contact_details}
 Flight Number: ${selectedTour.flight_no ?? ""}
-Pick Up Date-Time: ${
-                                  selectedTour.pickup_datetime
+Pick Up Date-Time: ${selectedTour.pickup_datetime
                                     ? formatDateTime(
-                                        selectedTour.pickup_datetime,
-                                      )
+                                      selectedTour.pickup_datetime,
+                                    )
                                     : ""
-                                }
+                                  }
 Pickup: ${selectedTour.pickup ?? ""}
 Drop off: ${selectedTour.destination ?? ""}
 Remarks:${selectedTour.remarks ?? ""}
 
 Ride Amount: ${thousandSeparator(
-                                  Number(
-                                    selectedTour.assignment?.assigned_amount,
-                                  ),
-                                )} ${selectedTour.assignment?.assigned_currency}
+                                    Number(
+                                      selectedTour.assignment?.assigned_amount,
+                                    ),
+                                  )} ${selectedTour.assignment?.assigned_currency}
           `.trim();
 
                                 navigator.clipboard

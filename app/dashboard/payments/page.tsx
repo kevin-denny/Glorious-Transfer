@@ -600,6 +600,8 @@ export default function PaymentsPage() {
         return "bg-green-100 text-green-800";
       case "Cancelled":
         return "bg-red-100 text-red-800";
+      case "No Show":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -852,12 +854,12 @@ export default function PaymentsPage() {
                 // Sum of tour payments in LKR
                 thousandSeparator(
                   toLKR(summary.tour_payments?.LKR || 0, "LKR") +
-                    toLKR(summary.tour_payments?.USD || 0, "USD") +
-                    toLKR(summary.tour_payments?.EUR || 0, "EUR") -
-                    // Minus sum of driver payments in LKR
-                    (toLKR(summary.driver_payments?.LKR || 0, "LKR") +
-                      toLKR(summary.driver_payments?.USD || 0, "USD") +
-                      toLKR(summary.driver_payments?.EUR || 0, "EUR"))
+                  toLKR(summary.tour_payments?.USD || 0, "USD") +
+                  toLKR(summary.tour_payments?.EUR || 0, "EUR") -
+                  // Minus sum of driver payments in LKR
+                  (toLKR(summary.driver_payments?.LKR || 0, "LKR") +
+                    toLKR(summary.driver_payments?.USD || 0, "USD") +
+                    toLKR(summary.driver_payments?.EUR || 0, "EUR"))
                 )
               }
             </div>
@@ -899,34 +901,34 @@ export default function PaymentsPage() {
                     {(Number(formDriverData?.amount) ?? 0) -
                       (Number(formDriverData?.paid_amount) ?? 0) >
                       0 && (
-                      <>
-                        <div>
-                          <Label className="text-gray-500">To be Paid</Label>
-                          <p className="font-medium">
-                            {`${thousandSeparator(
-                              Number(formDriverData.amount) -
+                        <>
+                          <div>
+                            <Label className="text-gray-500">To be Paid</Label>
+                            <p className="font-medium">
+                              {`${thousandSeparator(
+                                Number(formDriverData.amount) -
                                 Number(formDriverData.paid_amount)
-                            )} ${formDriverData.currency}`}
-                          </p>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="tobe_paid">Payment Amount</Label>
-                          <Input
-                            id="tobe_paid"
-                            value={formDriverData.tobe_paid || ""}
-                            onChange={(e) =>
-                              setFormDriverData({
-                                ...formDriverData,
-                                tobe_paid:
-                                  e.target.value === ""
-                                    ? 0
-                                    : Number(e.target.value),
-                              })
-                            }
-                          />
-                        </div>
-                      </>
-                    )}
+                              )} ${formDriverData.currency}`}
+                            </p>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="tobe_paid">Payment Amount</Label>
+                            <Input
+                              id="tobe_paid"
+                              value={formDriverData.tobe_paid || ""}
+                              onChange={(e) =>
+                                setFormDriverData({
+                                  ...formDriverData,
+                                  tobe_paid:
+                                    e.target.value === ""
+                                      ? 0
+                                      : Number(e.target.value),
+                                })
+                              }
+                            />
+                          </div>
+                        </>
+                      )}
 
                     <div className="flex justify-end gap-2">
                       <Button
@@ -1018,32 +1020,30 @@ export default function PaymentsPage() {
                       <div>
                         <Label className="text-gray-500">Total Amount</Label>
                         <p className="font-medium">
-                          {`${thousandSeparator(driverPayment.amount)} ${
-                            driverPayment.currency
-                          }`}
+                          {`${thousandSeparator(driverPayment.amount)} ${driverPayment.currency
+                            }`}
                         </p>
                       </div>
                       <div>
                         <Label className="text-gray-500">Paid Amount</Label>
                         <p className="font-medium">
-                          {`${thousandSeparator(driverPayment.paid_amount)} ${
-                            driverPayment.currency
-                          }`}
+                          {`${thousandSeparator(driverPayment.paid_amount)} ${driverPayment.currency
+                            }`}
                         </p>
                       </div>
                       {(Number(driverPayment?.amount) ?? 0) -
                         (Number(driverPayment?.paid_amount) ?? 0) >
                         0 && (
-                        <div>
-                          <Label className="text-gray-500">To be Paid</Label>
-                          <p className="font-medium">
-                            {`${thousandSeparator(
-                              Number(driverPayment.amount) -
+                          <div>
+                            <Label className="text-gray-500">To be Paid</Label>
+                            <p className="font-medium">
+                              {`${thousandSeparator(
+                                Number(driverPayment.amount) -
                                 Number(driverPayment.paid_amount)
-                            )} ${driverPayment.currency}`}
-                          </p>
-                        </div>
-                      )}
+                              )} ${driverPayment.currency}`}
+                            </p>
+                          </div>
+                        )}
 
                       <div>
                         <Label className="text-gray-500">Status</Label>
@@ -1105,9 +1105,8 @@ export default function PaymentsPage() {
                       <div>
                         <Label className="text-gray-500">Amount</Label>
                         <p className="font-medium">
-                          {`${thousandSeparator(formTourData.amount)} ${
-                            formTourData.currency
-                          }`}
+                          {`${thousandSeparator(formTourData.amount)} ${formTourData.currency
+                            }`}
                         </p>
                       </div>
 
@@ -1243,9 +1242,8 @@ export default function PaymentsPage() {
                       <div>
                         <Label className="text-gray-500">Amount</Label>
                         <p className="font-medium">
-                          {`${thousandSeparator(tourPayment.amount)} ${
-                            tourPayment.currency
-                          }`}
+                          {`${thousandSeparator(tourPayment.amount)} ${tourPayment.currency
+                            }`}
                         </p>
                       </div>
 

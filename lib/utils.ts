@@ -42,6 +42,7 @@ export const SYSCONFIG = {
   ASSIIGNED: 'Assigned',
   COMPLETED: 'Completed',
   CANCELLED: 'Cancelled',
+  NO_SHOW: 'No Show',
   PARTIAL: 'Partial',
   CONFIRMED: 'Confirmed',
 
@@ -306,7 +307,9 @@ export function formatDateTime(value: any) {
 
 
 export const vehicletypedata = [
-  "Car",
-  "Van",
-  "Minibus"
+  "Minicar",
+  "Sedan",
+  "Minivan",
+  "Minibus",
+  "Bus"
 ];

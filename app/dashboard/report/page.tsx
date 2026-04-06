@@ -173,8 +173,8 @@ export default function PaymentsPage() {
           download: download,
           driverId: driverId,
           downloadAll: downloadAll,
-          page: pageTour,
-          pageSize: pageSizeTour,
+          page: pageDriver,
+          pageSize: pageSizeDriver,
         }),
       });
 
@@ -372,6 +372,8 @@ export default function PaymentsPage() {
         return "bg-green-100 text-green-800";
       case "Cancelled":
         return "bg-red-100 text-red-800";
+      case "No Show":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -447,18 +449,16 @@ export default function PaymentsPage() {
       label: "Trip ID",
     },
     {
+      key: "passenger_name",
+      label: "Customer Name",
+    },
+    {
       key: "agent_id",
       label: "Agent ID",
     },
     {
       key: "agent_ref",
       label: "Agent Ref",
-    },
-    {
-      key: "income_amount",
-      label: "Income Amount",
-      render: (row: Tour) =>
-        `${thousandSeparator(row.income_amount)} ${row.income_currency}`,
     },
     {
       key: "pickup_datetime",
@@ -471,6 +471,12 @@ export default function PaymentsPage() {
     {
       key: "drop_off",
       label: "Drop off",
+    },
+    {
+      key: "income_amount",
+      label: "Income Amount",
+      render: (row: Tour) =>
+        `${thousandSeparator(row.income_amount)} ${row.income_currency}`,
     },
     {
       key: "amount",
@@ -697,34 +703,34 @@ export default function PaymentsPage() {
                 setPageSizeDriver(size);
                 setPageDriver(1);
               }}
-              // renderActions={(driver: DriverPayment) => (
-              //   <div className="flex gap-2">
-              //     <Button
-              //       size="sm"
-              //       variant="ghost"
-              //       onClick={() => handleView("driver", driver)}
-              //     >
-              //       <Eye className="h-4 w-4" />
-              //     </Button>
-              //     {driver?.status != "Completed" && (
-              //       <Button
-              //         size="sm"
-              //         variant="ghost"
-              //         onClick={() => handleEdit("driver", driver)}
-              //       >
-              //         <Edit className="h-4 w-4" />
-              //       </Button>
-              //     )}
+            // renderActions={(driver: DriverPayment) => (
+            //   <div className="flex gap-2">
+            //     <Button
+            //       size="sm"
+            //       variant="ghost"
+            //       onClick={() => handleView("driver", driver)}
+            //     >
+            //       <Eye className="h-4 w-4" />
+            //     </Button>
+            //     {driver?.status != "Completed" && (
+            //       <Button
+            //         size="sm"
+            //         variant="ghost"
+            //         onClick={() => handleEdit("driver", driver)}
+            //       >
+            //         <Edit className="h-4 w-4" />
+            //       </Button>
+            //     )}
 
-              //     {/* <Button
-              //       size="sm"
-              //       variant="ghost"
-              //       // onClick={() => handleDelete(driver.id)}
-              //     >
-              //       <Trash className="h-4 w-4 text-red-500" />
-              //     </Button> */}
-              //   </div>
-              // )}
+            //     {/* <Button
+            //       size="sm"
+            //       variant="ghost"
+            //       // onClick={() => handleDelete(driver.id)}
+            //     >
+            //       <Trash className="h-4 w-4 text-red-500" />
+            //     </Button> */}
+            //   </div>
+            // )}
             />
           </TabsContent>
 
@@ -888,34 +894,34 @@ export default function PaymentsPage() {
                 setPageSizeTour(size);
                 setPageTour(1);
               }}
-              // renderActions={(tour: TourPayment) => (
-              //   <div className="flex gap-2">
-              //     <Button
-              //       size="sm"
-              //       variant="ghost"
-              //       onClick={() => handleView("tour", tour)}
-              //     >
-              //       <Eye className="h-4 w-4" />
-              //     </Button>
-              //     {tour?.status != "Completed" && (
-              //       <Button
-              //         size="sm"
-              //         variant="ghost"
-              //         onClick={() => handleEdit("tour", tour)}
-              //       >
-              //         <Edit className="h-4 w-4" />
-              //       </Button>
-              //     )}
+            // renderActions={(tour: TourPayment) => (
+            //   <div className="flex gap-2">
+            //     <Button
+            //       size="sm"
+            //       variant="ghost"
+            //       onClick={() => handleView("tour", tour)}
+            //     >
+            //       <Eye className="h-4 w-4" />
+            //     </Button>
+            //     {tour?.status != "Completed" && (
+            //       <Button
+            //         size="sm"
+            //         variant="ghost"
+            //         onClick={() => handleEdit("tour", tour)}
+            //       >
+            //         <Edit className="h-4 w-4" />
+            //       </Button>
+            //     )}
 
-              //     {/* <Button
-              //       size="sm"
-              //       variant="ghost"
-              //       // onClick={() => handleDelete(tour.id)}
-              //     >
-              //       <Trash className="h-4 w-4 text-red-500" />
-              //     </Button> */}
-              //   </div>
-              // )}
+            //     {/* <Button
+            //       size="sm"
+            //       variant="ghost"
+            //       // onClick={() => handleDelete(tour.id)}
+            //     >
+            //       <Trash className="h-4 w-4 text-red-500" />
+            //     </Button> */}
+            //   </div>
+            // )}
             />
           </TabsContent>
         </Tabs>

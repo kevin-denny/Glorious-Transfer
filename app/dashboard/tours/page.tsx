@@ -346,7 +346,7 @@ export default function ToursPage() {
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(
-            errorData.message || `HTTP error! status: ${response.status}`
+            errorData.message || `HTTP error! status: ${response.status}`,
           );
         }
 
@@ -393,7 +393,7 @@ export default function ToursPage() {
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(
-            errorData.message || `HTTP error! status: ${response.status}`
+            errorData.message || `HTTP error! status: ${response.status}`,
           );
         }
 
@@ -451,7 +451,7 @@ export default function ToursPage() {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.message || `HTTP error! status: ${response.status}`
+          errorData.message || `HTTP error! status: ${response.status}`,
         );
       }
       toast({
@@ -557,6 +557,8 @@ export default function ToursPage() {
       case "Completed":
         return "bg-green-100 text-green-800";
       case "Cancelled":
+        return "bg-red-100 text-red-800";
+      case "No Show":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -946,23 +948,23 @@ export default function ToursPage() {
 
                   {(formData?.category == "Departure" ||
                     formData?.category == "Arrival") && (
-                    <div className="space-y-2">
-                      <Label htmlFor="pickup_datetime">
-                        Pickup Date & Time
-                      </Label>
-                      <Input
-                        id="pickup_datetime"
-                        type="datetime-local"
-                        value={formData.pickup_datetime}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            pickup_datetime: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  )}
+                      <div className="space-y-2">
+                        <Label htmlFor="pickup_datetime">
+                          Pickup Date & Time
+                        </Label>
+                        <Input
+                          id="pickup_datetime"
+                          type="datetime-local"
+                          value={formData.pickup_datetime}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              pickup_datetime: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    )}
 
                   <div className="space-y-2">
                     <Label htmlFor="flight_no">Flight Number</Label>
@@ -1015,6 +1017,7 @@ export default function ToursPage() {
                             <SelectItem value="Completed">Completed</SelectItem>
                           )}
                           <SelectItem value="Cancelled">Cancelled</SelectItem>
+                          <SelectItem value="No Show">No Show</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1266,65 +1269,67 @@ export default function ToursPage() {
             <DialogTitle className="flex items-center gap-2">
               <span>Trip Details: {selectedTour?.id}</span>
 
-              {selectedTour?.status === "Assigned" && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex items-center gap-1"
-                  onClick={() => {
-                    const textToCopy = `
-                    Hello from Glorious Transfer!
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex items-center gap-1"
+                onClick={() => {
+                  let textToCopy = `
+Hello from Glorious Transfer!
 We have received your booking for transport and please review the transfer date and time below and let us know if everything is correct. 
 Thank you!
 
 BOOKING DETAILS
 
-Pick Up Date-Time: ${
-                      selectedTour.pickup_datetime
-                        ? formatDateTime(selectedTour.pickup_datetime)
-                        : ""
+Pick Up Date-Time: ${selectedTour?.pickup_datetime
+                      ? formatDateTime(selectedTour.pickup_datetime)
+                      : ""
                     }
-Pickup: ${selectedTour.pickup ?? ""}
-Drop off: ${selectedTour.destination ?? ""}
-Remarks: ${selectedTour.remarks ?? ""}
+Pickup: ${selectedTour?.pickup ?? ""}
+Drop off: ${selectedTour?.destination ?? ""}
+Remarks: ${selectedTour?.remarks ?? ""}
 
+`;
+
+                  // Only add DRIVER DETAILS if status is "Assigned"
+                  if (selectedTour?.status === "Assigned") {
+                    textToCopy += `
 DRIVER DETAILS
 
-Driver Name: ${
-                      selectedTour.assignment
+Driver Name: ${selectedTour?.assignment
                         ? selectedTour.assignment.driver.name
                         : ""
-                    }
-Driver Contact: ${
-                      selectedTour.assignment
+                      }
+Driver Contact: ${selectedTour?.assignment
                         ? selectedTour.assignment.driver.phone
                         : ""
-                    }
-Vehicle: ${selectedTour.vehicle_type}
-Vehicle Number: ${
-                      selectedTour.assignment
+                      }
+Vehicle: ${selectedTour?.vehicle_type ?? ""}
+Vehicle Number: ${selectedTour?.assignment
                         ? selectedTour.assignment.driver.vehicle_number
                         : ""
-                    }
+                      }
 
+`;
+                  }
+
+                  textToCopy += `
 Attention:
 1. Please connect free WiFi at the CMB airport & notify us on WhatsApp once you land.
-
 2. Follow the map to go to the meeting point.
-        `.trim();
+      `.trim();
 
-                    navigator.clipboard.writeText(textToCopy).then(() => {
-                      toast({
-                        title: "Copied!",
-                        description: "Trip details copied to clipboard.",
-                      });
+                  navigator.clipboard.writeText(textToCopy).then(() => {
+                    toast({
+                      title: "Copied!",
+                      description: "Trip details copied to clipboard.",
                     });
-                  }}
-                >
-                  <Clipboard className="h-4 w-4" />
-                  Copy
-                </Button>
-              )}
+                  });
+                }}
+              >
+                <Clipboard className="h-4 w-4" />
+                Copy
+              </Button>
             </DialogTitle>
           </DialogHeader>
           {selectedTour && (
@@ -1384,13 +1389,13 @@ Attention:
                 )}
                 {(selectedTour?.category == "Departure" ||
                   selectedTour?.category == "Arrival") && (
-                  <div>
-                    <Label className="text-gray-500">Pickup Date & Time</Label>
-                    <p className="font-medium">
-                      {formatDateTime(selectedTour.pickup_datetime)}
-                    </p>
-                  </div>
-                )}
+                    <div>
+                      <Label className="text-gray-500">Pickup Date & Time</Label>
+                      <p className="font-medium">
+                        {formatDateTime(selectedTour.pickup_datetime)}
+                      </p>
+                    </div>
+                  )}
                 <div>
                   <Label className="text-gray-500">Flight Number</Label>
                   <p className="font-medium">{selectedTour.flight_no}</p>
@@ -1432,22 +1437,21 @@ Customer Name: ${selectedTour.customer_name}
 Pax: ${selectedTour.pax}
 Contact Details: ${selectedTour.contact_details}
 Flight Number: ${selectedTour.flight_no ?? ""}
-Pick Up Date-Time: ${
-                                  selectedTour.pickup_datetime
+Pick Up Date-Time: ${selectedTour.pickup_datetime
                                     ? formatDateTime(
-                                        selectedTour.pickup_datetime
-                                      )
+                                      selectedTour.pickup_datetime,
+                                    )
                                     : ""
-                                }
+                                  }
 Pickup: ${selectedTour.pickup ?? ""}
 Drop off: ${selectedTour.destination ?? ""}
 Remarks:${selectedTour.remarks ?? ""}
 
 Ride Amount: ${thousandSeparator(
-                                  Number(
-                                    selectedTour.assignment?.assigned_amount
-                                  )
-                                )} ${selectedTour.assignment?.assigned_currency}
+                                    Number(
+                                      selectedTour.assignment?.assigned_amount,
+                                    ),
+                                  )} ${selectedTour.assignment?.assigned_currency}
           `.trim();
 
                                 navigator.clipboard

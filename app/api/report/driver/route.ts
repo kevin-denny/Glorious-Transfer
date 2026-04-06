@@ -438,14 +438,14 @@ export async function POST(request: NextRequest) {
           'Trip ID': report.trip_id,
           'Agent ID': report.agent_id,
           'Agent Ref': report.agent_ref,
-          'Income Amount': report.income_amount,
-          'Income Currency': report.income_currency,
-          'Pick Up': report.pick_up,
-          'Drop Off': report.drop_off,
-          'Passenger Name': report.passenger_name,
           'Transfer Date': report.pickup_datetime && report.pickup_datetime !== '-'
             ? formatToISTDDMMYYYY(report.pickup_datetime)
             : report.pickup_datetime,
+          'Pick Up': report.pick_up,
+          'Drop Off': report.drop_off,
+          'Passenger Name': report.passenger_name,
+          'Income Amount': report.income_amount,
+          'Income Currency': report.income_currency,
           'Amount': report.amount,
           'Paid Amount': report.paid_amount,
           'Currency': report.currency,
@@ -480,14 +480,14 @@ export async function POST(request: NextRequest) {
           { wch: 12 },  // Trip ID
           { wch: 15 },  // Agent ID
           { wch: 15 },  // Agent Ref
+          { wch: 18 },  // Transfer Date
+          { wch: 20 },  // Pick Up
+          { wch: 20 },  // Drop Off
+          { wch: 25 },  // Passenger Name
           { wch: 15 },  // Income Amount
           { wch: 18 },  // Income Currency
           { wch: 15 },  // Amount
           { wch: 15 },  // Paid Amount
-          { wch: 20 },  // Pick Up
-          { wch: 20 },  // Drop Off
-          { wch: 25 },  // Passenger Name
-          { wch: 18 },  // Transfer Date
           { wch: 10 },  // Currency
           { wch: 15 }   // Payment Status
         ];
